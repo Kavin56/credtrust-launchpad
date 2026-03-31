@@ -13,11 +13,13 @@ const Footer = () => (
     <div className="bg-navy py-6">
       <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
-            <span className="text-navy-foreground font-heading font-bold">C</span>
-          </div>
-          <span className="font-heading text-lg font-bold text-navy-foreground">CredTrust</span>
-        </div>
+           <img
+             src="/logo.png"
+             alt="CredTrust Logo"
+             className="h-8 w-auto object-contain brightness-0 invert"
+           />
+           <span className="font-heading text-lg font-bold text-navy-foreground">CredTrust</span>
+         </div>
         <div className="flex items-center gap-6 text-navy-foreground text-sm">
           <span className="text-navy-foreground/70">Toll free numbers</span>
           <span className="flex items-center gap-1.5 font-semibold"><Phone className="w-4 h-4" /> 1800 425 1444</span>
