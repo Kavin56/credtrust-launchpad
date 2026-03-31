@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
@@ -32,12 +32,33 @@ export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
       ]);
 
       toast.success("Welcome back!");
-      navigate("/");
+      navigate("/dashboard");
     } catch (error: any) {
       console.error(error);
       toast.error("Failed to create account. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      // Attempt to create member record if it doesn't exist
+      await supabase.from('members').upsert([
+        { id: user.uid, email: user.email, status: 'pending_verification' }
+      ], { onConflict: 'id' });
+
+      toast.success("Signed in with Google!");
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error(error);
+      if (error.code !== "auth/popup-closed-by-user") {
+        toast.error("Google sign-in failed.");
+      }
     }
   };
 
@@ -104,6 +125,7 @@ export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
         <Button 
           type="button" 
           variant="ghost" 
+          onClick={handleGoogleSignIn}
           className="w-full h-12 rounded-lg text-gray-500 font-semibold gap-3 hover:bg-gray-50 border border-gray-100"
         >
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="" />

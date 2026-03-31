@@ -33,8 +33,9 @@ import {
   FileText,
   LogOut,
   User,
+  Bell,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { auth } from "@/lib/firebase";
 import { signOut } from "firebase/auth";
 import { useAuth } from "@/modules/auth/AuthContext";
@@ -231,6 +232,10 @@ const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { user } = useAuth();
+  const location = useLocation();
+
+  const isHomePage = location.pathname === "/";
+  const isAuthPage = location.pathname.startsWith("/auth");
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -247,10 +252,115 @@ const Header = () => {
     megaMenuTimeoutRef.current = setTimeout(() => setActiveMegaMenu(null), 200);
   };
 
+  // --- BANKING HEADER (Internal Pages) ---
+  if (!isHomePage && !isAuthPage && user) {
+    const bankingNavItems = [
+      "Overview", "Accounts", "Payments", "Deposits", "Loans", "Cards", "Investments", "Insurance", "Services"
+    ];
+    
+    return (
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-2 group">
+              <div className="w-8 h-8 bg-[#1a1f36] rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
+                <ShieldCheck className="w-5 h-5 text-[#c9a84c]" />
+              </div>
+              <div className="leading-none">
+                <span className="text-sm font-bold text-[#1a1f36] block">CredTrust</span>
+                <span className="text-[8px] text-gray-500 uppercase tracking-tighter">Net Banking</span>
+              </div>
+            </Link>
+
+            {/* Nav Links */}
+            <nav className="hidden lg:flex items-center gap-6">
+              {bankingNavItems.map((item) => (
+                <button 
+                  key={item}
+                  className="text-[13px] font-semibold text-gray-500 hover:text-[#1a1f36] transition-colors relative"
+                >
+                  {item}
+                  {item === "Overview" && (
+                    <div className="absolute -bottom-[22px] left-0 right-0 h-1 bg-[#1a1f36] rounded-full" />
+                  )}
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button className="p-2 text-gray-400 hover:text-[#1a1f36] transition-colors">
+              <Search className="w-4 h-4" />
+            </button>
+            <button className="p-2 text-gray-400 hover:text-[#1a1f36] transition-colors relative">
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#c9a84c] rounded-full border-2 border-white" />
+            </button>
+            
+            {/* Profile Pill */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 pl-3 pr-1 py-1 bg-gray-50 hover:bg-gray-100 rounded-full border border-gray-100 transition-all outline-none">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#1a1f36] to-[#2d3356] text-white flex items-center justify-center text-[10px] font-bold">
+                    TE
+                  </div>
+                  <span className="text-[11px] font-bold text-[#1a1f36]">My Profile</span>
+                  <ChevronDown className="w-3 h-3 text-gray-400 ml-1" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 mt-2">
+                <DropdownMenuLabel className="text-[10px] flex items-center gap-2">
+                   <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                   {user.email}
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="cursor-pointer">Profile Settings</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard" className="cursor-pointer">Member Dashboard</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin" className="text-red-500 cursor-pointer">Admin Access</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-red-500 cursor-pointer focus:bg-red-50 focus:text-red-600"
+                  onClick={() => signOut(auth)}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </header>
+    );
+  }
+
+  // --- MINIMAL AUTH HEADER ---
+  if (isAuthPage) {
+    return (
+      <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-gray-50">
+        <Link to="/" className="flex items-center gap-2">
+          <ShieldCheck className="w-6 h-6 text-[#1a1f36]" />
+          <span className="text-xl font-bold text-[#1a1f36]">CredTrust</span>
+        </Link>
+        <Link to="/support" className="text-sm font-semibold text-gray-500 hover:text-[#1a1f36]">
+          Need Help?
+        </Link>
+      </header>
+    );
+  }
+
+  // --- STANDARD MARKETING HEADER (Home Page) ---
   return (
     <header className="sticky top-0 z-50">
       {/* ===== TOP STRIP ===== */}
-      <div className="bg-[#1a1f36] text-white text-xs hidden lg:block">
+      {isHomePage && (
+        <div className="bg-[#1a1f36] text-white text-xs hidden lg:block">
         <div className="max-w-7xl mx-auto px-4 flex justify-between items-center h-10">
           {/* Left - Category Links */}
           <div className="flex items-center gap-0">
@@ -431,6 +541,7 @@ const Header = () => {
           </div>
         </div>
       </div>
+    )}
 
       {/* ===== MAIN NAVBAR ===== */}
       <nav
@@ -618,9 +729,23 @@ const Header = () => {
                   <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
                     Account
                   </DropdownMenuLabel>
-                  <DropdownMenuItem className="gap-2.5">
-                    <User className="w-4 h-4 text-muted-foreground/60" />
-                    Profile
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center gap-2.5 w-full">
+                      <User className="w-4 h-4 text-muted-foreground/60" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard" className="flex items-center gap-2.5 w-full">
+                      <FileText className="w-4 h-4 text-muted-foreground/60" />
+                      Member Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center gap-2.5 w-full text-red-500 hover:text-red-600 focus:text-red-600">
+                      <ShieldCheck className="w-4 h-4" />
+                      Admin Control
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 

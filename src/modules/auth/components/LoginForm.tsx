@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,12 +26,26 @@ export const LoginForm = ({ onToggleForm, onAdminMode }: LoginFormProps) => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast.success("Log in successful!");
-      navigate("/");
+      navigate("/dashboard");
     } catch (error: any) {
       console.error(error);
       toast.error("Invalid email or password.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      toast.success("Signed in with Google!");
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error(error);
+      if (error.code !== "auth/popup-closed-by-user") {
+        toast.error("Google sign-in failed.");
+      }
     }
   };
 
@@ -101,6 +115,7 @@ export const LoginForm = ({ onToggleForm, onAdminMode }: LoginFormProps) => {
         <Button 
           type="button" 
           variant="outline" 
+          onClick={handleGoogleSignIn}
           className="w-full h-12 rounded-lg border-gray-200 text-gray-700 font-semibold gap-3 hover:bg-gray-50"
         >
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5" alt="" />

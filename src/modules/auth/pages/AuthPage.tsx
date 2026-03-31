@@ -119,7 +119,7 @@ const AuthPage = () => {
                       stroke="currentColor" 
                       strokeWidth="2.5" 
                       strokeLinecap="round" 
-                      strokeJoin="round"
+                      strokeLinejoin="round"
                     />
                   </svg>
                 </div>
