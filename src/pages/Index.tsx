@@ -8,6 +8,7 @@ import CTABanner from "@/components/CTABanner";
 import DigitalBankingSection from "@/components/DigitalBankingSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import Footer from "@/components/Footer";
+import ChatWidget from "@/components/ChatWidget";
 
 const Index = () => (
   <div className="min-h-screen">
@@ -21,6 +22,7 @@ const Index = () => (
     <DigitalBankingSection />
     <TestimonialsSection />
     <Footer />
+    <ChatWidget />
   </div>
 );
 
