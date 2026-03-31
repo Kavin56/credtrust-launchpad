@@ -31,7 +31,14 @@ import {
   LogIn,
   UserPlus,
   FileText,
+  LogOut,
+  User,
 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
+import { useAuth } from "@/modules/auth/AuthContext";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -223,6 +230,7 @@ const Header = () => {
   const [activeMegaMenu, setActiveMegaMenu] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -593,46 +601,59 @@ const Header = () => {
               <Search className="w-5 h-5" />
             </button>
 
-            {/* Login Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="default"
-                  className="hidden sm:inline-flex items-center gap-2 bg-[#1a1f36] text-white hover:bg-[#2d3356] text-sm font-semibold"
-                >
-                  Login
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
-                  Member Login
-                </DropdownMenuLabel>
-                <DropdownMenuItem className="gap-2.5">
-                  <LogIn className="w-4 h-4 text-muted-foreground/60" />
-                  Member Portal
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2.5">
-                  <Users className="w-4 h-4 text-muted-foreground/60" />
-                  Staff Login
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
-                  Quick Access
-                </DropdownMenuLabel>
-                <DropdownMenuItem className="gap-2.5">
-                  <UserPlus className="w-4 h-4 text-muted-foreground/60" />
-                  New Member Registration
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Login / Profile Dropdown */}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="default"
+                    className="hidden sm:inline-flex items-center gap-2 bg-[#1a1f36] text-white hover:bg-[#2d3356] text-sm font-semibold border border-white/10"
+                  >
+                    <User className="w-4 h-4 text-[#c9a84c]" />
+                    {user.email?.split('@')[0]}
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
+                    Account
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem className="gap-2.5">
+                    <User className="w-4 h-4 text-muted-foreground/60" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="gap-2.5 text-red-500 focus:text-red-500 focus:bg-red-50"
+                    onClick={async () => {
+                      await signOut(auth);
+                      toast.success("Successfully logged out");
+                    }}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                size="default"
+                asChild
+                className="hidden sm:inline-flex items-center gap-2 bg-[#1a1f36] text-white hover:bg-[#2d3356] text-sm font-semibold"
+              >
+                <Link to="/auth?mode=signup">
+                  Signup
+                  <UserPlus className="w-3.5 h-3.5" />
+                </Link>
+              </Button>
+            )}
 
-            <a
-              href="#"
+            <Link
+              to={user ? "/loan-apply" : "/auth"}
               className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 bg-[#c9a84c] text-[#1a1f36] text-sm font-semibold rounded-lg hover:bg-[#d4b65c] transition-all shadow-sm hover:shadow-md"
             >
               Apply Now
-            </a>
+            </Link>
 
             {/* Mobile Toggle */}
             <button
@@ -746,19 +767,41 @@ const Header = () => {
                 </div>
 
                 {/* Mobile Actions */}
-                <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
-                  <a
-                    href="#"
-                    className="flex-1 text-center py-3 bg-[#1a1f36] text-white text-sm font-semibold rounded-lg"
-                  >
-                    Login
-                  </a>
-                  <a
-                    href="#"
-                    className="flex-1 text-center py-3 bg-[#c9a84c] text-[#1a1f36] text-sm font-semibold rounded-lg"
-                  >
-                    Apply Now
-                  </a>
+                <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-gray-100">
+                  {user ? (
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between h-12 text-[#1a1f36] border-gray-200"
+                      onClick={async () => {
+                        await signOut(auth);
+                        setMobileOpen(false);
+                        toast.success("Successfully logged out");
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-[#c9a84c]" />
+                        <span>Logout ({user.email?.split('@')[0]})</span>
+                      </div>
+                      <LogOut className="w-4 h-4 text-gray-400" />
+                    </Button>
+                  ) : (
+                    <div className="flex gap-3">
+                      <Link
+                        to="/auth?mode=signup"
+                        className="flex-1 text-center py-3 bg-[#1a1f36] text-white text-sm font-semibold rounded-lg"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        Signup
+                      </Link>
+                      <Link
+                        to={user ? "/loan-apply" : "/auth"}
+                        className="flex-1 text-center py-3 bg-[#c9a84c] text-[#1a1f36] text-sm font-semibold rounded-lg"
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        Apply Now
+                      </Link>
+                    </div>
+                  )}
                 </div>
 
                 {/* Mobile Contact */}
