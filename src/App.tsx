@@ -11,6 +11,8 @@ import LoanApply from "./pages/LoanApply";
 import MemberDashboard from "./modules/member/pages/MemberDashboard";
 import AdminDashboard from "./modules/admin/pages/AdminDashboard";
 import KYCForm from "./modules/member/components/KYCForm";
+import ProfilePage from "./modules/member/pages/ProfilePage";
+import AccountsPage from "./modules/member/pages/AccountsPage";
 
 const queryClient = new QueryClient();
 
@@ -37,7 +39,8 @@ const App = () => (
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/loan-apply" element={<ProtectedRoute><LoanApply /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><MemberDashboard /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><MemberDashboard /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/accounts" element={<ProtectedRoute><AccountsPage /></ProtectedRoute>} />
           <Route path="/kyc" element={<ProtectedRoute><KYCForm /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

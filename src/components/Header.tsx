@@ -275,17 +275,34 @@ const Header = () => {
 
             {/* Nav Links */}
             <nav className="hidden lg:flex items-center gap-6">
-              {bankingNavItems.map((item) => (
-                <button 
-                  key={item}
-                  className="text-[13px] font-semibold text-gray-500 hover:text-[#1a1f36] transition-colors relative"
-                >
-                  {item}
-                  {item === "Overview" && (
-                    <div className="absolute -bottom-[22px] left-0 right-0 h-1 bg-[#1a1f36] rounded-full" />
-                  )}
-                </button>
-              ))}
+              {[
+                { name: "Overview", path: "/dashboard" },
+                { name: "Accounts", path: "/accounts" },
+                { name: "Payments", path: "/dashboard" },
+                { name: "Deposits", path: "/dashboard" },
+                { name: "Loans", path: "/dashboard" },
+                { name: "Cards", path: "/dashboard" },
+                { name: "Investments", path: "/dashboard" },
+                { name: "Insurance", path: "/dashboard" },
+                { name: "Services", path: "/dashboard" }
+              ].map((item) => {
+                const isActive = location.pathname === item.path || (item.name === "Overview" && location.pathname === "/dashboard");
+                // Special case for highlighting "Overview" when on /dashboard
+                const highlighted = (item.name === "Overview" && location.pathname === "/dashboard") || (item.name === "Accounts" && location.pathname === "/accounts");
+                
+                return (
+                  <Link 
+                    key={item.name}
+                    to={item.path}
+                    className={`text-[13px] font-semibold transition-colors relative h-16 flex items-center ${highlighted ? 'text-[#1a1f36]' : 'text-gray-500 hover:text-[#1a1f36]'}`}
+                  >
+                    {item.name}
+                    {highlighted && (
+                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#1a1f36] rounded-full" />
+                    )}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
 

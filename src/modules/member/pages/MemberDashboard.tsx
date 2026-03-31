@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/modules/auth/AuthContext";
 import { 
   PiggyBank, 
@@ -39,7 +40,6 @@ import {
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Link } from "react-router-dom";
 
 const quickActions = [
   { label: "Welcome to Yono", icon: Sparkles, bg: "bg-purple-100", color: "text-purple-600" },
@@ -137,9 +137,9 @@ const MemberDashboard = () => {
                     </div>
                   </div>
                   <div className="relative z-10 flex items-center gap-10 pt-4">
-                    <button className="text-[13px] font-bold border-b-2 border-white pb-0.5 hover:text-white/70 hover:border-white/70 transition-all">
+                    <Link to="/accounts" className="text-[13px] font-bold border-b-2 border-white pb-0.5 hover:text-white/70 hover:border-white/70 transition-all">
                       View Accounts
-                    </button>
+                    </Link>
                     <button className="text-[13px] font-bold border-b-2 border-white pb-0.5 hover:text-white/70 hover:border-white/70 transition-all">
                       Transactions
                     </button>
