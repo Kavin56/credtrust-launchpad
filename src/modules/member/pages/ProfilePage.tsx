@@ -64,10 +64,10 @@ const ProfilePage = () => {
              <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm p-8 text-center space-y-6 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-full h-24 bg-gradient-to-br from-[#1a1f36] to-[#6b21a8] rounded-t-[40px]" />
                 <div className="relative pt-6">
-                   <div className="w-28 h-28 rounded-[32px] border-4 border-white shadow-xl bg-[#c9a84c] mx-auto flex items-center justify-center text-white text-[40px] font-black group-hover:rotate-6 transition-transform duration-500">
+                   <div className="w-28 h-28 relative rounded-[32px] border-4 border-white shadow-xl bg-[#c9a84c] mx-auto flex items-center justify-center text-white text-[40px] font-black group-hover:rotate-6 transition-transform duration-500">
                       KV
-                      <div className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 group-hover:text-[#1a1f36] shadow-lg cursor-pointer">
-                         <Camera className="w-5 h-5" />
+                      <div className="absolute -bottom-1 -right-1 w-9 h-9 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#1a1f36] shadow-lg cursor-pointer z-10">
+                         <Camera className="w-4 h-4" />
                       </div>
                    </div>
                 </div>
