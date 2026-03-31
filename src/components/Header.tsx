@@ -18,16 +18,7 @@ import {
   Globe2,
   Building2,
   Users,
-  BadgeIndianRupee,
-  TrendingUp,
-  Banknote,
-  FileText,
-  ArrowRightLeft,
-  UserPlus,
   Briefcase,
-  GraduationCap,
-  Home,
-  Car,
   Gem,
   HandCoins,
   FileCheck,
@@ -37,51 +28,29 @@ import {
   HelpCircle,
   Download,
   MessageSquare,
+  LogIn,
+  UserPlus,
+  FileText,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 const categoryLinks = [
   { label: "Personal", href: "#" },
   { label: "Business & MSME", href: "#" },
   { label: "Agriculture", href: "#" },
   { label: "NRI Services", href: "#" },
-];
-
-const utilityLinks = [
-  {
-    label: "Ways to Bank",
-    icon: Smartphone,
-    children: [
-      { name: "Mobile Banking", icon: Smartphone, desc: "Bank on the go" },
-      { name: "Net Banking", icon: Globe2, desc: "Online access 24/7" },
-      { name: "WhatsApp Banking", icon: MessageSquare, desc: "Chat to bank" },
-      { name: "ATM & e-Lobby", icon: Landmark, desc: "Self-service branches" },
-      { name: "Doorstep Banking", icon: MapPin, desc: "We come to you" },
-    ],
-  },
-  {
-    label: "About Us",
-    icon: Building2,
-    children: [
-      { name: "About the Society", icon: Building2, desc: "Our story" },
-      { name: "Board of Directors", icon: Users, desc: "Leadership team" },
-      { name: "Vision & Mission", icon: TrendingUp, desc: "Our purpose" },
-      { name: "Awards & Achievements", icon: FileCheck, desc: "Recognition" },
-      { name: "Careers", icon: Briefcase, desc: "Join our team" },
-    ],
-  },
-  {
-    label: "Support",
-    icon: Headphones,
-    children: [
-      { name: "Contact Us", icon: Headphones, desc: "Get in touch" },
-      { name: "Locate Branch", icon: MapPin, desc: "Find nearest branch" },
-      { name: "Download Center", icon: Download, desc: "Forms & apps" },
-      { name: "Raise Concerns", icon: HelpCircle, desc: "Grievance redressal" },
-      { name: "FAQs", icon: BookOpen, desc: "Common questions" },
-    ],
-  },
-  { label: "Blog", href: "#" },
-  { label: "Investors", href: "#" },
 ];
 
 const mainNavItems = [
@@ -252,10 +221,8 @@ const Header = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [activeMegaMenu, setActiveMegaMenu] = useState<string | null>(null);
-  const [activeUtilityDropdown, setActiveUtilityDropdown] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
   const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const utilityTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -270,15 +237,6 @@ const Header = () => {
 
   const handleMegaMenuLeave = () => {
     megaMenuTimeoutRef.current = setTimeout(() => setActiveMegaMenu(null), 200);
-  };
-
-  const handleUtilityEnter = (label: string) => {
-    if (utilityTimeoutRef.current) clearTimeout(utilityTimeoutRef.current);
-    setActiveUtilityDropdown(label);
-  };
-
-  const handleUtilityLeave = () => {
-    utilityTimeoutRef.current = setTimeout(() => setActiveUtilityDropdown(null), 200);
   };
 
   return (
@@ -301,57 +259,144 @@ const Header = () => {
             ))}
           </div>
 
-          {/* Right - Utility Links */}
+          {/* Right - Utility Links with shadcn DropdownMenu */}
           <div className="flex items-center gap-0">
-            {utilityLinks.map((item) => (
-              <div
-                key={item.label}
-                className="relative"
-                onMouseEnter={() => item.children && handleUtilityEnter(item.label)}
-                onMouseLeave={handleUtilityLeave}
-              >
-                <a
-                  href={item.href || "#"}
-                  className="flex items-center gap-1 px-3.5 py-2.5 text-white/60 hover:text-white transition-colors"
-                >
-                  {item.label}
-                  {item.children && <ChevronDown className="w-3 h-3" />}
-                </a>
-                <AnimatePresence>
-                  {item.children && activeUtilityDropdown === item.label && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute top-full right-0 mt-1 w-64 bg-white rounded-xl border border-gray-100 overflow-hidden z-50"
-                      style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.15)" }}
-                    >
-                      <div className="p-1.5">
-                        {item.children.map((child) => {
-                          const Icon = child.icon;
-                          return (
-                            <a
-                              key={child.name}
-                              href="#"
-                              className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors group"
-                            >
-                              <div className="w-8 h-8 rounded-lg bg-[#1a1f36]/5 flex items-center justify-center shrink-0 group-hover:bg-[#c9a84c]/10 transition-colors">
-                                <Icon className="w-4 h-4 text-[#1a1f36]/50 group-hover:text-[#c9a84c] transition-colors" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-800 group-hover:text-[#1a1f36]">{child.name}</p>
-                                <p className="text-xs text-gray-400">{child.desc}</p>
-                              </div>
-                            </a>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            ))}
+            {/* Ways to Bank */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 px-3.5 py-2.5 text-white/60 hover:text-white transition-colors outline-none">
+                Ways to Bank
+                <ChevronDown className="w-3 h-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
+                  Digital Banking
+                </DropdownMenuLabel>
+                <DropdownMenuItem className="gap-2.5">
+                  <Smartphone className="w-4 h-4 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-sm">Mobile Banking</p>
+                    <p className="text-xs text-muted-foreground">Bank on the go</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2.5">
+                  <Globe2 className="w-4 h-4 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-sm">Net Banking</p>
+                    <p className="text-xs text-muted-foreground">Online access 24/7</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2.5">
+                  <MessageSquare className="w-4 h-4 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-sm">WhatsApp Banking</p>
+                    <p className="text-xs text-muted-foreground">Chat to bank</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="gap-2.5">
+                  <Landmark className="w-4 h-4 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-sm">ATM & e-Lobby</p>
+                    <p className="text-xs text-muted-foreground">Self-service branches</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2.5">
+                  <MapPin className="w-4 h-4 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-sm">Doorstep Banking</p>
+                    <p className="text-xs text-muted-foreground">We come to you</p>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* About Us */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 px-3.5 py-2.5 text-white/60 hover:text-white transition-colors outline-none">
+                About Us
+                <ChevronDown className="w-3 h-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuItem className="gap-2.5">
+                  <Building2 className="w-4 h-4 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-sm">About the Society</p>
+                    <p className="text-xs text-muted-foreground">Our story</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2.5">
+                  <Users className="w-4 h-4 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-sm">Board of Directors</p>
+                    <p className="text-xs text-muted-foreground">Leadership team</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="gap-2.5">
+                  <FileCheck className="w-4 h-4 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-sm">Awards & Achievements</p>
+                    <p className="text-xs text-muted-foreground">Recognition</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2.5">
+                  <Briefcase className="w-4 h-4 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-sm">Careers</p>
+                    <p className="text-xs text-muted-foreground">Join our team</p>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Support */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 px-3.5 py-2.5 text-white/60 hover:text-white transition-colors outline-none">
+                Support
+                <ChevronDown className="w-3 h-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuItem className="gap-2.5">
+                  <Headphones className="w-4 h-4 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-sm">Contact Us</p>
+                    <p className="text-xs text-muted-foreground">Get in touch</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2.5">
+                  <MapPin className="w-4 h-4 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-sm">Locate Branch</p>
+                    <p className="text-xs text-muted-foreground">Find nearest branch</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="gap-2.5">
+                  <Download className="w-4 h-4 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-sm">Download Center</p>
+                    <p className="text-xs text-muted-foreground">Forms & apps</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2.5">
+                  <HelpCircle className="w-4 h-4 text-muted-foreground/60" />
+                  <div>
+                    <p className="text-sm">FAQs</p>
+                    <p className="text-xs text-muted-foreground">Common questions</p>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Blog */}
+            <a href="#" className="px-3.5 py-2.5 text-white/60 hover:text-white transition-colors">
+              Blog
+            </a>
+
+            {/* Investors */}
+            <a href="#" className="px-3.5 py-2.5 text-white/60 hover:text-white transition-colors">
+              Investors
+            </a>
 
             {/* Phone */}
             <a
@@ -362,28 +407,19 @@ const Header = () => {
               <span className="font-medium">1800 425 1444</span>
             </a>
 
-            {/* Language */}
-            <div className="relative group">
-              <button className="flex items-center gap-1 px-3.5 py-2.5 text-white/60 hover:text-white transition-colors border-l border-white/10">
+            {/* Language Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 px-3.5 py-2.5 text-white/60 hover:text-white transition-colors outline-none border-l border-white/10">
                 <Globe className="w-3 h-3" />
-                <span>EN</span>
+                EN
                 <ChevronDown className="w-3 h-3" />
-              </button>
-              <div
-                className="absolute top-full right-0 mt-1 w-32 bg-white rounded-xl border border-gray-100 py-1.5 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150"
-                style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.15)" }}
-              >
-                {["English", "Hindi", "Kannada"].map((lang) => (
-                  <a
-                    key={lang}
-                    href="#"
-                    className="block px-4 py-2.5 text-sm text-gray-700 hover:text-[#1a1f36] hover:bg-gray-50 mx-1 rounded-lg transition-colors"
-                  >
-                    {lang}
-                  </a>
-                ))}
-              </div>
-            </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32">
+                <DropdownMenuItem className="font-medium">English</DropdownMenuItem>
+                <DropdownMenuItem>Hindi</DropdownMenuItem>
+                <DropdownMenuItem>Kannada</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
@@ -557,13 +593,39 @@ const Header = () => {
               <Search className="w-5 h-5" />
             </button>
 
-            <a
-              href="#"
-              className="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 bg-[#1a1f36] text-white text-sm font-semibold rounded-lg hover:bg-[#2d3356] transition-all shadow-sm hover:shadow-md"
-            >
-              Login
-              <ChevronDown className="w-3.5 h-3.5" />
-            </a>
+            {/* Login Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="default"
+                  className="hidden sm:inline-flex items-center gap-2 bg-[#1a1f36] text-white hover:bg-[#2d3356] text-sm font-semibold"
+                >
+                  Login
+                  <ChevronDown className="w-3.5 h-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
+                  Member Login
+                </DropdownMenuLabel>
+                <DropdownMenuItem className="gap-2.5">
+                  <LogIn className="w-4 h-4 text-muted-foreground/60" />
+                  Member Portal
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2.5">
+                  <Users className="w-4 h-4 text-muted-foreground/60" />
+                  Staff Login
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
+                  Quick Access
+                </DropdownMenuLabel>
+                <DropdownMenuItem className="gap-2.5">
+                  <UserPlus className="w-4 h-4 text-muted-foreground/60" />
+                  New Member Registration
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <a
               href="#"

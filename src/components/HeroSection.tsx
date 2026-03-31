@@ -37,8 +37,8 @@ const HeroSection = () => {
 
   return (
     <section className="relative bg-muted overflow-hidden">
-      <div className="container py-12 md:py-20 lg:py-28">
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center min-h-[400px] md:min-h-[480px]">
+      <div className="container py-6 md:py-10 lg:py-14">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center min-h-[280px] md:min-h-[340px]">
           {/* Text */}
           <AnimatePresence mode="wait">
             <motion.div
@@ -87,7 +87,7 @@ const HeroSection = () => {
         </div>
 
         {/* Dots */}
-        <div className="flex justify-center gap-2 mt-8">
+        <div className="flex justify-center gap-2 mt-4">
           {slides.map((_, i) => (
             <button
               key={i}
