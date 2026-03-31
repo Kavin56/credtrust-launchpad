@@ -13,6 +13,15 @@ import AdminDashboard from "./modules/admin/pages/AdminDashboard";
 import KYCForm from "./modules/member/components/KYCForm";
 import ProfilePage from "./modules/member/pages/ProfilePage";
 import AccountsPage from "./modules/member/pages/AccountsPage";
+import MembershipPage from "./modules/member/pages/MembershipPage";
+import DepositApplicationPage from "./modules/member/pages/DepositApplicationPage";
+import LoanApplicationPage from "./modules/member/pages/LoanApplicationPage";
+import PaymentsPage from "./modules/member/pages/PaymentsPage";
+import InvestmentsPage from "./modules/member/pages/InvestmentsPage";
+import InsurancePage from "./modules/member/pages/InsurancePage";
+import CardsPage from "./modules/member/pages/CardsPage";
+import ServicesPage from "./modules/member/pages/ServicesPage";
+import ProductDetailPage from "./modules/member/pages/ProductDetailPage";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +50,15 @@ const App = () => (
           <Route path="/dashboard" element={<ProtectedRoute><MemberDashboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/accounts" element={<ProtectedRoute><AccountsPage /></ProtectedRoute>} />
+          <Route path="/membership" element={<ProtectedRoute><MembershipPage /></ProtectedRoute>} />
+          <Route path="/deposit-apply" element={<ProtectedRoute><DepositApplicationPage /></ProtectedRoute>} />
+          <Route path="/loan-apply" element={<ProtectedRoute><LoanApplicationPage /></ProtectedRoute>} />
+          <Route path="/payments" element={<ProtectedRoute><PaymentsPage /></ProtectedRoute>} />
+          <Route path="/investments" element={<ProtectedRoute><InvestmentsPage /></ProtectedRoute>} />
+          <Route path="/insurance" element={<ProtectedRoute><InsurancePage /></ProtectedRoute>} />
+          <Route path="/cards" element={<ProtectedRoute><CardsPage /></ProtectedRoute>} />
+          <Route path="/services" element={<ProtectedRoute><ServicesPage /></ProtectedRoute>} />
+          <Route path="/product/:category/:slug" element={<ProtectedRoute><ProductDetailPage /></ProtectedRoute>} />
           <Route path="/kyc" element={<ProtectedRoute><KYCForm /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

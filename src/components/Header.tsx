@@ -1,718 +1,255 @@
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  ChevronDown,
-  ChevronRight,
-  Search,
-  Phone,
-  Menu,
-  X,
-  Globe,
-  Wallet,
-  PiggyBank,
-  CreditCard,
-  Landmark,
-  Receipt,
-  ShieldCheck,
-  Smartphone,
-  Globe2,
-  Building2,
-  Users,
-  Briefcase,
-  Gem,
-  HandCoins,
-  FileCheck,
-  BookOpen,
-  Headphones,
-  MapPin,
-  HelpCircle,
-  Download,
-  MessageSquare,
-  LogIn,
-  UserPlus,
-  FileText,
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  Search, 
+  Menu, 
+  X, 
+  Bell, 
+  User, 
+  ChevronDown, 
+  Info, 
+  Smartphone, 
+  CreditCard, 
+  Landmark, 
+  PiggyBank, 
+  Activity, 
+  ShieldCheck, 
+  BadgePercent, 
+  Headset, 
+  Briefcase, 
+  Globe2, 
+  Settings,
   LogOut,
-  User,
-  Bell,
-} from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
-import { useAuth } from "@/modules/auth/AuthContext";
-import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-  DropdownMenuPortal,
-} from "@/components/ui/dropdown-menu";
+  Moon,
+  Sun,
+  Monitor,
+  Zap,
+  Star,
+  Users,
+  Gem,
+  Calculator,
+  ArrowRight,
+  HeartPulse,
+  Car,
+  Umbrella,
+  Plane,
+  MonitorSmartphone,
+  Wallet,
+  FileText,
+  Lock,
+  Percent,
+  ChevronRight
+} from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
-const categoryLinks = [
-  { label: "Personal", href: "#" },
-  { label: "Business & MSME", href: "#" },
-  { label: "Agriculture", href: "#" },
-  { label: "NRI Services", href: "#" },
-];
+// Internal icons for the menu
+const Calendar = (props: any) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+);
+const HandCoins = (props: any) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17"/><path d="m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-5.4a2 2 0 0 0-2.8-2.8L15 13"/><circle cx="14" cy="8" r="3"/></svg>
+);
+const GraduationCap = (props: any) => (
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+);
 
-const mainNavItems = [
-  {
-    label: "Accounts",
-    href: "#",
-    megaMenu: {
-      columns: [
-        {
-          heading: "Savings Accounts",
-          icon: PiggyBank,
-          items: [
-            { name: "Regular Savings Account", tag: undefined },
-            { name: "Premium Savings Account", tag: "Popular" },
-            { name: "Salary Account", tag: undefined },
-            { name: "Zero Balance Account", tag: "New" },
-          ],
-        },
-        {
-          heading: "Current Accounts",
-          icon: Wallet,
-          items: [
-            { name: "Individual Current Account", tag: undefined },
-            { name: "Business Current Account", tag: "Popular" },
-            { name: "Institutional Account", tag: undefined },
-          ],
-        },
-        {
-          heading: "Special Accounts",
-          icon: ShieldCheck,
-          items: [
-            { name: "Minor Account", tag: undefined },
-            { name: "Joint Account", tag: undefined },
-            { name: "Senior Citizen Account", tag: "New" },
-          ],
-        },
-      ],
-      featured: {
-        title: "Open Account in Minutes",
-        desc: "Instant digital account opening with zero paperwork.",
-        cta: "Apply Now",
-        gradient: "from-[#1a1f36] to-[#2d3356]",
-      },
-    },
+const megaMenuData = {
+  Deposits: {
+    products: [
+      { name: "Fixed Deposit", icon: ShieldCheck, path: "/product/deposits/fixed-deposit" },
+      { name: "Recurring Deposit", icon: Calendar, path: "/product/deposits/recurring-deposit" },
+      { name: "Annuity Deposit", icon: FileText, path: "/product/deposits/annuity" },
+      { name: "Auto Sweep", icon: Zap, path: "/product/deposits/auto-sweep" }
+    ],
+    links: [
+      { name: "Manage Deposits", path: "/accounts?tab=deposits" },
+      { name: "View Interest Rate", path: "/product/deposits/fixed-deposit" },
+      { name: "Manage PPF Accounts", path: "/product/investments/ppf" },
+      { name: "Requests", path: "/services" }
+    ]
   },
-  {
-    label: "Deposits",
-    href: "#",
-    megaMenu: {
-      columns: [
-        {
-          heading: "Term Deposits",
-          icon: Landmark,
-          items: [
-            { name: "Fixed Deposit", tag: "Popular" },
-            { name: "Recurring Deposit", tag: undefined },
-            { name: "Tax Saver FD", tag: "New" },
-            { name: "Flexi Deposit", tag: undefined },
-          ],
-        },
-        {
-          heading: "Savings Schemes",
-          icon: Receipt,
-          items: [
-            { name: "Daily Deposit Scheme", tag: undefined },
-            { name: "Monthly Income Scheme", tag: "Popular" },
-            { name: "Cumulative Deposit", tag: undefined },
-          ],
-        },
-      ],
-      featured: {
-        title: "Earn Up to 8.5%* Interest",
-        desc: "Competitive rates on fixed and recurring deposits.",
-        cta: "View Rates",
-        gradient: "from-[#c9a84c] to-[#b8953f]",
-      },
-    },
+  Loans: {
+    products: [
+      { name: "Personal Loan", icon: User, path: "/product/loans/personal-loan" },
+      { name: "SHG Credit", icon: HandCoins, path: "/product/loans/shg-credit" },
+      { name: "Home Loan", icon: Landmark, path: "/product/loans/home-loan" },
+      { name: "Gold Loan", icon: Gem, path: "/product/loans/gold-loan" },
+      { name: "Education Loan", icon: GraduationCap, path: "/product/loans/personal-loan" }
+    ],
+    links: [
+      { name: "View Existing Loans", path: "/accounts?tab=loans" },
+      { name: "Apply Instant Loan", path: "/loan-apply" },
+      { name: "Check Credit Score", path: "/dashboard" },
+      { name: "Calculate Loan EMI", path: "/loan-apply" }
+    ]
   },
-  {
-    label: "Loans",
-    href: "#",
-    megaMenu: {
-      columns: [
-        {
-          heading: "Personal Loans",
-          icon: HandCoins,
-          items: [
-            { name: "Personal Loan", tag: "Popular" },
-            { name: "Salary Loan", tag: undefined },
-            { name: "Emergency Loan", tag: "New" },
-          ],
-        },
-        {
-          heading: "Business Loans",
-          icon: Briefcase,
-          items: [
-            { name: "Business Term Loan", tag: undefined },
-            { name: "Working Capital Loan", tag: "Popular" },
-            { name: "Micro Enterprise Loan", tag: undefined },
-          ],
-        },
-        {
-          heading: "Secured Loans",
-          icon: Gem,
-          items: [
-            { name: "Gold Loan", tag: "Popular" },
-            { name: "Property Mortgage Loan", tag: undefined },
-            { name: "Loan Against Deposit", tag: undefined },
-          ],
-        },
-        {
-          heading: "Other Loans",
-          icon: FileText,
-          items: [
-            { name: "Education Loan", tag: undefined },
-            { name: "Vehicle Loan", tag: undefined },
-            { name: "Housing Loan", tag: "Popular" },
-          ],
-        },
-      ],
-      featured: {
-        title: "Quick Loan Approval",
-        desc: "Get pre-approved loans with minimal documentation.",
-        cta: "Check Eligibility",
-        gradient: "from-[#1a1f36] to-[#2d3356]",
-      },
-    },
+  Cards: {
+    products: [
+      { name: "Credit Cards", icon: CreditCard, path: "/product/cards/credit-cards" },
+      { name: "Debit Cards", icon: MonitorSmartphone, path: "/product/cards/debit-cards" },
+      { name: "Forex Cards", icon: Globe2, path: "/product/cards/forex-cards" },
+      { name: "NCMC", icon: Smartphone, path: "/product/cards/ncmc-card" }
+    ],
+    links: [
+      { name: "Manage Credit Card", path: "/cards" },
+      { name: "Manage Debit Card", path: "/cards" },
+      { name: "Manage Forex Card", path: "/cards" }
+    ]
   },
-  {
-    label: "Services",
-    href: "#",
-    megaMenu: {
-      columns: [
-        {
-          heading: "Digital Services",
-          icon: Smartphone,
-          items: [
-            { name: "Mobile Banking", tag: "Popular" },
-            { name: "Net Banking", tag: undefined },
-            { name: "UPI Payments", tag: "New" },
-            { name: "Fund Transfer", tag: undefined },
-          ],
-        },
-        {
-          heading: "Member Services",
-          icon: Users,
-          items: [
-            { name: "Share Certificate", tag: undefined },
-            { name: "Passbook Update", tag: undefined },
-            { name: "Account Statement", tag: undefined },
-            { name: "Nominee Change", tag: undefined },
-          ],
-        },
-      ],
-      featured: {
-        title: "Go Digital Today",
-        desc: "Access all services from your phone or computer.",
-        cta: "Get Started",
-        gradient: "from-[#c9a84c] to-[#b8953f]",
-      },
-    },
+  Investments: {
+    products: [
+      { name: "Mutual Funds", icon: Activity, path: "/product/investments/mutual-funds" },
+      { name: "NPS", icon: PiggyBank, path: "/product/investments/nps" },
+      { name: "PPF", icon: Wallet, path: "/product/investments/ppf" },
+      { name: "Demat & Securities", icon: Briefcase, path: "/product/investments/demat" }
+    ],
+    links: [
+      { name: "Manage Mutual Fund", path: "/investments" },
+      { name: "Manage NPS Account", path: "/investments" },
+      { name: "Manage PPF", path: "/investments" }
+    ]
   },
-  { label: "About", href: "#" },
-  { label: "Contact", href: "#" },
-];
+  Insurance: {
+    products: [
+      { name: "Life", icon: Umbrella, path: "/product/insurance/life-insurance" },
+      { name: "Health", icon: HeartPulse, path: "/product/insurance/health-insurance" },
+      { name: "Accident", icon: Info, path: "/product/insurance/accident-cover" },
+      { name: "Motor", icon: Car, path: "/product/insurance/motor-insurance" }
+    ],
+    links: [
+      { name: "Renew Insurance", path: "/insurance" },
+      { name: "View Certificates", path: "/insurance" },
+      { name: "Claim Status", path: "/insurance" }
+    ]
+  },
+  Services: {
+    products: [
+      { name: "Account Related", icon: Settings, path: "/product/services/account-services" },
+      { name: "Tax Related", icon: Percent, path: "/product/services/tax-services" },
+      { name: "Cheque Services", icon: FileText, path: "/product/services/cheque-services" },
+      { name: "e-Secure Lock", icon: Lock, path: "/product/services/e-secure-lock" }
+    ],
+    links: [
+      { name: "Form 15G/15H", path: "/product/services/tax-services" },
+      { name: "Order Certificate", path: "/product/services/account-services" },
+      { name: "Track Service Status", path: "/services" }
+    ]
+  }
+};
 
 const Header = () => {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [activeMegaMenu, setActiveMegaMenu] = useState<string | null>(null);
-  const [scrolled, setScrolled] = useState(false);
-  const megaMenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const { user } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeMegaMenu, setActiveMegaMenu] = useState(null);
+  const dropdownRef = useRef(null);
+  const navigate = useNavigate();
   const location = useLocation();
 
-  const isHomePage = location.pathname === "/";
-  const isAuthPage = location.pathname.startsWith("/auth");
-
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    setActiveMegaMenu(null);
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
-  const handleMegaMenuEnter = (label: string) => {
-    if (megaMenuTimeoutRef.current) clearTimeout(megaMenuTimeoutRef.current);
-    setActiveMegaMenu(label);
-  };
+  const navItems = [
+    { name: "Overview", path: "/dashboard" },
+    { name: "Accounts", path: "/accounts" },
+    { name: "Payments", path: "/payments" },
+    { name: "Deposits", path: "Deposits", hasMegaMenu: true },
+    { name: "Loans", path: "Loans", hasMegaMenu: true },
+    { name: "Cards", path: "Cards", hasMegaMenu: true },
+    { name: "Investments", path: "Investments", hasMegaMenu: true },
+    { name: "Insurance", path: "Insurance", hasMegaMenu: true },
+    { name: "Services", path: "Services", hasMegaMenu: true }
+  ];
 
-  const handleMegaMenuLeave = () => {
-    megaMenuTimeoutRef.current = setTimeout(() => setActiveMegaMenu(null), 200);
-  };
-
-  // --- BANKING HEADER (Internal Pages) ---
-  if (!isHomePage && !isAuthPage && user) {
-    const bankingNavItems = [
-      "Overview", "Accounts", "Payments", "Deposits", "Loans", "Cards", "Investments", "Insurance", "Services"
-    ];
-    
-    return (
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 bg-[#1a1f36] rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform">
-                <ShieldCheck className="w-5 h-5 text-[#c9a84c]" />
-              </div>
-              <div className="leading-none">
-                <span className="text-sm font-bold text-[#1a1f36] block">CredTrust</span>
-                <span className="text-[8px] text-gray-500 uppercase tracking-tighter">Net Banking</span>
-              </div>
-            </Link>
-
-            {/* Nav Links */}
-            <nav className="hidden lg:flex items-center gap-6">
-              {[
-                { name: "Overview", path: "/dashboard" },
-                { name: "Accounts", path: "/accounts" },
-                { name: "Payments", path: "/dashboard" },
-                { name: "Deposits", path: "/dashboard" },
-                { name: "Loans", path: "/dashboard" },
-                { name: "Cards", path: "/dashboard" },
-                { name: "Investments", path: "/dashboard" },
-                { name: "Insurance", path: "/dashboard" },
-                { name: "Services", path: "/dashboard" }
-              ].map((item) => {
-                const isActive = location.pathname === item.path || (item.name === "Overview" && location.pathname === "/dashboard");
-                // Special case for highlighting "Overview" when on /dashboard
-                const highlighted = (item.name === "Overview" && location.pathname === "/dashboard") || (item.name === "Accounts" && location.pathname === "/accounts");
-                
-                return (
-                  <Link 
-                    key={item.name}
-                    to={item.path}
-                    className={`text-[13px] font-semibold transition-colors relative h-16 flex items-center ${highlighted ? 'text-[#1a1f36]' : 'text-gray-500 hover:text-[#1a1f36]'}`}
-                  >
-                    {item.name}
-                    {highlighted && (
-                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#1a1f36] rounded-full" />
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className="p-2 text-gray-400 hover:text-[#1a1f36] transition-colors">
-              <Search className="w-4 h-4" />
-            </button>
-            <button className="p-2 text-gray-400 hover:text-[#1a1f36] transition-colors relative">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#c9a84c] rounded-full border-2 border-white" />
-            </button>
-            
-            {/* Profile Pill */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 pl-3 pr-1 py-1 bg-gray-50 hover:bg-gray-100 rounded-full border border-gray-100 transition-all outline-none">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#1a1f36] to-[#2d3356] text-white flex items-center justify-center text-[10px] font-bold">
-                    TE
-                  </div>
-                  <span className="text-[11px] font-bold text-[#1a1f36]">My Profile</span>
-                  <ChevronDown className="w-3 h-3 text-gray-400 ml-1" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 mt-2">
-                <DropdownMenuLabel className="text-[10px] flex items-center gap-2">
-                   <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                   {user.email}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/profile" className="cursor-pointer">Profile Settings</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/dashboard" className="cursor-pointer">Member Dashboard</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/admin" className="text-red-500 cursor-pointer">Admin Access</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  className="text-red-500 cursor-pointer focus:bg-red-50 focus:text-red-600"
-                  onClick={() => signOut(auth)}
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </header>
-    );
-  }
-
-  // --- MINIMAL AUTH HEADER ---
-  if (isAuthPage) {
-    return (
-      <header className="h-20 flex items-center justify-between px-8 bg-white border-b border-gray-50">
-        <Link to="/" className="flex items-center gap-2">
-          <ShieldCheck className="w-6 h-6 text-[#1a1f36]" />
-          <span className="text-xl font-bold text-[#1a1f36]">CredTrust</span>
-        </Link>
-        <Link to="/support" className="text-sm font-semibold text-gray-500 hover:text-[#1a1f36]">
-          Need Help?
-        </Link>
-      </header>
-    );
-  }
-
-  // --- STANDARD MARKETING HEADER (Home Page) ---
   return (
-    <header className="sticky top-0 z-50">
-      {/* ===== TOP STRIP ===== */}
-      {isHomePage && (
-        <div className="bg-[#1a1f36] text-white text-xs hidden lg:block">
-        <div className="max-w-7xl mx-auto px-4 flex justify-between items-center h-10">
-          {/* Left - Category Links */}
-          <div className="flex items-center gap-0">
-            {categoryLinks.map((cat, idx) => (
-              <a
-                key={cat.label}
-                href={cat.href}
-                className={`px-4 py-2.5 font-medium transition-colors hover:text-[#c9a84c] ${
-                  idx === 0 ? "text-[#c9a84c]" : "text-white/70"
-                }`}
-              >
-                {cat.label}
-              </a>
-            ))}
-          </div>
-
-          {/* Right - Utility Links with shadcn DropdownMenu */}
-          <div className="flex items-center gap-0">
-            {/* Ways to Bank */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-1 px-3.5 py-2.5 text-white/60 hover:text-white transition-colors outline-none">
-                Ways to Bank
-                <ChevronDown className="w-3 h-3" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
-                  Digital Banking
-                </DropdownMenuLabel>
-                <DropdownMenuItem className="gap-2.5">
-                  <Smartphone className="w-4 h-4 text-muted-foreground/60" />
-                  <div>
-                    <p className="text-sm">Mobile Banking</p>
-                    <p className="text-xs text-muted-foreground">Bank on the go</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2.5">
-                  <Globe2 className="w-4 h-4 text-muted-foreground/60" />
-                  <div>
-                    <p className="text-sm">Net Banking</p>
-                    <p className="text-xs text-muted-foreground">Online access 24/7</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2.5">
-                  <MessageSquare className="w-4 h-4 text-muted-foreground/60" />
-                  <div>
-                    <p className="text-sm">WhatsApp Banking</p>
-                    <p className="text-xs text-muted-foreground">Chat to bank</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="gap-2.5">
-                  <Landmark className="w-4 h-4 text-muted-foreground/60" />
-                  <div>
-                    <p className="text-sm">ATM & e-Lobby</p>
-                    <p className="text-xs text-muted-foreground">Self-service branches</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2.5">
-                  <MapPin className="w-4 h-4 text-muted-foreground/60" />
-                  <div>
-                    <p className="text-sm">Doorstep Banking</p>
-                    <p className="text-xs text-muted-foreground">We come to you</p>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* About Us */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-1 px-3.5 py-2.5 text-white/60 hover:text-white transition-colors outline-none">
-                About Us
-                <ChevronDown className="w-3 h-3" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuItem className="gap-2.5">
-                  <Building2 className="w-4 h-4 text-muted-foreground/60" />
-                  <div>
-                    <p className="text-sm">About the Society</p>
-                    <p className="text-xs text-muted-foreground">Our story</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2.5">
-                  <Users className="w-4 h-4 text-muted-foreground/60" />
-                  <div>
-                    <p className="text-sm">Board of Directors</p>
-                    <p className="text-xs text-muted-foreground">Leadership team</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="gap-2.5">
-                  <FileCheck className="w-4 h-4 text-muted-foreground/60" />
-                  <div>
-                    <p className="text-sm">Awards & Achievements</p>
-                    <p className="text-xs text-muted-foreground">Recognition</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2.5">
-                  <Briefcase className="w-4 h-4 text-muted-foreground/60" />
-                  <div>
-                    <p className="text-sm">Careers</p>
-                    <p className="text-xs text-muted-foreground">Join our team</p>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Support */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-1 px-3.5 py-2.5 text-white/60 hover:text-white transition-colors outline-none">
-                Support
-                <ChevronDown className="w-3 h-3" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuItem className="gap-2.5">
-                  <Headphones className="w-4 h-4 text-muted-foreground/60" />
-                  <div>
-                    <p className="text-sm">Contact Us</p>
-                    <p className="text-xs text-muted-foreground">Get in touch</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2.5">
-                  <MapPin className="w-4 h-4 text-muted-foreground/60" />
-                  <div>
-                    <p className="text-sm">Locate Branch</p>
-                    <p className="text-xs text-muted-foreground">Find nearest branch</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="gap-2.5">
-                  <Download className="w-4 h-4 text-muted-foreground/60" />
-                  <div>
-                    <p className="text-sm">Download Center</p>
-                    <p className="text-xs text-muted-foreground">Forms & apps</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2.5">
-                  <HelpCircle className="w-4 h-4 text-muted-foreground/60" />
-                  <div>
-                    <p className="text-sm">FAQs</p>
-                    <p className="text-xs text-muted-foreground">Common questions</p>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Blog */}
-            <a href="#" className="px-3.5 py-2.5 text-white/60 hover:text-white transition-colors">
-              Blog
-            </a>
-
-            {/* Investors */}
-            <a href="#" className="px-3.5 py-2.5 text-white/60 hover:text-white transition-colors">
-              Investors
-            </a>
-
-            {/* Phone */}
-            <a
-              href="tel:1800-425-1444"
-              className="flex items-center gap-1.5 px-3.5 py-2.5 text-white/60 hover:text-white transition-colors border-l border-white/10 ml-1"
-            >
-              <Phone className="w-3 h-3" />
-              <span className="font-medium">1800 425 1444</span>
-            </a>
-
-            {/* Language Selector */}
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-1 px-3.5 py-2.5 text-white/60 hover:text-white transition-colors outline-none border-l border-white/10">
-                <Globe className="w-3 h-3" />
-                EN
-                <ChevronDown className="w-3 h-3" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-32">
-                <DropdownMenuItem className="font-medium">English</DropdownMenuItem>
-                <DropdownMenuItem>Hindi</DropdownMenuItem>
-                <DropdownMenuItem>Kannada</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </div>
-    )}
-
-      {/* ===== MAIN NAVBAR ===== */}
-      <nav
-        className={`bg-white border-b transition-all duration-300 ${
-          scrolled ? "shadow-md border-gray-200" : "shadow-sm border-gray-100"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16 lg:h-[72px]">
-          {/* Logo */}
-          <a href="#" className="flex items-center gap-3 shrink-0">
-            <img
-              src="/logo.png"
-              alt="CredTrust Logo"
-              className="h-10 w-auto object-contain"
-            />
-            <div className="hidden sm:block">
-              <span className="font-heading text-lg font-bold text-[#1a1f36] leading-none block">
-                CredTrust
-              </span>
-              <span className="text-[10px] text-gray-500 tracking-wide uppercase leading-none mt-0.5 block">
-                Cooperative Society
-              </span>
+    <header className="sticky top-0 z-[100] w-full bg-white border-b border-gray-100 shadow-sm font-sans">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo Section */}
+          <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer group" onClick={() => navigate('/dashboard')}>
+            <div className="bg-[#1a1f36] p-1.5 rounded-lg group-hover:rotate-6 transition-transform">
+              <Landmark className="w-6 h-6 text-[#c9a84c]" />
             </div>
-          </a>
+            <div>
+               <h1 className="text-lg font-black text-[#1a1f36] tracking-tighter leading-none">
+                 CredTrust <span className="text-[#6b21a8] text-[10px] block tracking-widest font-bold opacity-60">NET-BANKING</span>
+               </h1>
+            </div>
+          </div>
 
-          {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1">
-            {mainNavItems.map((item) => (
-              <div
-                key={item.label}
-                className="relative"
-                onMouseEnter={() => item.megaMenu && handleMegaMenuEnter(item.label)}
-                onMouseLeave={handleMegaMenuLeave}
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center space-x-0.5 h-full">
+            {navItems.map((item) => (
+              <div 
+                key={item.name} 
+                className="h-full flex items-center relative"
+                onMouseEnter={() => item.hasMegaMenu && setActiveMegaMenu(item.name)}
+                onMouseLeave={() => setActiveMegaMenu(null)}
               >
-                <a
-                  href={item.href}
-                  className={`flex items-center gap-1 px-3 xl:px-4 py-2 text-sm font-medium transition-all duration-200 rounded-lg ${
-                    activeMegaMenu === item.label
-                      ? "text-[#1a1f36] bg-gray-50"
-                      : "text-gray-600 hover:text-[#1a1f36] hover:bg-gray-50"
-                  }`}
-                >
-                  {item.label}
-                  {item.megaMenu && (
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                        activeMegaMenu === item.label ? "rotate-180" : ""
-                      }`}
-                    />
-                  )}
-                </a>
+                {item.hasMegaMenu ? (
+                  <button className={`px-4 h-full flex items-center gap-1.5 text-[14px] font-bold transition-all relative ${
+                    activeMegaMenu === item.name ? "text-[#6b21a8] bg-[#fdf4ff]" : "text-[#1a1f36] hover:text-[#6b21a8] hover:bg-gray-50/50"
+                  }`}>
+                    {item.name}
+                    {activeMegaMenu === item.name && (
+                      <motion.div layoutId="underline" className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#6b21a8]" />
+                    )}
+                  </button>
+                ) : (
+                  <Link to={item.path} className="px-4 h-full flex items-center text-[14px] font-bold text-[#1a1f36] hover:text-[#6b21a8] hover:bg-gray-50/50 transition-all">
+                    {item.name}
+                  </Link>
+                )}
 
-                {/* Mega Menu */}
+                {/* Desktop Mega-Menu Container */}
                 <AnimatePresence>
-                  {item.megaMenu && activeMegaMenu === item.label && (
+                  {item.hasMegaMenu && activeMegaMenu === item.name && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50"
-                      style={{ width: "max-content", minWidth: "600px", maxWidth: "820px" }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className={`absolute top-[64px] w-[620px] bg-white rounded-[32px] shadow-2xl border border-gray-100 overflow-hidden ${
+                        item.name === 'Insurance' || item.name === 'Services' || item.name === 'Investments' ? 'right-0' : 'left-0'
+                      }`}
                     >
-                      <div
-                        className="bg-white rounded-2xl border border-gray-100 overflow-hidden"
-                        style={{ boxShadow: "0 25px 60px -12px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.03)" }}
-                      >
-                        <div className="flex">
-                          {/* Menu Columns */}
-                          <div className="flex-1 p-5">
-                            <div
-                              className={`grid gap-5 ${
-                                item.megaMenu.columns.length > 2 ? "grid-cols-3" : "grid-cols-2"
-                              }`}
-                            >
-                              {item.megaMenu.columns.map((group) => {
-                                const GroupIcon = group.icon;
-                                return (
-                                  <div key={group.heading}>
-                                    <div className="flex items-center gap-2 mb-3 pb-2.5 border-b border-gray-100">
-                                      <div className="w-7 h-7 rounded-lg bg-[#1a1f36]/5 flex items-center justify-center">
-                                        <GroupIcon className="w-3.5 h-3.5 text-[#1a1f36]/60" />
-                                      </div>
-                                      <h4 className="text-xs font-bold text-[#1a1f36] uppercase tracking-wider">
-                                        {group.heading}
-                                      </h4>
-                                    </div>
-                                    <ul className="space-y-0.5">
-                                      {group.items.map((subItem) => (
-                                        <li key={subItem.name}>
-                                          <a
-                                            href="#"
-                                            className="flex items-center justify-between gap-2 px-2.5 py-2 text-[13px] text-gray-600 hover:text-[#1a1f36] hover:bg-gray-50 rounded-lg transition-all duration-150 group/item"
-                                          >
-                                            <span className="flex items-center gap-2">
-                                              <ChevronRight className="w-3 h-3 text-gray-300 group-hover/item:text-[#c9a84c] transition-colors" />
-                                              {subItem.name}
-                                            </span>
-                                            {subItem.tag && (
-                                              <span
-                                                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${
-                                                  subItem.tag === "Popular"
-                                                    ? "bg-[#c9a84c]/15 text-[#a08530]"
-                                                    : "bg-emerald-50 text-emerald-600"
-                                                }`}
-                                              >
-                                                {subItem.tag}
-                                              </span>
-                                            )}
-                                          </a>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                );
-                              })}
-                            </div>
-
-                            {/* Explore All */}
-                            <div className="mt-4 pt-3 border-t border-gray-100">
-                              <a
-                                href="#"
-                                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1a1f36] hover:text-[#c9a84c] transition-colors group/explore"
+                      <div className="grid grid-cols-2 divide-x divide-gray-50">
+                        {/* Products Column */}
+                        <div className="p-8 space-y-6">
+                          <h4 className="text-[13px] font-black text-[#1a1f36] mb-8 px-2 uppercase tracking-tighter opacity-80">Products</h4>
+                          <div className="flex flex-col">
+                            {megaMenuData[activeMegaMenu as keyof typeof megaMenuData]?.products.map((prod, i, arr) => (
+                              <Link 
+                                key={i} 
+                                to={prod.path} 
+                                className={`flex items-center gap-5 p-4 hover:bg-[#fdf4ff] transition-all group ${i !== arr.length - 1 ? 'border-b border-gray-100' : ''}`}
                               >
-                                Explore all {item.label.toLowerCase()}
-                                <ChevronRight className="w-4 h-4 group-hover/explore:translate-x-0.5 transition-transform" />
-                              </a>
-                            </div>
-                          </div>
-
-                          {/* Featured Card */}
-                          <div className="w-[220px] shrink-0 border-l border-gray-100">
-                            <div
-                              className={`h-full bg-gradient-to-br ${item.megaMenu.featured.gradient} p-5 flex flex-col justify-between`}
-                            >
-                              <div>
-                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mb-4">
-                                  <CreditCard className="w-5 h-5 text-white" />
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[#6b21a8]/60 group-hover:text-[#6b21a8] transition-colors">
+                                  <prod.icon className="w-5 h-5 stroke-[1.5px]" />
                                 </div>
-                                <h3 className="text-white font-bold text-base leading-snug mb-2">
-                                  {item.megaMenu.featured.title}
-                                </h3>
-                                <p className="text-white/70 text-xs leading-relaxed">
-                                  {item.megaMenu.featured.desc}
-                                </p>
-                              </div>
-                              <a
-                                href="#"
-                                className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#c9a84c] hover:text-white transition-colors"
+                                <span className="text-[14px] font-bold text-[#1a1f36] group-hover:text-[#6b21a8] transition-colors">{prod.name}</span>
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Quick Links Column */}
+                        <div className="p-8 bg-gray-50/10 space-y-6">
+                          <h4 className="text-[13px] font-black text-[#1a1f36] mb-8 px-2 uppercase tracking-tighter opacity-80">Quick Links</h4>
+                          <div className="flex flex-col">
+                            {megaMenuData[activeMegaMenu as keyof typeof megaMenuData]?.links.map((link, i, arr) => (
+                              <Link 
+                                key={i} 
+                                to={link.path} 
+                                className={`flex items-center gap-5 p-4 hover:bg-[#fdf4ff] transition-all group ${i !== arr.length - 1 ? 'border-b border-gray-100' : ''}`}
                               >
-                                {item.megaMenu.featured.cta}
-                                <ChevronRight className="w-4 h-4" />
-                              </a>
-                            </div>
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[#6b21a8]/60 group-hover:text-[#6b21a8] transition-colors">
+                                  <ChevronRight className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                                <span className="text-[14px] font-bold text-[#1a1f36] group-hover:text-[#6b21a8] transition-colors">{link.name}</span>
+                              </Link>
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -723,242 +260,71 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Right Actions */}
-          <div className="flex items-center gap-2">
-            <button className="p-2.5 rounded-lg hover:bg-gray-50 transition-colors text-gray-500 hover:text-[#1a1f36]">
-              <Search className="w-5 h-5" />
+          {/* Right Header Utilities */}
+          <div className="hidden lg:flex items-center gap-3">
+            <button className="relative p-2 text-gray-400 hover:text-[#1a1f36] transition-colors group">
+              <Bell className="w-5 h-5 group-hover:rotate-[15deg] transition-transform" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
             </button>
 
-            {/* Login / Profile Dropdown */}
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="default"
-                    className="hidden sm:inline-flex items-center gap-2 bg-[#1a1f36] text-white hover:bg-[#2d3356] text-sm font-semibold border border-white/10"
-                  >
-                    <User className="w-4 h-4 text-[#c9a84c]" />
-                    {user.email?.split('@')[0]}
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
-                    Account
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="flex items-center gap-2.5 w-full">
-                      <User className="w-4 h-4 text-muted-foreground/60" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard" className="flex items-center gap-2.5 w-full">
-                      <FileText className="w-4 h-4 text-muted-foreground/60" />
-                      Member Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin" className="flex items-center gap-2.5 w-full text-red-500 hover:text-red-600 focus:text-red-600">
-                      <ShieldCheck className="w-4 h-4" />
-                      Admin Control
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    className="gap-2.5 text-red-500 focus:text-red-500 focus:bg-red-50"
-                    onClick={async () => {
-                      await signOut(auth);
-                      toast.success("Successfully logged out");
-                    }}
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button
-                size="default"
-                asChild
-                className="hidden sm:inline-flex items-center gap-2 bg-[#1a1f36] text-white hover:bg-[#2d3356] text-sm font-semibold"
-              >
-                <Link to="/auth?mode=signup">
-                  Signup
-                  <UserPlus className="w-3.5 h-3.5" />
-                </Link>
-              </Button>
-            )}
-
-            <Link
-              to={user ? "/loan-apply" : "/auth"}
-              className="hidden md:inline-flex items-center gap-2 px-5 py-2.5 bg-[#c9a84c] text-[#1a1f36] text-sm font-semibold rounded-lg hover:bg-[#d4b65c] transition-all shadow-sm hover:shadow-md"
-            >
-              Apply Now
+            <Link to="/profile" className="flex items-center gap-2 pl-2 group max-w-[140px]">
+              <div className="w-9 h-9 shrink-0 rounded-lg bg-[#1a1f36] border border-white shadow-md flex items-center justify-center text-[#c9a84c] text-[10px] font-black group-hover:scale-110 transition-transform">
+                KS
+              </div>
+              <div className="hidden xl:block overflow-hidden">
+                 <p className="text-[11px] font-black text-[#1a1f36] leading-none uppercase truncate">Kavinkumar</p>
+                 <p className="text-[9px] font-bold text-[#6b21a8] mt-0.5">My Profile</p>
+              </div>
             </Link>
+          </div>
 
-            {/* Mobile Toggle */}
-            <button
-              className="lg:hidden p-2.5 rounded-lg hover:bg-gray-50 transition-colors text-gray-600"
-              onClick={() => setMobileOpen(!mobileOpen)}
-            >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+          {/* Mobile Menu Button */}
+          <div className="lg:hidden flex items-center">
+            <Button variant="ghost" onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 -mr-2">
+              {isMenuOpen ? <X className="w-7 h-7 text-[#1a1f36]" /> : <Menu className="w-7 h-7 text-[#1a1f36]" />}
+            </Button>
           </div>
         </div>
+      </div>
 
-        {/* ===== MOBILE MENU ===== */}
-        <AnimatePresence>
-          {mobileOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="lg:hidden border-t border-gray-100 overflow-hidden bg-white"
-            >
-              <div className="max-w-7xl mx-auto px-4 py-4">
-                {/* Mobile Categories */}
-                <div className="flex gap-2 mb-4 pb-4 border-b border-gray-100">
-                  {categoryLinks.map((cat, idx) => (
-                    <a
-                      key={cat.label}
-                      href={cat.href}
-                      className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${
-                        idx === 0
-                          ? "bg-[#1a1f36] text-white"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      }`}
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="lg:hidden bg-white border-t border-gray-100 overflow-hidden"
+          >
+            <div className="p-6 space-y-6">
+               <nav className="grid gap-2">
+                  {navItems.map((item) => (
+                    <Link 
+                      key={item.name} 
+                      to={item.hasMegaMenu ? `/${item.name.toLowerCase()}` : item.path}
+                      className="px-4 py-4 rounded-2xl bg-gray-50 text-[15px] font-bold text-[#1a1f36] flex items-center justify-between active:bg-gray-100 transition-colors"
                     >
-                      {cat.label}
-                    </a>
+                      {item.name}
+                      <ChevronRight className="w-4 h-4 text-gray-300" />
+                    </Link>
                   ))}
-                </div>
-
-                {/* Mobile Nav Items */}
-                <div className="space-y-0.5">
-                  {mainNavItems.map((item) => (
-                    <div key={item.label}>
-                      <a
-                        href={item.href}
-                        className="flex items-center justify-between px-3 py-3 text-sm font-medium text-gray-700 hover:text-[#1a1f36] hover:bg-gray-50 rounded-lg transition-colors"
-                        onClick={(e) => {
-                          if (item.megaMenu) {
-                            e.preventDefault();
-                            setActiveDropdown(activeDropdown === item.label ? null : item.label);
-                          } else {
-                            setMobileOpen(false);
-                          }
-                        }}
-                      >
-                        {item.label}
-                        {item.megaMenu && (
-                          <ChevronDown
-                            className={`w-4 h-4 transition-transform duration-200 ${
-                              activeDropdown === item.label ? "rotate-180" : ""
-                            }`}
-                          />
-                        )}
-                      </a>
-                      <AnimatePresence>
-                        {item.megaMenu && activeDropdown === item.label && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden pl-2"
-                          >
-                            {item.megaMenu.columns.map((group) => {
-                              const GroupIcon = group.icon;
-                              return (
-                                <div key={group.heading} className="py-2">
-                                  <div className="flex items-center gap-2 px-3 mb-1.5">
-                                    <GroupIcon className="w-3.5 h-3.5 text-gray-400" />
-                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                      {group.heading}
-                                    </p>
-                                  </div>
-                                  {group.items.map((subItem) => (
-                                    <a
-                                      key={subItem.name}
-                                      href="#"
-                                      className="flex items-center justify-between px-3 py-2 text-sm text-gray-500 hover:text-[#1a1f36] hover:bg-gray-50 rounded-md transition-colors"
-                                      onClick={() => setMobileOpen(false)}
-                                    >
-                                      <span>{subItem.name}</span>
-                                      {subItem.tag && (
-                                        <span
-                                          className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${
-                                            subItem.tag === "Popular"
-                                              ? "bg-[#c9a84c]/15 text-[#a08530]"
-                                              : "bg-emerald-50 text-emerald-600"
-                                          }`}
-                                        >
-                                          {subItem.tag}
-                                        </span>
-                                      )}
-                                    </a>
-                                  ))}
-                                </div>
-                              );
-                            })}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Mobile Actions */}
-                <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-gray-100">
-                  {user ? (
-                    <Button
-                      variant="outline"
-                      className="w-full justify-between h-12 text-[#1a1f36] border-gray-200"
-                      onClick={async () => {
-                        await signOut(auth);
-                        setMobileOpen(false);
-                        toast.success("Successfully logged out");
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-[#c9a84c]" />
-                        <span>Logout ({user.email?.split('@')[0]})</span>
-                      </div>
-                      <LogOut className="w-4 h-4 text-gray-400" />
-                    </Button>
-                  ) : (
-                    <div className="flex gap-3">
-                      <Link
-                        to="/auth?mode=signup"
-                        className="flex-1 text-center py-3 bg-[#1a1f36] text-white text-sm font-semibold rounded-lg"
-                        onClick={() => setMobileOpen(false)}
-                      >
-                        Signup
-                      </Link>
-                      <Link
-                        to={user ? "/loan-apply" : "/auth"}
-                        className="flex-1 text-center py-3 bg-[#c9a84c] text-[#1a1f36] text-sm font-semibold rounded-lg"
-                        onClick={() => setMobileOpen(false)}
-                      >
-                        Apply Now
-                      </Link>
-                    </div>
-                  )}
-                </div>
-
-                {/* Mobile Contact */}
-                <a
-                  href="tel:1800-425-1444"
-                  className="flex items-center justify-center gap-2 mt-3 py-2.5 text-sm text-gray-500 hover:text-[#1a1f36] transition-colors"
-                >
-                  <Phone className="w-4 h-4" />
-                  1800 425 1444
-                </a>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </nav>
+               </nav>
+               <div className="pt-6 border-t border-gray-100 flex items-center justify-between px-4">
+                  <div className="flex items-center gap-3">
+                     <div className="w-12 h-12 rounded-2xl bg-[#1a1f36] flex items-center justify-center text-[#c9a84c] font-black">KS</div>
+                     <div>
+                        <p className="text-sm font-black text-[#1a1f36]">Kavinkumar V S</p>
+                        <p className="text-[11px] font-bold text-[#6b21a8]">CT88219</p>
+                     </div>
+                  </div>
+                  <button className="p-3 bg-[#f8fafc] rounded-2xl text-gray-400 hover:text-rose-600 transition-all">
+                     <LogOut className="w-5 h-5" />
+                  </button>
+               </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 };

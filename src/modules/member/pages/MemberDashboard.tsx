@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/modules/auth/AuthContext";
 import { 
   PiggyBank, 
@@ -35,7 +35,12 @@ import {
   Compass,
   Gift,
   Hourglass,
-  GraduationCap
+  GraduationCap,
+  Umbrella,
+  Settings,
+  Percent,
+  Lock,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
@@ -52,45 +57,60 @@ const quickActions = [
   { label: "Invest Now", icon: GraduationCap, bg: "bg-rose-100", color: "text-rose-600" },
 ];
 
-const SidebarGroup = ({ title, items }: { title: string, items: any[] }) => (
-  <div className="mb-12 last:mb-0">
-    <div className="flex items-center justify-between mb-8">
-      <h3 className="text-[13px] font-bold text-[#1a1f36] tracking-tight">{title}</h3>
-      <button className="text-[11px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-colors">
-        View All
-      </button>
-    </div>
-    <div className="grid grid-cols-4 gap-x-2 gap-y-10">
-      {items.map((item, idx) => (
-        <button key={idx} className="flex flex-col items-center gap-3 transition-all group/item">
-          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#6b21a8] group-hover/item:shadow-lg group-hover/item:scale-110 border border-transparent group-hover/item:border-purple-100 transition-all">
-            <item.icon className="w-6 h-6 stroke-[1.8px]" />
-          </div>
-          <span className="text-[11px] font-bold text-gray-700 group-hover/item:text-[#1a1f36] text-center leading-tight transition-colors">
-            {item.label}
-          </span>
+const SidebarGroup = ({ title, items }: { title: string, items: any[] }) => {
+  const navigate = useNavigate();
+  return (
+    <div className="mb-12 last:mb-0">
+      <div className="flex items-center justify-between mb-8">
+        <h3 className="text-[13px] font-bold text-[#1a1f36] tracking-tight">{title}</h3>
+        <button className="text-[11px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-colors">
+          View All
         </button>
-      ))}
+      </div>
+      <div className="grid grid-cols-4 gap-x-2 gap-y-10">
+        {items.map((item, idx) => {
+          const ButtonContent = (
+            <>
+              <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#6b21a8] group-hover/item:shadow-lg group-hover/item:scale-110 border border-transparent group-hover/item:border-purple-100 transition-all">
+                <item.icon className="w-6 h-6 stroke-[1.8px]" />
+              </div>
+              <span className="text-[11px] font-bold text-gray-700 group-hover/item:text-[#1a1f36] text-center leading-tight transition-colors">
+                {item.label}
+              </span>
+            </>
+          );
+
+          return item.path ? (
+            <Link key={idx} to={item.path} className="flex flex-col items-center gap-3 transition-all group/item">
+              {ButtonContent}
+            </Link>
+          ) : (
+            <button key={idx} className="flex flex-col items-center gap-3 transition-all group/item">
+              {ButtonContent}
+            </button>
+          );
+        })}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const MemberDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const userName = user?.email?.split('@')[0] || "Member";
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans selection:bg-[#c9a84c]/30">
       <Header />
       
-      <main className="max-w-7xl mx-auto px-4 py-8 lg:py-12">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* MAIN CONTENT (75%) */}
-          <div className="flex-grow lg:w-[75%] space-y-8">
+          {/* MAIN CONTENT (9 COLS) */}
+          <div className="lg:col-span-9 space-y-8 min-w-0">
             
-            {/* WELCOME BANNER (High-Fidelity Redesign) */}
+            {/* WELCOME BANNER */}
             <section className="bg-white rounded-[40px] p-10 border border-gray-100 shadow-xl shadow-black/[0.03] relative overflow-hidden group">
-              {/* Subtle background decoration */}
               <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-[#c9a84c]/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl pointer-events-none" />
               
               <div className="relative z-10">
@@ -113,11 +133,10 @@ const MemberDashboard = () => {
               </div>
             </section>
 
-            {/* RELATIONSHIP OVERVIEW (Pixel-Perfect Parity) */}
+            {/* RELATIONSHIP OVERVIEW */}
             <section>
               <h1 className="text-xl font-bold text-[#1a1f36] mb-8">Relationship Overview</h1>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Transaction Card - Deep Magenta/Purple */}
                 <div className="bg-gradient-to-br from-[#b91d73] to-[#7c2d12] rounded-[40px] p-8 text-white relative overflow-hidden group shadow-2xl shadow-pink-900/10 min-h-[250px] flex flex-col">
                   <div className="relative z-10 flex-grow">
                     <div className="flex justify-between items-start mb-8">
@@ -130,128 +149,37 @@ const MemberDashboard = () => {
                       <p className="text-[12px] font-bold text-white/50 tracking-wider">Combined Balance</p>
                       <div className="flex items-center gap-4">
                         <span className="text-3xl font-bold font-sans tracking-tight block">₹XXXX.xx</span>
-                        <button className="p-1.5 bg-white/10 rounded-lg hover:bg-white/20 transition-all border border-white/5">
-                          <Search className="w-3.5 h-3.5 text-white/60" />
-                        </button>
                       </div>
                     </div>
                   </div>
-                  <div className="relative z-10 flex items-center gap-10 pt-4">
-                    <Link to="/accounts" className="text-[13px] font-bold border-b-2 border-white pb-0.5 hover:text-white/70 hover:border-white/70 transition-all">
-                      View Accounts
-                    </Link>
-                    <button className="text-[13px] font-bold border-b-2 border-white pb-0.5 hover:text-white/70 hover:border-white/70 transition-all">
-                      Transactions
-                    </button>
-                  </div>
-                  {/* Overlapping Circle patterns */}
-                  <div className="absolute top-0 right-0 w-[240px] h-[300px] bg-white/10 rounded-full -translate-y-1/3 translate-x-1/4 pointer-events-none blur-xl" />
-                  <div className="absolute bottom-0 right-1/4 w-[120px] h-[120px] bg-indigo-500/10 rounded-full pointer-events-none blur-xl" />
                 </div>
 
-                {/* Deposits Card - Light Lilac */}
                 <div className="bg-[#eef2ff] rounded-[40px] p-8 text-[#1a1f36] relative overflow-hidden group shadow-sm min-h-[250px] border border-white flex flex-col">
                   <div className="relative z-10 flex flex-col h-full flex-grow">
                     <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#1a1f36]/40 mb-8">DEPOSITS</h3>
                     <div className="space-y-2 mb-auto">
                       <p className="text-xl font-bold text-[#1a1f36] leading-tight">Grow your money faster</p>
-                      <p className="text-[12px] text-gray-600 font-bold">Check out our high-yield deposits</p>
                     </div>
                   </div>
-                  <button className="relative z-10 self-start text-[14px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-all pt-4">
-                    Explore
-                  </button>
-                  {/* Lilac Patterns matching image */}
-                  <div className="absolute -right-16 -bottom-16 w-56 h-56 bg-indigo-100 rounded-full pointer-events-none opacity-40" />
-                  <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-indigo-200 rounded-full pointer-events-none opacity-20" />
-                  <div className="absolute top-[-40px] left-[-40px] w-32 h-32 bg-indigo-100/30 rounded-full pointer-events-none" />
                 </div>
 
-                {/* Loans Card - Light Lilac */}
                 <div className="bg-[#eef2ff] rounded-[40px] p-8 text-[#1a1f36] relative overflow-hidden group shadow-sm min-h-[250px] border border-white flex flex-col">
                   <div className="relative z-10 flex flex-col h-full flex-grow">
                     <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#1a1f36]/40 mb-8">LOANS</h3>
                     <div className="space-y-2 mb-auto">
                       <p className="text-xl font-bold text-[#1a1f36] leading-tight">Find the perfect loan</p>
-                      <p className="text-[12px] text-gray-600 font-bold">Ready to make that big purchase?</p>
                     </div>
                   </div>
-                  <button className="relative z-10 self-start text-[14px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-all pt-4">
-                    Manage loans
-                  </button>
-                  {/* Lilac Patterns matching image */}
-                  <div className="absolute -right-16 -bottom-16 w-56 h-56 bg-indigo-100 rounded-full pointer-events-none opacity-40" />
-                  <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-indigo-200 rounded-full pointer-events-none opacity-20" />
-                </div>
-
-                {/* Investments Card - Light Lilac */}
-                <div className="bg-[#eef2ff] rounded-[40px] p-8 text-[#1a1f36] relative overflow-hidden group shadow-sm min-h-[250px] border border-white flex flex-col">
-                  <div className="relative z-10 flex flex-col h-full flex-grow">
-                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#1a1f36]/40 mb-8">INVESTMENTS</h3>
-                    <div className="space-y-2 mb-auto">
-                      <p className="text-xl font-bold text-[#1a1f36] leading-tight">Build your wealth</p>
-                      <p className="text-[12px] text-gray-600 font-bold">Smart portfolios and mutual funds</p>
-                    </div>
-                  </div>
-                  <button className="relative z-10 self-start text-[14px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-all pt-4">
-                    View Portfolio
-                  </button>
-                  {/* Lilac Patterns matching image */}
-                  <div className="absolute -right-16 -bottom-16 w-56 h-56 bg-indigo-100 rounded-full pointer-events-none opacity-40" />
-                  <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-indigo-200 rounded-full pointer-events-none opacity-20" />
-                </div>
-
-                {/* Insurance Card - Light Lilac */}
-                <div className="bg-[#eef2ff] rounded-[40px] p-8 text-[#1a1f36] relative overflow-hidden group shadow-sm min-h-[250px] border border-white flex flex-col">
-                  <div className="relative z-10 flex flex-col h-full flex-grow">
-                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#1a1f36]/40 mb-8">INSURANCE</h3>
-                    <div className="space-y-2 mb-auto">
-                      <p className="text-xl font-bold text-[#1a1f36] leading-tight">Secure your future</p>
-                      <p className="text-[12px] text-gray-600 font-bold">Health, Life, and Motor protection</p>
-                    </div>
-                  </div>
-                  <button className="relative z-10 self-start text-[14px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-all pt-4">
-                    Get Covered
-                  </button>
-                  {/* Lilac Patterns matching image */}
-                  <div className="absolute -right-16 -bottom-16 w-56 h-56 bg-indigo-100 rounded-full pointer-events-none opacity-40" />
-                  <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-indigo-200 rounded-full pointer-events-none opacity-20" />
-                </div>
-
-                {/* Cards Card - Light Lilac */}
-                <div className="bg-[#eef2ff] rounded-[40px] p-8 text-[#1a1f36] relative overflow-hidden group shadow-sm min-h-[250px] border border-white flex flex-col">
-                  <div className="relative z-10 flex flex-col h-full flex-grow">
-                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#1a1f36]/40 mb-8">CARDS</h3>
-                    <div className="space-y-2 mb-auto">
-                      <p className="text-xl font-bold text-[#1a1f36] leading-tight">Explore Credit Cards</p>
-                      <p className="text-[12px] text-gray-600 font-bold">Unbeatable offers and rewards</p>
-                    </div>
-                  </div>
-                  <button className="relative z-10 self-start text-[14px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-all pt-4">
-                    Apply Now
-                  </button>
-                  {/* Lilac Patterns matching image */}
-                  <div className="absolute -right-16 -bottom-16 w-56 h-56 bg-indigo-100 rounded-full pointer-events-none opacity-40" />
-                  <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-indigo-200 rounded-full pointer-events-none opacity-20" />
                 </div>
               </div>
             </section>
 
             <div className="grid lg:grid-cols-2 gap-6 items-stretch">
-              {/* PAYMENTS & TRANSFERS (Perfect Structural Parity) */}
               <section className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm relative group overflow-hidden flex flex-col">
-                {/* Level 1: Main Title */}
                 <h3 className="text-[13px] font-bold text-[#1a1f36] mb-4">Payments & Transfers</h3>
-                
-                {/* Level 2: Tabs */}
                 <div className="flex border-b border-gray-100 gap-8 mb-8">
                   <button className="text-[12px] font-bold text-[#6b21a8] border-b-2 border-[#6b21a8] pb-2 uppercase tracking-tight whitespace-nowrap">Fund Transfer</button>
-                  <button className="text-[12px] font-bold text-gray-400 pb-2 uppercase tracking-tight flex items-center gap-1.5 hover:text-[#6b21a8] transition-colors whitespace-nowrap">
-                    <Bell className="w-3 h-3" /> Bill payments
-                  </button>
                 </div>
-                
-                {/* Level 3: Operations (Fixed Overlapping) */}
                 <div className="grid grid-cols-4 gap-x-1 gap-y-4 mb-4">
                   {[
                     { label: "Quick Transfer", desc: "Upto ₹50,000", icon: Zap, singleLine: true },
@@ -265,22 +193,12 @@ const MemberDashboard = () => {
                       </div>
                       <div className="text-center min-h-[30px] flex flex-col items-center justify-start">
                         <p className={`text-[10px] font-bold text-[#1a1f36] leading-[1.1] ${item.singleLine ? 'whitespace-nowrap' : 'max-w-[70px]'}`}>{item.label}</p>
-                        {item.desc && <p className="text-[8px] text-gray-400 font-bold whitespace-nowrap mt-0.5">{item.desc}</p>}
                       </div>
                     </button>
                   ))}
                 </div>
-                
-                <div className="mt-auto pt-6 border-t border-gray-50">
-                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest italic block mb-4">Recents</span>
-                  <div className="flex flex-col items-start gap-1">
-                    <div className="w-12 h-12 rounded-full bg-pink-100 border border-pink-200 flex items-center justify-center text-[13px] font-extrabold text-pink-600 shadow-sm">PR</div>
-                    <p className="text-[10px] font-bold text-gray-400 tracking-tight uppercase mt-1">PALANIAP..</p>
-                  </div>
-                </div>
               </section>
 
-              {/* UPCOMING PAYMENTS (Compact Surgical Refinement) */}
               <section className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm flex flex-col items-center text-center relative overflow-hidden group h-full">
                  <h3 className="text-[13px] font-bold text-[#6b21a8] uppercase tracking-widest self-start mb-6">Upcoming Payments</h3>
                  <div className="flex-grow flex flex-col items-center justify-center py-2">
@@ -292,18 +210,17 @@ const MemberDashboard = () => {
                              <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center">
                                 <Plus className="w-4 h-4 text-[#6b21a8]" />
                              </div>
-                             <div className="flex-grow ml-3">
-                                <div className="h-2 w-12 bg-gray-100 rounded-full mb-1" />
-                                <div className="h-1.5 w-16 bg-gray-50 rounded-full" />
-                             </div>
                           </div>
                           <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-purple-50 rounded-full opacity-50" />
                        </div>
                     </div>
-                    <h4 className="text-[14px] font-bold text-[#1a1f36] mb-2 leading-tight">Never Miss Your Payments Now</h4>
-                    <p className="text-[11px] text-gray-500 font-bold max-w-[200px] mb-6 leading-normal">Track and get reminder for your upcoming Payments</p>
-                    <button className="rounded-full px-10 py-2.5 bg-white border-2 border-indigo-100 text-[#6b21a8] font-bold hover:bg-indigo-50 transition-all text-[12px] shadow-sm active:scale-95">
-                      Pay Bills
+                    <h4 className="text-[14px] font-bold text-[#1a1f36] mb-2 leading-tight">Clear Your Pending Dues</h4>
+                    <p className="text-[11px] text-gray-500 font-bold max-w-[200px] mb-6 leading-normal">You have 2 pending installments due this week. Pay now to avoid late fees.</p>
+                    <button 
+                      onClick={() => navigate('/payments')}
+                      className="rounded-full px-10 py-2.5 bg-white border-2 border-indigo-100 text-[#6b21a8] font-bold hover:bg-indigo-50 transition-all text-[12px] shadow-sm active:scale-95"
+                    >
+                      Pay Bills & EMIs
                     </button>
                  </div>
               </section>
@@ -369,60 +286,60 @@ const MemberDashboard = () => {
             <SidebarGroup 
               title="Investments" 
               items={[
-                { label: "Mutual Funds", icon: Activity },
-                { label: "Demat & Securities", icon: Wallet },
-                { label: "NPS", icon: LayoutGrid },
-                { label: "PPF", icon: PiggyBank }
+                { label: "Mutual Funds", icon: Activity, path: "/product/investments/mutual-funds" },
+                { label: "Demat & Securities", icon: Wallet, path: "/product/investments/demat" },
+                { label: "NPS", icon: LayoutGrid, path: "/product/investments/nps" },
+                { label: "PPF", icon: PiggyBank, path: "/product/investments/ppf" }
               ]} 
             />
             <div className="h-px bg-gray-50 my-8" />
             <SidebarGroup 
               title="Loans" 
               items={[
-                { label: "Personal Loan", icon: UserCheck },
-                { label: "Loan Against Mutual Fund", icon: HandCoins },
-                { label: "Home Loan", icon: Landmark },
-                { label: "Gold Loan", icon: Gem }
+                { label: "Personal Loan", icon: UserCheck, path: "/product/loans/personal-loan" },
+                { label: "SHG Credit", icon: HandCoins, path: "/product/loans/shg-credit" },
+                { label: "Home Loan", icon: Landmark, path: "/product/loans/home-loan" },
+                { label: "Gold Loan", icon: Gem, path: "/product/loans/gold-loan" }
               ]} 
             />
             <div className="h-px bg-gray-50 my-8" />
             <SidebarGroup 
               title="Deposits" 
               items={[
-                { label: "Fixed Deposit", icon: ShieldCheck },
-                { label: "Recurring Deposit", icon: Calendar },
-                { label: "Annuity Deposit", icon: FileText },
-                { label: "Auto Sweep", icon: Zap }
+                { label: "Fixed Deposit", icon: ShieldCheck, path: "/product/deposits/fixed-deposit" },
+                { label: "Recurring Deposit", icon: Calendar, path: "/product/deposits/recurring-deposit" },
+                { label: "Annuity Deposit", icon: FileText, path: "/product/deposits/annuity" },
+                { label: "Auto Sweep", icon: Zap, path: "/product/deposits/auto-sweep" }
               ]} 
             />
             <div className="h-px bg-gray-50 my-8" />
             <SidebarGroup 
               title="Insurance" 
               items={[
-                { label: "Life", icon: HeartPulse },
-                { label: "Health", icon: ShieldCheck },
-                { label: "Accident", icon: Info },
-                { label: "Motor", icon: Car }
+                { label: "Life", icon: HeartPulse, path: "/product/insurance/life-insurance" },
+                { label: "Health", icon: ShieldCheck, path: "/product/insurance/health-insurance" },
+                { label: "Accident", icon: Info, path: "/product/insurance/accident-cover" },
+                { label: "Motor", icon: Car, path: "/product/insurance/motor-insurance" }
               ]} 
             />
              <div className="h-px bg-gray-50 my-8" />
             <SidebarGroup 
               title="Cards" 
               items={[
-                { label: "Credit Cards", icon: CreditCard },
-                { label: "Debit Cards", icon: Wallet },
-                { label: "Forex Cards", icon: Globe2 },
-                { label: "NCMC", icon: Smartphone }
+                { label: "Credit Cards", icon: CreditCard, path: "/product/cards/credit-cards" },
+                { label: "Debit Cards", icon: Wallet, path: "/product/cards/debit-cards" },
+                { label: "Forex Cards", icon: Globe2, path: "/product/cards/forex-cards" },
+                { label: "NCMC", icon: Smartphone, path: "/product/cards/ncmc-card" }
               ]} 
             />
              <div className="h-px bg-gray-50 my-8" />
             <SidebarGroup 
               title="Services" 
               items={[
-                { label: "Account Related", icon: LayoutGrid },
-                { label: "Tax Related", icon: BadgePercent },
-                { label: "Cheque Services", icon: FileText },
-                { label: "e-Secure Lock", icon: ShieldCheck }
+                { label: "Account Related", icon: LayoutGrid, path: "/product/services/account-services" },
+                { label: "Tax Related", icon: BadgePercent, path: "/product/services/tax-services" },
+                { label: "Cheque Services", icon: FileText, path: "/product/services/cheque-services" },
+                { label: "e-Secure Lock", icon: ShieldCheck, path: "/product/services/e-secure-lock" }
               ]} 
             />
           </div>
