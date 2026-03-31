@@ -1,13 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-if (!apiKey) {
-  console.warn("VITE_GEMINI_API_KEY is not set. Chat widget will not function.");
-}
-
-const ai = new GoogleGenAI({ apiKey: apiKey || "" });
-
 const SYSTEM_PROMPT = `You are CredTrust Assistant, a helpful and friendly customer support chatbot for CredTrust Cooperative Society Ltd.
 
 About CredTrust:
@@ -26,11 +18,26 @@ Guidelines:
 
 const chatHistories = new Map<string, Array<{ role: string; content: string }>>();
 
+function getApiKey(): string | undefined {
+  return import.meta.env.VITE_GEMINI_API_KEY;
+}
+
+function getAI(): GoogleGenAI {
+  const key = getApiKey();
+  if (!key) {
+    throw new Error("VITE_GEMINI_API_KEY is not set");
+  }
+  return new GoogleGenAI({ apiKey: key });
+}
+
 export async function sendMessage(
   message: string,
   sessionId: string = "default"
 ): Promise<string> {
+  const apiKey = getApiKey();
+
   if (!apiKey) {
+    console.error("VITE_GEMINI_API_KEY is missing. Check your .env file and restart the dev server.");
     return "Chat is currently unavailable. Please call our toll-free numbers: 1800 425 1444 or 1800 572 8031 for assistance.";
   }
 
@@ -49,8 +56,9 @@ export async function sendMessage(
   }));
 
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-3-flash-preview",
       contents,
       config: {
         systemInstruction: SYSTEM_PROMPT,
@@ -68,9 +76,18 @@ export async function sendMessage(
     }
 
     return text;
-  } catch (error) {
-    console.error("Gemini API error:", error);
-    return "I'm experiencing a technical issue. Please call our toll-free numbers: 1800 425 1444 or 1800 572 8031 for immediate assistance.";
+  } catch (error: unknown) {
+    const err = error as Error;
+    console.error("Gemini API error:", err?.message || error);
+
+    if (err?.message?.includes("API_KEY_INVALID") || err?.message?.includes("invalid API key")) {
+      return "Invalid API key. Please check your VITE_GEMINI_API_KEY in the .env file.";
+    }
+    if (err?.message?.includes("not found") || err?.message?.includes("404")) {
+      return "Model not available. The AI service may be temporarily unavailable.";
+    }
+
+    return `Sorry, I encountered an error: ${err?.message || "Unknown error"}. Please call 1800 425 1444 for help.`;
   }
 }
 
