@@ -42,31 +42,31 @@ import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 
 const quickActions = [
-  { label: "Welcome to Yono", icon: Sparkles, bg: "bg-blue-50/50", color: "text-blue-600" },
-  { label: "Security", icon: ShieldCheck, bg: "bg-indigo-50/50", color: "text-indigo-600" },
-  { label: "Explore", icon: Compass, bg: "bg-amber-50/50", color: "text-amber-600" },
-  { label: "Offers", icon: Gift, bg: "bg-pink-50/50", color: "text-pink-600" },
-  { label: "Discover", icon: Smartphone, bg: "bg-purple-50/50", color: "text-purple-600" },
-  { label: "Savings Ac", icon: PiggyBank, bg: "bg-emerald-50/50", color: "text-emerald-600" },
-  { label: "Insurance", icon: HeartPulse, bg: "bg-rose-50/50", color: "text-rose-600" },
-  { label: "Education", icon: GraduationCap, bg: "bg-sky-50/50", color: "text-sky-600" },
+  { label: "Welcome to Yono", icon: Sparkles, bg: "bg-purple-100", color: "text-purple-600" },
+  { label: "Security", icon: ShieldCheck, bg: "bg-blue-100", color: "text-blue-600" },
+  { label: "Explore", icon: Compass, bg: "bg-orange-100", color: "text-orange-600" },
+  { label: "Offers", icon: Gift, bg: "bg-pink-100", color: "text-pink-600" },
+  { label: "Discover", icon: Smartphone, bg: "bg-indigo-100", color: "text-indigo-600" },
+  { label: "Savings Ac", icon: PiggyBank, bg: "bg-emerald-100", color: "text-emerald-600" },
+  { label: "Coming Soon", icon: Hourglass, bg: "bg-slate-100", color: "text-slate-600" },
+  { label: "Invest Now", icon: GraduationCap, bg: "bg-rose-100", color: "text-rose-600" },
 ];
 
 const SidebarGroup = ({ title, items }: { title: string, items: any[] }) => (
-  <div className="mb-10 last:mb-0 bg-white rounded-[32px] p-6 border border-gray-100 shadow-sm transition-all hover:shadow-md">
-    <div className="flex items-center justify-between mb-6">
-      <h3 className="text-[11px] font-bold text-[#1a1f36] uppercase tracking-widest">{title}</h3>
-      <button className="text-[9px] font-bold text-[#c9a84c] uppercase tracking-widest hover:text-[#1a1f36] transition-colors">
+  <div className="mb-12 last:mb-0">
+    <div className="flex items-center justify-between mb-8">
+      <h3 className="text-[13px] font-bold text-[#1a1f36] tracking-tight">{title}</h3>
+      <button className="text-[11px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-colors">
         View All
       </button>
     </div>
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-4 gap-x-2 gap-y-10">
       {items.map((item, idx) => (
-        <button key={idx} className="flex flex-col items-center gap-3 p-4 rounded-2xl hover:bg-gray-50 transition-all group/item">
-          <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover/item:bg-white group-hover/item:text-[#c9a84c] group-hover/item:shadow-sm border border-transparent group-hover/item:border-gray-100 transition-all">
-            <item.icon className="w-5 h-5" />
+        <button key={idx} className="flex flex-col items-center gap-3 transition-all group/item">
+          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-[#6b21a8] group-hover/item:shadow-lg group-hover/item:scale-110 border border-transparent group-hover/item:border-purple-100 transition-all">
+            <item.icon className="w-6 h-6 stroke-[1.8px]" />
           </div>
-          <span className="text-[10px] font-bold text-gray-400 group-hover/item:text-[#1a1f36] text-center leading-tight transition-colors">
+          <span className="text-[11px] font-bold text-gray-700 group-hover/item:text-[#1a1f36] text-center leading-tight transition-colors">
             {item.label}
           </span>
         </button>
@@ -94,17 +94,17 @@ const MemberDashboard = () => {
               <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-[#c9a84c]/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl pointer-events-none" />
               
               <div className="relative z-10">
-                <h1 className="font-serif text-[28px] text-gray-500 mb-10 tracking-tight leading-none group-hover:translate-x-1 transition-transform duration-500">
-                  Hello <span className="text-[#1a1f36] font-bold underline decoration-[#c9a84c]/30 decoration-4 underline-offset-8">{userName.split(' ')[0]}</span>, <span className="italic opacity-80">Let's get started!</span>
+                <h1 className="font-serif text-[32px] text-gray-700 mb-10 tracking-tight leading-none group-hover:translate-x-1 transition-transform duration-500 font-bold italic">
+                  Hello <span className="text-[#1a1f36] underline decoration-[#c9a84c]/50 decoration-4 underline-offset-8">{userName.split(' ')[0]}</span>, <span className="opacity-80">Let's get started!</span>
                 </h1>
                 
-                <div className="grid grid-cols-4 lg:grid-cols-8 gap-4 lg:gap-8">
+                <div className="grid grid-cols-4 lg:grid-cols-8 gap-4 lg:gap-10">
                   {quickActions.map((action, idx) => (
                     <button key={idx} className="flex flex-col items-center gap-4 transition-all group/action">
-                      <div className={`w-16 h-16 rounded-full ${action.bg} flex items-center justify-center border border-white shadow-inner group-hover/action:scale-110 group-hover/action:-rotate-6 transition-all duration-300`}>
-                        <action.icon className={`w-6 h-6 ${action.color}`} />
+                      <div className={`w-16 h-16 rounded-full ${action.bg} flex items-center justify-center border-4 border-white shadow-md group-hover/action:scale-110 group-hover/action:-rotate-3 transition-all duration-300`}>
+                        <action.icon className={`w-6 h-6 ${action.color} stroke-[2.5px]`} />
                       </div>
-                      <span className="text-[11px] font-bold text-gray-400 group-hover/action:text-[#1a1f36] text-center leading-tight transition-colors">
+                      <span className="text-[12px] font-bold text-gray-600 group-hover/action:text-[#1a1f36] text-center leading-tight transition-colors">
                         {action.label}
                       </span>
                     </button>
@@ -113,143 +113,199 @@ const MemberDashboard = () => {
               </div>
             </section>
 
-            {/* RELATIONSHIP OVERVIEW (High-Fidelity) */}
+            {/* RELATIONSHIP OVERVIEW (Pixel-Perfect Parity) */}
             <section>
-              <h2 className="text-[11px] font-bold text-gray-400 mb-6 uppercase tracking-[0.2em] flex items-center gap-3">
-                <div className="w-8 h-[1px] bg-gray-200" />
-                Relationship Overview
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {/* Transaction Card */}
-                <div className="bg-gradient-to-br from-[#1a1f36] via-[#2d3356] to-[#1a1f36] rounded-[40px] p-8 text-white relative overflow-hidden group shadow-2xl shadow-indigo-900/20">
-                  <div className="relative z-10">
-                    <div className="flex justify-between items-start mb-10">
-                      <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#c9a84c]">Transaction Accounts</h3>
-                      <div className="w-10 h-6 bg-white/10 rounded-md border border-white/20 flex items-center justify-center">
-                        <div className="w-6 h-4 bg-[#c9a84c]/20 rounded-sm" />
-                      </div>
+              <h1 className="text-xl font-bold text-[#1a1f36] mb-8">Relationship Overview</h1>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Transaction Card - Deep Magenta/Purple */}
+                <div className="bg-gradient-to-br from-[#b91d73] to-[#7c2d12] rounded-[40px] p-8 text-white relative overflow-hidden group shadow-2xl shadow-pink-900/10 min-h-[250px] flex flex-col">
+                  <div className="relative z-10 flex-grow">
+                    <div className="flex justify-between items-start mb-8">
+                      <h3 className="text-[12px] font-bold uppercase tracking-widest text-white/90">TRANSACTION ACCOUNTS</h3>
+                      <button className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                        <Search className="w-5 h-5 text-white/70" />
+                      </button>
                     </div>
-                    <div className="space-y-1 mb-10">
-                      <p className="text-[10px] font-medium text-white/40 uppercase tracking-wider">Combined Balance</p>
+                    <div className="space-y-1 mb-8">
+                      <p className="text-[12px] font-bold text-white/50 tracking-wider">Combined Balance</p>
                       <div className="flex items-center gap-4">
-                        <span className="text-3xl font-bold font-sans tracking-tight">₹XXXX.xx</span>
-                        <button className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                          <Search className="w-4 h-4 text-[#c9a84c]" />
+                        <span className="text-3xl font-bold font-sans tracking-tight block">₹XXXX.xx</span>
+                        <button className="p-1.5 bg-white/10 rounded-lg hover:bg-white/20 transition-all border border-white/5">
+                          <Search className="w-3.5 h-3.5 text-white/60" />
                         </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <button className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-[11px] font-bold transition-all border border-white/10">
-                        View Accounts
-                      </button>
-                      <button className="flex-1 py-3 bg-[#c9a84c] text-[#1a1f36] rounded-2xl text-[11px] font-bold transition-all hover:bg-white">
-                        Transactions
-                      </button>
-                    </div>
                   </div>
-                  {/* Decorative Elements */}
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-[#c9a84c]/10 rounded-full blur-[80px] -translate-y-12 translate-x-12" />
-                  <div className="absolute -bottom-10 -left-10 w-48 h-48 bg-blue-500/10 rounded-full blur-[60px]" />
-                </div>
-
-                {/* Deposits Card */}
-                <div className="bg-white rounded-[40px] p-8 border border-gray-100 shadow-xl shadow-black/[0.02] relative overflow-hidden group">
-                  <div className="relative z-10 flex flex-col h-full">
-                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-10">Deposits</h3>
-                    <div className="space-y-3 mb-auto">
-                      <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center mb-4">
-                        <PiggyBank className="w-6 h-6 text-indigo-500" />
-                      </div>
-                      <p className="text-lg font-bold text-[#1a1f36] leading-tight">Grow your money faster</p>
-                      <p className="text-[11px] text-gray-400 leading-relaxed">Check out our high-yield fixed and recurring deposits.</p>
-                    </div>
-                    <button className="w-full py-4 mt-8 bg-gray-50 hover:bg-indigo-50 rounded-[20px] text-[11px] font-bold text-[#1a1f36] transition-all flex items-center justify-center gap-2 group/btn">
-                      Explore Deposits
-                      <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
+                  <div className="relative z-10 flex items-center gap-10 pt-4">
+                    <button className="text-[13px] font-bold border-b-2 border-white pb-0.5 hover:text-white/70 hover:border-white/70 transition-all">
+                      View Accounts
+                    </button>
+                    <button className="text-[13px] font-bold border-b-2 border-white pb-0.5 hover:text-white/70 hover:border-white/70 transition-all">
+                      Transactions
                     </button>
                   </div>
+                  {/* Overlapping Circle patterns */}
+                  <div className="absolute top-0 right-0 w-[240px] h-[300px] bg-white/10 rounded-full -translate-y-1/3 translate-x-1/4 pointer-events-none blur-xl" />
+                  <div className="absolute bottom-0 right-1/4 w-[120px] h-[120px] bg-indigo-500/10 rounded-full pointer-events-none blur-xl" />
                 </div>
 
-                {/* Loans Card */}
-                <div className="bg-white rounded-[40px] p-8 border border-gray-100 shadow-xl shadow-black/[0.02] relative overflow-hidden group">
-                  <div className="relative z-10 flex flex-col h-full">
-                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-10">Loans</h3>
-                    <div className="space-y-3 mb-auto">
-                      <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center mb-4">
-                        <HandCoins className="w-6 h-6 text-amber-500" />
-                      </div>
-                      <p className="text-lg font-bold text-[#1a1f36] leading-tight">Find the perfect loan</p>
-                      <p className="text-[11px] text-gray-400 leading-relaxed">Ready to make that big purchase? We have you covered.</p>
+                {/* Deposits Card - Light Lilac */}
+                <div className="bg-[#eef2ff] rounded-[40px] p-8 text-[#1a1f36] relative overflow-hidden group shadow-sm min-h-[250px] border border-white flex flex-col">
+                  <div className="relative z-10 flex flex-col h-full flex-grow">
+                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#1a1f36]/40 mb-8">DEPOSITS</h3>
+                    <div className="space-y-2 mb-auto">
+                      <p className="text-xl font-bold text-[#1a1f36] leading-tight">Grow your money faster</p>
+                      <p className="text-[12px] text-gray-600 font-bold">Check out our high-yield deposits</p>
                     </div>
-                    <button className="w-full py-4 mt-8 bg-gray-50 hover:bg-amber-50 rounded-[20px] text-[11px] font-bold text-[#1a1f36] transition-all flex items-center justify-center gap-2 group/btn">
-                      Manage Loans
-                      <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
-                    </button>
                   </div>
+                  <button className="relative z-10 self-start text-[14px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-all pt-4">
+                    Explore
+                  </button>
+                  {/* Lilac Patterns matching image */}
+                  <div className="absolute -right-16 -bottom-16 w-56 h-56 bg-indigo-100 rounded-full pointer-events-none opacity-40" />
+                  <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-indigo-200 rounded-full pointer-events-none opacity-20" />
+                  <div className="absolute top-[-40px] left-[-40px] w-32 h-32 bg-indigo-100/30 rounded-full pointer-events-none" />
+                </div>
+
+                {/* Loans Card - Light Lilac */}
+                <div className="bg-[#eef2ff] rounded-[40px] p-8 text-[#1a1f36] relative overflow-hidden group shadow-sm min-h-[250px] border border-white flex flex-col">
+                  <div className="relative z-10 flex flex-col h-full flex-grow">
+                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#1a1f36]/40 mb-8">LOANS</h3>
+                    <div className="space-y-2 mb-auto">
+                      <p className="text-xl font-bold text-[#1a1f36] leading-tight">Find the perfect loan</p>
+                      <p className="text-[12px] text-gray-600 font-bold">Ready to make that big purchase?</p>
+                    </div>
+                  </div>
+                  <button className="relative z-10 self-start text-[14px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-all pt-4">
+                    Manage loans
+                  </button>
+                  {/* Lilac Patterns matching image */}
+                  <div className="absolute -right-16 -bottom-16 w-56 h-56 bg-indigo-100 rounded-full pointer-events-none opacity-40" />
+                  <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-indigo-200 rounded-full pointer-events-none opacity-20" />
+                </div>
+
+                {/* Investments Card - Light Lilac */}
+                <div className="bg-[#eef2ff] rounded-[40px] p-8 text-[#1a1f36] relative overflow-hidden group shadow-sm min-h-[250px] border border-white flex flex-col">
+                  <div className="relative z-10 flex flex-col h-full flex-grow">
+                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#1a1f36]/40 mb-8">INVESTMENTS</h3>
+                    <div className="space-y-2 mb-auto">
+                      <p className="text-xl font-bold text-[#1a1f36] leading-tight">Build your wealth</p>
+                      <p className="text-[12px] text-gray-600 font-bold">Smart portfolios and mutual funds</p>
+                    </div>
+                  </div>
+                  <button className="relative z-10 self-start text-[14px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-all pt-4">
+                    View Portfolio
+                  </button>
+                  {/* Lilac Patterns matching image */}
+                  <div className="absolute -right-16 -bottom-16 w-56 h-56 bg-indigo-100 rounded-full pointer-events-none opacity-40" />
+                  <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-indigo-200 rounded-full pointer-events-none opacity-20" />
+                </div>
+
+                {/* Insurance Card - Light Lilac */}
+                <div className="bg-[#eef2ff] rounded-[40px] p-8 text-[#1a1f36] relative overflow-hidden group shadow-sm min-h-[250px] border border-white flex flex-col">
+                  <div className="relative z-10 flex flex-col h-full flex-grow">
+                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#1a1f36]/40 mb-8">INSURANCE</h3>
+                    <div className="space-y-2 mb-auto">
+                      <p className="text-xl font-bold text-[#1a1f36] leading-tight">Secure your future</p>
+                      <p className="text-[12px] text-gray-600 font-bold">Health, Life, and Motor protection</p>
+                    </div>
+                  </div>
+                  <button className="relative z-10 self-start text-[14px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-all pt-4">
+                    Get Covered
+                  </button>
+                  {/* Lilac Patterns matching image */}
+                  <div className="absolute -right-16 -bottom-16 w-56 h-56 bg-indigo-100 rounded-full pointer-events-none opacity-40" />
+                  <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-indigo-200 rounded-full pointer-events-none opacity-20" />
+                </div>
+
+                {/* Cards Card - Light Lilac */}
+                <div className="bg-[#eef2ff] rounded-[40px] p-8 text-[#1a1f36] relative overflow-hidden group shadow-sm min-h-[250px] border border-white flex flex-col">
+                  <div className="relative z-10 flex flex-col h-full flex-grow">
+                    <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#1a1f36]/40 mb-8">CARDS</h3>
+                    <div className="space-y-2 mb-auto">
+                      <p className="text-xl font-bold text-[#1a1f36] leading-tight">Explore Credit Cards</p>
+                      <p className="text-[12px] text-gray-600 font-bold">Unbeatable offers and rewards</p>
+                    </div>
+                  </div>
+                  <button className="relative z-10 self-start text-[14px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-all pt-4">
+                    Apply Now
+                  </button>
+                  {/* Lilac Patterns matching image */}
+                  <div className="absolute -right-16 -bottom-16 w-56 h-56 bg-indigo-100 rounded-full pointer-events-none opacity-40" />
+                  <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-indigo-200 rounded-full pointer-events-none opacity-20" />
                 </div>
               </div>
             </section>
 
-            <div className="grid lg:grid-cols-2 gap-8">
-              {/* PAYMENTS & TRANSFERS (Refined) */}
-              <section className="bg-white rounded-[40px] p-10 border border-gray-100 shadow-xl shadow-black/[0.03]">
-                <div className="flex items-center justify-between mb-10">
-                  <h3 className="text-sm font-bold text-[#1a1f36]">Payments & Transfers</h3>
-                  <div className="flex bg-gray-50 p-1 rounded-xl">
-                    <button className="px-5 py-2 text-[10px] font-bold bg-white text-[#1a1f36] rounded-lg shadow-sm">FUND TRANSFER</button>
-                    <button className="px-5 py-2 text-[10px] font-bold text-gray-400 hover:text-gray-600 transition-colors">BILL PAYMENTS</button>
-                  </div>
+            <div className="grid lg:grid-cols-2 gap-6 items-stretch">
+              {/* PAYMENTS & TRANSFERS (Perfect Structural Parity) */}
+              <section className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm relative group overflow-hidden flex flex-col">
+                {/* Level 1: Main Title */}
+                <h3 className="text-[13px] font-bold text-[#1a1f36] mb-4">Payments & Transfers</h3>
+                
+                {/* Level 2: Tabs */}
+                <div className="flex border-b border-gray-100 gap-8 mb-8">
+                  <button className="text-[12px] font-bold text-[#6b21a8] border-b-2 border-[#6b21a8] pb-2 uppercase tracking-tight whitespace-nowrap">Fund Transfer</button>
+                  <button className="text-[12px] font-bold text-gray-400 pb-2 uppercase tracking-tight flex items-center gap-1.5 hover:text-[#6b21a8] transition-colors whitespace-nowrap">
+                    <Bell className="w-3 h-3" /> Bill payments
+                  </button>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-6">
+                {/* Level 3: Operations (Fixed Overlapping) */}
+                <div className="grid grid-cols-4 gap-x-1 gap-y-4 mb-4">
                   {[
-                    { label: "Quick Transfer", desc: "Up to ₹50,000", icon: Zap, bg: "bg-orange-50", text: "text-orange-500" },
-                    { label: "Send Money", desc: "Own/Other Accounts", icon: IndianRupee, bg: "bg-blue-50", text: "text-blue-500" },
-                    { label: "Send Money Abroad", desc: "Global Transfers", icon: Globe2, bg: "bg-emerald-50", text: "text-emerald-500" },
-                    { label: "Schedule Pay", desc: "Automated Payments", icon: Calendar, bg: "bg-purple-50", text: "text-purple-500" }
+                    { label: "Quick Transfer", desc: "Upto ₹50,000", icon: Zap, singleLine: true },
+                    { label: "Send Money", desc: "To own/other a/c", icon: IndianRupee, singleLine: true },
+                    { label: "Send Money Abroad", icon: Globe2, singleLine: false },
+                    { label: "Schedule Payments", icon: Calendar, singleLine: false }
                   ].map((item, idx) => (
-                    <button key={idx} className="flex flex-col gap-4 p-5 rounded-3xl bg-gray-50/50 hover:bg-white hover:shadow-xl hover:shadow-black/[0.02] border border-transparent hover:border-gray-100 transition-all group/item">
-                      <div className={`w-12 h-12 rounded-2xl ${item.bg} flex items-center justify-center ${item.text} group-hover/item:scale-110 transition-transform`}>
-                        <item.icon className="w-5 h-5" />
+                    <button key={idx} className="flex flex-col items-center gap-2 group/item p-0.5">
+                      <div className="w-12 h-14 rounded-xl border border-gray-100 flex items-center justify-center text-[#6b21a8] group-hover/item:border-[#6b21a8] transition-all bg-white shadow-sm group-hover/item:shadow-md">
+                        <item.icon className="w-5 h-5 stroke-[1.8px]" />
                       </div>
-                      <div className="text-left">
-                        <p className="text-[13px] font-bold text-[#1a1f36] mb-1">{item.label}</p>
-                        <p className="text-[10px] text-gray-400 font-medium">{item.desc}</p>
+                      <div className="text-center min-h-[30px] flex flex-col items-center justify-start">
+                        <p className={`text-[10px] font-bold text-[#1a1f36] leading-[1.1] ${item.singleLine ? 'whitespace-nowrap' : 'max-w-[70px]'}`}>{item.label}</p>
+                        {item.desc && <p className="text-[8px] text-gray-400 font-bold whitespace-nowrap mt-0.5">{item.desc}</p>}
                       </div>
                     </button>
                   ))}
                 </div>
                 
-                <div className="mt-10 pt-8 border-t border-gray-50">
-                  <span className="text-[10px] font-bold text-gray-300 uppercase tracking-[0.2em] block mb-6">Recent Transfers</span>
-                  <div className="flex items-center gap-4">
-                    <div className="flex -space-x-3">
-                      {["PR", "KS", "AD"].map((init, i) => (
-                        <div key={i} className="w-10 h-10 rounded-full border-4 border-white bg-gray-100 flex items-center justify-center text-[10px] font-bold text-gray-400">
-                          {init}
-                        </div>
-                      ))}
-                      <div className="w-10 h-10 rounded-full border-4 border-white bg-[#c9a84c] flex items-center justify-center text-[10px] font-bold text-[#1a1f36]">
-                        +
-                      </div>
-                    </div>
-                    <span className="text-[11px] font-bold text-[#1a1f36] opacity-40 italic">Select beneficiary...</span>
+                <div className="mt-auto pt-6 border-t border-gray-50">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest italic block mb-4">Recents</span>
+                  <div className="flex flex-col items-start gap-1">
+                    <div className="w-12 h-12 rounded-full bg-pink-100 border border-pink-200 flex items-center justify-center text-[13px] font-extrabold text-pink-600 shadow-sm">PR</div>
+                    <p className="text-[10px] font-bold text-gray-400 tracking-tight uppercase mt-1">PALANIAP..</p>
                   </div>
                 </div>
               </section>
 
-              {/* UPCOMING PAYMENTS */}
-              <section className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
-                <span className="text-[10px] font-bold text-[#1a1f36] uppercase tracking-widest mb-12 self-start">Upcoming Payments</span>
-                <div className="w-48 h-48 bg-[#f8fafc] rounded-full flex items-center justify-center relative mb-8 group">
-                  <Calendar className="w-16 h-16 text-indigo-100 group-hover:text-indigo-200 transition-colors" />
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-[#c9a84c] rounded-md animate-pulse" />
-                </div>
-                <h4 className="text-sm font-bold text-[#1a1f36] mb-2">Never Miss Your Payments Now</h4>
-                <p className="text-[11px] text-gray-400 max-w-[200px] mb-8 leading-relaxed">Track and get reminder for your upcoming Payments</p>
-                <Button className="rounded-full px-8 bg-transparent border-2 border-[#c9a84c] text-[#c9a84c] font-bold hover:bg-[#c9a84c] hover:text-white transition-all text-sm h-11">
-                  Pay Bills
-                </Button>
+              {/* UPCOMING PAYMENTS (Compact Surgical Refinement) */}
+              <section className="bg-white rounded-[32px] p-8 border border-gray-100 shadow-sm flex flex-col items-center text-center relative overflow-hidden group h-full">
+                 <h3 className="text-[13px] font-bold text-[#6b21a8] uppercase tracking-widest self-start mb-6">Upcoming Payments</h3>
+                 <div className="flex-grow flex flex-col items-center justify-center py-2">
+                    <div className="w-40 h-40 bg-[#fafafa] rounded-full flex items-center justify-center relative mb-6">
+                       <div className="absolute inset-0 bg-[#6b21a8]/5 rounded-full animate-pulse" />
+                       <div className="relative w-32 h-24 bg-white border border-gray-100 rounded-xl shadow-lg flex flex-col p-2 overflow-hidden rotate-[-2deg]">
+                          <div className="w-full h-8 bg-[#6b21a8] rounded-t-lg mb-2 opacity-90" />
+                          <div className="flex justify-between items-center px-1">
+                             <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+                                <Plus className="w-4 h-4 text-[#6b21a8]" />
+                             </div>
+                             <div className="flex-grow ml-3">
+                                <div className="h-2 w-12 bg-gray-100 rounded-full mb-1" />
+                                <div className="h-1.5 w-16 bg-gray-50 rounded-full" />
+                             </div>
+                          </div>
+                          <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-purple-50 rounded-full opacity-50" />
+                       </div>
+                    </div>
+                    <h4 className="text-[14px] font-bold text-[#1a1f36] mb-2 leading-tight">Never Miss Your Payments Now</h4>
+                    <p className="text-[11px] text-gray-500 font-bold max-w-[200px] mb-6 leading-normal">Track and get reminder for your upcoming Payments</p>
+                    <button className="rounded-full px-10 py-2.5 bg-white border-2 border-indigo-100 text-[#6b21a8] font-bold hover:bg-indigo-50 transition-all text-[12px] shadow-sm active:scale-95">
+                      Pay Bills
+                    </button>
+                 </div>
               </section>
             </div>
 
@@ -306,8 +362,10 @@ const MemberDashboard = () => {
             
           </div>
           
-          {/* SIDEBAR (25%) */}
-          <div className="lg:w-[25%] space-y-2 lg:sticky lg:top-36 shrink-0 h-fit">
+          {/* SIDEBAR (Unified white area as in image) */}
+          <div className="lg:w-[380px] bg-white rounded-[32px] border border-gray-100 shadow-sm p-10 space-y-4 shrink-0 h-fit lg:sticky lg:top-24 overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#6b21a8]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            
             <SidebarGroup 
               title="Investments" 
               items={[
@@ -317,6 +375,7 @@ const MemberDashboard = () => {
                 { label: "PPF", icon: PiggyBank }
               ]} 
             />
+            <div className="h-px bg-gray-50 my-8" />
             <SidebarGroup 
               title="Loans" 
               items={[
@@ -326,6 +385,7 @@ const MemberDashboard = () => {
                 { label: "Gold Loan", icon: Gem }
               ]} 
             />
+            <div className="h-px bg-gray-50 my-8" />
             <SidebarGroup 
               title="Deposits" 
               items={[
@@ -335,6 +395,7 @@ const MemberDashboard = () => {
                 { label: "Auto Sweep", icon: Zap }
               ]} 
             />
+            <div className="h-px bg-gray-50 my-8" />
             <SidebarGroup 
               title="Insurance" 
               items={[
@@ -344,6 +405,7 @@ const MemberDashboard = () => {
                 { label: "Motor", icon: Car }
               ]} 
             />
+             <div className="h-px bg-gray-50 my-8" />
             <SidebarGroup 
               title="Cards" 
               items={[
@@ -353,6 +415,7 @@ const MemberDashboard = () => {
                 { label: "NCMC", icon: Smartphone }
               ]} 
             />
+             <div className="h-px bg-gray-50 my-8" />
             <SidebarGroup 
               title="Services" 
               items={[
