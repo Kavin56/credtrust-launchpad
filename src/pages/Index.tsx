@@ -12,7 +12,7 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import Footer from "@/components/Footer";
 import ChatWidget from "@/components/ChatWidget";
 import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/modules/auth/AuthContext";
+import { useAuth } from "@/modules/login/AuthContext";
 
 const Index = () => {
   const { user, loading } = useAuth();

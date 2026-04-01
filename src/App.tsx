@@ -3,10 +3,10 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "@/modules/auth/AuthContext";
+import { useAuth } from "@/modules/login/AuthContext";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
-import AuthPage from "./modules/auth/pages/AuthPage";
+import LoginPage from "./modules/login/pages/LoginPage";
 import LoanApply from "./pages/LoanApply";
 import MemberDashboard from "./modules/member/pages/MemberDashboard";
 import AdminDashboard from "./modules/admin/pages/AdminDashboard";
@@ -29,7 +29,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children: React.Re
   const { user, loading } = useAuth();
   
   if (loading) return null;
-  if (!user) return <Navigate to="/auth" />;
+  if (!user) return <Navigate to="/login" />;
   
   // For now, any user can access member dashboard. 
   // Admin check can be added later via Supabase roles.
@@ -45,7 +45,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/loan-apply" element={<ProtectedRoute><LoanApply /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><MemberDashboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />

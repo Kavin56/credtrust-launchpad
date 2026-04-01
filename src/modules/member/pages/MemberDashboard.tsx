@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/modules/auth/AuthContext";
+import { useAuth } from "@/modules/login/AuthContext";
 import { 
   PiggyBank, 
   HandCoins, 
