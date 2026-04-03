@@ -23,6 +23,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import api from "@/lib/api";
+import { useAuth } from "@/modules/login/AuthContext";
 
 const schemes = [
   { 
@@ -72,7 +74,9 @@ const DepositApplicationPage = () => {
   const [selectedScheme, setSelectedScheme] = useState(schemes[0]);
   const [amount, setAmount] = useState(selectedScheme.min);
   const [tenure, setTenure] = useState(12);
+  const [accountId, setAccountId] = useState("");
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const calculateMaturity = () => {
     const rate = selectedScheme.rate / 100;
@@ -88,9 +92,23 @@ const DepositApplicationPage = () => {
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
   
-  const handleSubmit = () => {
-    toast.success("Deposit application submitted successfully!");
-    navigate("/accounts");
+  const handleSubmit = async () => {
+    try {
+      await api.post("/deposits", {
+        kind: selectedScheme.type === "Recurring" ? "RD" : "FD",
+        principal: amount,
+        rate: selectedScheme.rate,
+        tenureMonths: tenure,
+        startDate: new Date().toISOString(),
+        payoutMode: "maturity",
+        accountId,
+      });
+      toast.success("Deposit application submitted successfully!");
+      navigate("/accounts");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Unable to create deposit");
+    }
   };
 
   return (
@@ -200,19 +218,19 @@ const DepositApplicationPage = () => {
 
                    <div className="grid md:grid-cols-2 gap-12">
                       <div className="space-y-8">
-                         <div className="space-y-4">
-                            <Label className="text-[12px] font-bold uppercase tracking-widest text-gray-400">Deposit Amount (₹)</Label>
-                            <Input 
-                               type="number" 
-                               value={amount} 
-                               onChange={(e) => setAmount(Number(e.target.value))}
+                        <div className="space-y-4">
+                           <Label className="text-[12px] font-bold uppercase tracking-widest text-gray-400">Deposit Amount (₹)</Label>
+                           <Input 
+                              type="number" 
+                              value={amount} 
+                              onChange={(e) => setAmount(Number(e.target.value))}
                                className="h-16 text-2xl font-black rounded-2xl border-gray-100 focus:border-[#1a1f36] transition-all"
                             />
                             <p className="text-[10px] font-bold text-gray-400">Minimum required: ₹{selectedScheme.min.toLocaleString()}</p>
                          </div>
                          
-                         <div className="space-y-4">
-                            <Label className="text-[12px] font-bold uppercase tracking-widest text-gray-400">Tenure (Months)</Label>
+                        <div className="space-y-4">
+                           <Label className="text-[12px] font-bold uppercase tracking-widest text-gray-400">Tenure (Months)</Label>
                             <div className="flex items-center gap-4">
                                {[6, 12, 24, 36, 60].map(m => (
                                  <button 
@@ -225,8 +243,17 @@ const DepositApplicationPage = () => {
                                     {m}m
                                  </button>
                                ))}
-                            </div>
-                         </div>
+                        </div>
+                        <div className="space-y-4">
+                           <Label className="text-[12px] font-bold uppercase tracking-widest text-gray-400">Debit Account ID</Label>
+                           <Input
+                             placeholder="Choose member account ID"
+                             value={accountId}
+                             onChange={(e) => setAccountId(e.target.value)}
+                             className="h-12 rounded-2xl border-gray-100 focus:border-[#1a1f36]"
+                           />
+                        </div>
+                     </div>
                       </div>
 
                       <div className="bg-[#1a1f36]/[0.02] rounded-[40px] p-8 border border-gray-100 flex flex-col justify-center text-center space-y-6">

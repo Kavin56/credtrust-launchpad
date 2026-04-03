@@ -4,11 +4,35 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const AccountsPage = () => {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') === 'deposits' ? 1 : 0;
   const [activeTabIndex, setActiveTabIndex] = useState(initialTab);
+  const { data: accounts, isLoading: accountsLoading } = useQuery({
+    queryKey: ["accounts"],
+    queryFn: async () => {
+      const { data } = await api.get("/accounts/me");
+      return data;
+    },
+  });
+  const { data: deposits, isLoading: depLoading } = useQuery({
+    queryKey: ["deposits"],
+    queryFn: async () => {
+      const { data } = await api.get("/deposits");
+      return data;
+    },
+  });
+  const { data: loans, isLoading: loanLoading } = useQuery({
+    queryKey: ["loans"],
+    queryFn: async () => {
+      const { data } = await api.get("/loans");
+      return data;
+    },
+  });
   
   // Update tab if URL param changes
   useEffect(() => {
@@ -68,19 +92,23 @@ const AccountsPage = () => {
 
              {activeTabIndex === 0 ? (
                 <div className="space-y-4">
-                  <h4 className="text-[13px] font-bold text-[#6b21a8] px-2 mb-4">Savings Account</h4>
-                  <div className="bg-gradient-to-br from-[#6b21a8] to-[#4c1d95] rounded-[24px] p-6 text-white shadow-xl shadow-purple-900/10 cursor-pointer hover:scale-[1.02] transition-transform relative overflow-hidden group">
-                      <div className="relative z-10 space-y-3">
-                        <p className="text-[11px] font-bold text-white/50 uppercase tracking-widest">A/C Number</p>
-                        <div className="flex items-center gap-3">
-                            <span className="text-[15px] font-bold font-sans">XXXXXXX6966</span>
-                            <button className="p-1.5 bg-white/10 rounded-lg hover:bg-white/20">
-                              <Eye className="w-4 h-4" />
-                            </button>
+                  <h4 className="text-[13px] font-bold text-[#6b21a8] px-2 mb-4">Transaction Accounts</h4>
+                  {accountsLoading && <Skeleton className="h-24 w-full" />}
+                  {!accountsLoading && accounts?.map((acc: any) => (
+                    <div key={acc.id} className="bg-gradient-to-br from-[#6b21a8] to-[#4c1d95] rounded-[24px] p-6 text-white shadow-xl shadow-purple-900/10 relative overflow-hidden group">
+                        <div className="relative z-10 space-y-3">
+                          <p className="text-[11px] font-bold text-white/50 uppercase tracking-widest">A/C Number</p>
+                          <div className="flex items-center gap-3">
+                              <span className="text-[15px] font-bold font-sans">{acc.number}</span>
+                              <button className="p-1.5 bg-white/10 rounded-lg hover:bg-white/20">
+                                <Eye className="w-4 h-4" />
+                              </button>
+                          </div>
+                          <p className="text-sm font-bold">Balance: ₹{Number(acc.balance).toLocaleString()}</p>
                         </div>
-                      </div>
-                      <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full pointer-events-none" />
-                  </div>
+                        <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full pointer-events-none" />
+                    </div>
+                  ))}
                 </div>
              ) : (
                 <div className="space-y-4">
@@ -107,7 +135,9 @@ const AccountsPage = () => {
                         <span className="text-[13px] font-bold uppercase tracking-widest whitespace-nowrap">SAVINGS A/C</span>
                         <div className="w-px h-3 bg-white/20" />
                         <div className="flex items-center gap-2">
-                            <span className="text-[14px] font-bold font-sans tracking-widest">XXXXXXX6966</span>
+                            <span className="text-[14px] font-bold font-sans tracking-widest">
+                              {accounts?.[0]?.number || "—"}
+                            </span>
                             <Eye className="w-4 h-4 opacity-70 cursor-pointer" />
                         </div>
                       </div>
@@ -165,7 +195,7 @@ const AccountsPage = () => {
                     <div className="bg-[#f1f5f9] rounded-[32px] p-8 space-y-6 self-start border border-gray-100 h-fit">
                         <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
                           <p className="text-[12px] font-bold text-gray-500 uppercase tracking-tight">Available Balance</p>
-                          <p className="text-[15px] font-black text-[#1a1f36]">₹38,034.36</p>
+                          <p className="text-[15px] font-black text-[#1a1f36]">₹{accounts?.[0]?.balance ? Number(accounts[0].balance).toLocaleString() : "0.00"}</p>
                         </div>
                         <div className="flex justify-between items-center py-2">
                           <p className="text-[12px] font-bold text-gray-500 uppercase tracking-tight">Hold Amount</p>
@@ -187,15 +217,15 @@ const AccountsPage = () => {
                       <div className="bg-gradient-to-br from-[#1a1f36] to-[#2d3356] rounded-[40px] p-8 text-white relative overflow-hidden shadow-xl">
                           <div className="relative z-10 space-y-6">
                             <p className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] leading-none">Total Invested (FD/RD)</p>
-                            <p className="text-4xl font-black">₹4,50,000</p>
+                            <p className="text-4xl font-black">₹{deposits?.reduce((s:number,d:any)=>s+Number(d.principal),0).toLocaleString()}</p>
                             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
                                 <div>
                                    <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Maturity Value</p>
-                                   <p className="font-bold text-[#c9a84c]">₹4,88,125</p>
+                                   <p className="font-bold text-[#c9a84c]">₹—</p>
                                 </div>
                                 <div>
                                    <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Active Accounts</p>
-                                   <p className="font-bold">2 Deposits</p>
+                                   <p className="font-bold">{deposits?.length || 0} Deposits</p>
                                 </div>
                             </div>
                           </div>
@@ -203,24 +233,23 @@ const AccountsPage = () => {
                       </div>
 
                       <div className="space-y-4">
-                         {[
-                           { name: "Saranam Fixed Deposit", id: "FD-XXXXX882", balance: "₹4,00,000", alert: "Renew in 14m", icon: Landmark, iconBg: "bg-amber-50", iconColor: "text-amber-600" },
-                           { name: "Irumudi Recurring Plan", id: "RD-XXXXX991", balance: "₹50,000", alert: "5 Installments Left", icon: PiggyBank, iconBg: "bg-emerald-50", iconColor: "text-emerald-600" }
-                         ].map((dep, i) => (
-                           <div key={i} className="bg-white rounded-[32px] p-6 border border-gray-100 flex items-center justify-between hover:border-[#6b21a8] transition-all cursor-pointer shadow-sm">
+                         {depLoading && <Skeleton className="h-20 w-full" />}
+                         {!depLoading && deposits?.length === 0 && <div className="text-gray-400 text-sm">No deposits yet.</div>}
+                         {!depLoading && deposits?.map((dep:any) => (
+                           <div key={dep.id} className="bg-white rounded-[32px] p-6 border border-gray-100 flex items-center justify-between hover:border-[#6b21a8] transition-all cursor-pointer shadow-sm">
                               <div className="flex items-center gap-4">
-                                 <div className={`w-12 h-12 rounded-2xl ${dep.iconBg} flex items-center justify-center ${dep.iconColor}`}>
-                                    <dep.icon className="w-6 h-6" />
+                                 <div className={`w-12 h-12 rounded-2xl ${dep.kind === 'FD' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'} flex items-center justify-center`}>
+                                    <Landmark className="w-6 h-6" />
                                  </div>
                                  <div>
-                                    <h4 className="text-[14px] font-bold text-[#1a1f36]">{dep.name}</h4>
-                                    <p className="text-[11px] text-gray-400">{dep.id} | 8.25%</p>
+                                    <h4 className="text-[14px] font-bold text-[#1a1f36]">{dep.kind} Deposit</h4>
+                                    <p className="text-[11px] text-gray-400">{dep.id.slice(0,8)} | {Number(dep.rate)}%</p>
                                  </div>
                               </div>
                               <div className="text-right flex flex-col items-end gap-2">
                                 <div>
-                                   <p className="text-[15px] font-black text-[#1a1f36]">{dep.balance}</p>
-                                   <p className="text-[10px] font-bold text-emerald-600 tracking-tighter uppercase">{dep.alert}</p>
+                                   <p className="text-[15px] font-black text-[#1a1f36]">₹{Number(dep.principal).toLocaleString()}</p>
+                                   <p className="text-[10px] font-bold text-emerald-600 tracking-tighter uppercase">{new Date(dep.maturityDate).toDateString()}</p>
                                 </div>
                                 <Link to="/payments" className="px-3 py-1 bg-white border border-gray-200 rounded-lg text-[9px] font-black uppercase text-[#6b21a8] hover:bg-gray-50 tracking-widest">
                                    Re-invest
@@ -244,16 +273,16 @@ const AccountsPage = () => {
                       {/* Summary Card */}
                       <div className="bg-gradient-to-br from-[#1a1f36] to-[#2d3356] rounded-[40px] p-8 text-white relative overflow-hidden shadow-xl">
                           <div className="relative z-10 space-y-6">
-                            <p className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] leading-none">Total Oustanding Balance</p>
-                            <p className="text-4xl font-black">₹1,24,000</p>
+                            <p className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] leading-none">Total Outstanding Balance</p>
+                            <p className="text-4xl font-black">₹{loans?.reduce((s:number,l:any)=>s+Number(l.principal),0).toLocaleString()}</p>
                             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
                                 <div>
                                    <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Next EMI Due</p>
-                                   <p className="font-bold text-[#c9a84c]">05 April 2026</p>
+                                   <p className="font-bold text-[#c9a84c]">{loans?.[0]?.nextDueDate ? new Date(loans[0].nextDueDate).toDateString() : "—"}</p>
                                 </div>
                                 <div>
                                    <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Total EMI Amount</p>
-                                   <p className="font-bold text-emerald-400">₹8,450.00</p>
+                                   <p className="font-bold text-emerald-400">₹{loans?.reduce((s:number,l:any)=>s+Number(l.emiAmount||0),0).toLocaleString()}</p>
                                 </div>
                             </div>
                           </div>
@@ -261,24 +290,23 @@ const AccountsPage = () => {
                       </div>
 
                       <div className="space-y-4">
-                         {[
-                           { name: "Swamy Gold Loan", id: "LN-GL-8821", amount: "₹84,000", emi: "₹4,200", status: "Active", color: "text-[#c9a84c]", bg: "bg-amber-50" },
-                           { name: "Udaya Emergency Credit", id: "LN-EL-9902", amount: "₹40,000", emi: "₹4,250", status: "In Arrears", color: "text-rose-600", bg: "bg-rose-50" }
-                         ].map((loan, i) => (
-                           <div key={i} className="bg-white rounded-[32px] p-6 border border-gray-100 flex items-center justify-between hover:border-[#6b21a8] transition-all cursor-pointer shadow-sm">
+                         {loanLoading && <Skeleton className="h-20 w-full" />}
+                         {!loanLoading && loans?.length === 0 && <div className="text-gray-400 text-sm">No loans yet.</div>}
+                         {!loanLoading && loans?.map((loan:any) => (
+                           <div key={loan.id} className="bg-white rounded-[32px] p-6 border border-gray-100 flex items-center justify-between hover:border-[#6b21a8] transition-all cursor-pointer shadow-sm">
                               <div className="flex items-center gap-4">
-                                 <div className={`w-12 h-12 rounded-2xl ${loan.bg} flex items-center justify-center ${loan.color}`}>
+                                 <div className={`w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-[#c9a84c]`}>
                                     <CircleDollarSign className="w-6 h-6" />
                                  </div>
                                  <div>
-                                    <h4 className="text-[14px] font-bold text-[#1a1f36]">{loan.name}</h4>
-                                    <p className="text-[11px] text-gray-400">{loan.id} | EMI: {loan.emi}</p>
+                                    <h4 className="text-[14px] font-bold text-[#1a1f36]">{loan.product}</h4>
+                                    <p className="text-[11px] text-gray-400">{loan.id.slice(0,8)} | EMI: ₹{Number(loan.emiAmount||0).toLocaleString()}</p>
                                  </div>
                               </div>
                               <div className="text-right flex flex-col items-end gap-2">
                                  <div>
-                                    <p className="text-[15px] font-black text-[#1a1f36]">{loan.amount}</p>
-                                    <p className={`text-[10px] font-bold tracking-tighter uppercase ${loan.status === 'Active' ? 'text-emerald-600' : 'text-rose-600'}`}>{loan.status}</p>
+                                    <p className="text-[15px] font-black text-[#1a1f36]">₹{Number(loan.principal).toLocaleString()}</p>
+                                    <p className={`text-[10px] font-bold tracking-tighter uppercase ${loan.status === 'DISBURSED' ? 'text-emerald-600' : 'text-rose-600'}`}>{loan.status}</p>
                                  </div>
                                  <Link to="/payments" className="px-3 py-1 bg-[#1a1f36] text-white rounded-lg text-[9px] font-black uppercase hover:bg-black tracking-widest shadow-sm">
                                     Pay EMI

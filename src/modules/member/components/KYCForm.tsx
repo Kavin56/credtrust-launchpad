@@ -15,20 +15,50 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
+import api from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 const KYCForm = () => {
   const [step, setStep] = useState(1);
+  const [idNumber, setIdNumber] = useState("");
+  const [address, setAddress] = useState("");
+  const [frontFile, setFrontFile] = useState<File | null>(null);
+  const [backFile, setBackFile] = useState<File | null>(null);
+  const [addressFile, setAddressFile] = useState<File | null>(null);
+  const [nomineeName, setNomineeName] = useState("");
+  const [nomineeRel, setNomineeRel] = useState("");
+  const [nomineePhone, setNomineePhone] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
 
-  const handleSubmit = () => {
-    toast.success("KYC Details submitted for verification!");
-    navigate("/dashboard");
+  const uploadIfPresent = async (file: File | null) => {
+    if (!file) return;
+    const form = new FormData();
+    form.append("file", file);
+    await api.post("/members/me/kyc/upload", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setLoading(true);
+      await api.patch("/members/me/kyc", { status: "UNDER_REVIEW" }).catch(() => {});
+      await uploadIfPresent(frontFile);
+      await uploadIfPresent(backFile);
+      await uploadIfPresent(addressFile);
+      toast.success("KYC submitted for verification");
+      navigate("/dashboard");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to submit KYC");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -84,22 +114,24 @@ const KYCForm = () => {
                       </div>
                       <div className="space-y-2">
                         <Label>ID Number</Label>
-                        <Input placeholder="Enter Number" />
+                        <Input placeholder="Enter Number" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Upload Front</Label>
-                          <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:bg-gray-50 cursor-pointer">
+                          <label className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:bg-gray-50 cursor-pointer block">
                             <Upload className="w-4 h-4 mx-auto mb-2 text-gray-400" />
                             <span className="text-[10px] uppercase font-bold text-gray-400">Choose File</span>
-                          </div>
+                            <input type="file" className="hidden" onChange={(e) => setFrontFile(e.target.files?.[0] || null)} />
+                          </label>
                         </div>
                         <div className="space-y-2">
                           <Label>Upload Back</Label>
-                          <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:bg-gray-50 cursor-pointer">
+                          <label className="border-2 border-dashed border-gray-200 rounded-lg p-4 text-center hover:bg-gray-50 cursor-pointer block">
                             <Upload className="w-4 h-4 mx-auto mb-2 text-gray-400" />
                             <span className="text-[10px] uppercase font-bold text-gray-400">Choose File</span>
-                          </div>
+                            <input type="file" className="hidden" onChange={(e) => setBackFile(e.target.files?.[0] || null)} />
+                          </label>
                         </div>
                       </div>
                     </div>
@@ -117,15 +149,16 @@ const KYCForm = () => {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <Label>Current Residential Address</Label>
-                        <textarea className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Street, City, State, Pincode" />
+                        <textarea className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm" placeholder="Street, City, State, Pincode" value={address} onChange={(e) => setAddress(e.target.value)} />
                       </div>
                       <div className="space-y-2">
                         <Label>Address Proof Document</Label>
-                        <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:bg-gray-50 cursor-pointer">
+                        <label className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:bg-gray-50 cursor-pointer block">
                           <ImageIcon className="w-8 h-8 mx-auto mb-3 text-gray-300" />
                           <p className="text-sm font-medium text-gray-600">Drag & drop or click to upload</p>
                           <p className="text-xs text-gray-400 mt-1">Utility Bill, Rental Agreement, or Voter ID</p>
-                        </div>
+                          <input type="file" className="hidden" onChange={(e) => setAddressFile(e.target.files?.[0] || null)} />
+                        </label>
                       </div>
                     </div>
                   </motion.div>
@@ -149,17 +182,17 @@ const KYCForm = () => {
                         <Label>Nominee Full Name</Label>
                         <div className="relative">
                           <User className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                          <Input className="pl-10" placeholder="Relative's Name" />
+                          <Input className="pl-10" placeholder="Relative's Name" value={nomineeName} onChange={(e) => setNomineeName(e.target.value)} />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Relationship</Label>
-                          <Input placeholder="e.g. Spouse" />
+                          <Input placeholder="e.g. Spouse" value={nomineeRel} onChange={(e) => setNomineeRel(e.target.value)} />
                         </div>
                         <div className="space-y-2">
                           <Label>Nominee Phone</Label>
-                          <Input placeholder="+91" />
+                          <Input placeholder="+91" value={nomineePhone} onChange={(e) => setNomineePhone(e.target.value)} />
                         </div>
                       </div>
                     </div>
@@ -181,8 +214,8 @@ const KYCForm = () => {
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 ) : (
-                  <Button onClick={handleSubmit} className="bg-[#c9a84c] hover:bg-[#d4b65c] text-white px-10 font-bold">
-                    Submit Application
+                  <Button onClick={handleSubmit} disabled={loading} className="bg-[#c9a84c] hover:bg-[#d4b65c] text-white px-10 font-bold">
+                    {loading ? "Submitting..." : "Submit Application"}
                   </Button>
                 )}
               </div>

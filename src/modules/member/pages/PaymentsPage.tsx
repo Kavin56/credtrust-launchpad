@@ -29,50 +29,46 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-
-const pendingDues = [
-  { 
-    id: 'pay-1', 
-    name: 'Saranam Fixed Deposit', 
-    sub: 'Installment #4',
-    type: 'FD/RD',
-    amount: 5000, 
-    due: '05 Apr 2026',
-    status: 'Upcoming',
-    icon: Landmark,
-    color: 'bg-amber-50 text-amber-600 border-amber-100'
-  },
-  { 
-    id: 'pay-2', 
-    name: 'Udaya Emergency Credit', 
-    sub: 'Monthly EMI',
-    type: 'Loan',
-    amount: 4250, 
-    due: '31 Mar 2026',
-    status: 'Due Today',
-    icon: Zap,
-    color: 'bg-rose-50 text-rose-600 border-rose-100'
-  },
-  { 
-    id: 'pay-3', 
-    name: 'Membership Maintenance', 
-    sub: 'Annual Fee',
-    type: 'Service',
-    amount: 250, 
-    due: '15 Apr 2026',
-    status: 'Upcoming',
-    icon: Users,
-    color: 'bg-emerald-50 text-emerald-600 border-emerald-100'
-  }
-];
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 const PaymentsPage = () => {
   const [step, setStep] = useState(1);
   const [selectedDues, setSelectedDues] = useState<string[]>([]);
   const [paymentMethod, setPaymentMethod] = useState('internal');
+  const [accountId, setAccountId] = useState<string>("");
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const totalAmount = pendingDues
+  const { data: emiDue, isLoading } = useQuery({
+    queryKey: ["emi-due"],
+    queryFn: async () => {
+      const { data } = await api.get("/reports/emi-due");
+      return data;
+    },
+  });
+
+  const { data: accounts } = useQuery({
+    queryKey: ["accounts"],
+    queryFn: async () => {
+      const { data } = await api.get("/accounts/me");
+      return data;
+    },
+  });
+
+  const payMutation = useMutation({
+    mutationFn: async (scheduleId: string) => {
+      await api.post("/loans/pay", {
+        scheduleId,
+        amount: emiDue.find((d: any) => d.id === scheduleId)?.totalDue || 0,
+        paidOn: new Date().toISOString(),
+        accountId: accountId || "CASH",
+      });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["emi-due"] }),
+  });
+
+  const totalAmount = (emiDue || [])
     .filter(d => selectedDues.includes(d.id))
     .reduce((sum, d) => sum + d.amount, 0);
 
@@ -85,9 +81,15 @@ const PaymentsPage = () => {
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
   
-  const handlePay = () => {
-    toast.success("Payment successful! Receipt generated.");
-    setStep(3);
+  const handlePay = async () => {
+    try {
+      if (selectedDues.length === 0) return;
+      await Promise.all(selectedDues.map((id) => payMutation.mutateAsync(id)));
+      toast.success("Payment successful! Receipt generated.");
+      setStep(3);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Payment failed");
+    }
   };
 
   return (
@@ -128,7 +130,11 @@ const PaymentsPage = () => {
                    className="p-10 space-y-8"
                 >
                    <div className="grid gap-6">
-                      {pendingDues.map((d) => (
+                      {isLoading && <div className="text-center text-gray-400">Loading dues...</div>}
+                      {!isLoading && emiDue?.length === 0 && (
+                        <div className="text-center text-gray-400">No dues.</div>
+                      )}
+                      {emiDue?.map((d: any) => (
                         <div 
                            key={d.id}
                            onClick={() => toggleSelection(d.id)}
@@ -137,20 +143,20 @@ const PaymentsPage = () => {
                            }`}
                         >
                            <div className="flex items-center gap-6">
-                              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${d.color}`}>
-                                 <d.icon className="w-6 h-6" />
+                              <div className="w-14 h-14 rounded-2xl flex items-center justify-center border bg-amber-50 text-amber-600 border-amber-100">
+                                 <Calendar className="w-6 h-6" />
                               </div>
                               <div className="space-y-1">
-                                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 leading-none">{d.type}</p>
-                                 <h4 className="font-bold text-[#1a1f36] text-[15px]">{d.name}</h4>
-                                 <p className="text-[11px] text-gray-400">{d.sub} | Due {d.due}</p>
+                                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 leading-none">Loan EMI</p>
+                                 <h4 className="font-bold text-[#1a1f36] text-[15px]">Schedule #{d.id.slice(0,6)}</h4>
+                                 <p className="text-[11px] text-gray-400">Due {new Date(d.dueDate).toDateString()}</p>
                               </div>
                            </div>
                            <div className="text-right flex items-center gap-6">
                               <div className="space-y-1">
-                                 <p className="text-[16px] font-black text-[#1a1f36]">₹{d.amount.toLocaleString()}</p>
-                                 <p className={`text-[10px] font-bold uppercase tracking-tighter ${d.status === 'Due Today' ? 'text-rose-600' : 'text-emerald-600'}`}>
-                                    {d.status}
+                                 <p className="text-[16px] font-black text-[#1a1f36]">₹{Number(d.totalDue).toLocaleString()}</p>
+                                 <p className="text-[10px] font-bold uppercase tracking-tighter text-emerald-600">
+                                    Pending
                                  </p>
                               </div>
                               <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${
@@ -211,7 +217,21 @@ const PaymentsPage = () => {
                          <div className="relative z-10 space-y-4">
                             <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-[#6b21a8]">
                                <Wallet className="w-6 h-6" />
-                            </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Pay from account</Label>
+                    <select
+                      className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                      value={accountId}
+                      onChange={(e) => setAccountId(e.target.value)}
+                    >
+                      <option value="">Select account</option>
+                      {accounts?.map((a:any)=>(
+                        <option key={a.id} value={a.id}>{a.number} — ₹{Number(a.balance).toFixed(2)}</option>
+                      ))}
+                    </select>
+                  </div>
                             <h4 className="font-bold text-[#1a1f36]">Internal Savings Wallet</h4>
                             <p className="text-[11px] text-gray-400 leading-tight">Instant deduction from your A/C XXXXXX6966</p>
                             <p className="text-[10px] font-bold text-emerald-600">Balance: ₹38,034.36</p>
@@ -250,8 +270,8 @@ const PaymentsPage = () => {
                          <p className="text-4xl font-black">₹{totalAmount.toLocaleString()}</p>
                       </div>
                       <div className="h-px md:h-12 w-full md:w-px bg-white/10" />
-                      <Button onClick={handlePay} className="h-14 px-16 bg-[#c9a84c] text-[#1a1f36] rounded-2xl hover:bg-white shadow-xl shadow-amber-900/20 font-black">
-                         {paymentMethod === 'internal' ? 'Pay Instantly' : 'Generate QR Code'}
+                      <Button onClick={handlePay} disabled={payMutation.isPending || (!accountId && paymentMethod==='internal')} className="h-14 px-16 bg-[#c9a84c] text-[#1a1f36] rounded-2xl hover:bg-white shadow-xl shadow-amber-900/20 font-black">
+                         {payMutation.isPending ? 'Processing...' : paymentMethod === 'internal' ? 'Pay Instantly' : 'Generate QR Code'}
                          <Smartphone className="w-4 h-4 ml-2" />
                       </Button>
                    </div>

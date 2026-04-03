@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../AuthContext";
 
 interface AdminLoginFormProps {
   onBack: () => void;
@@ -18,6 +17,7 @@ export const AdminLoginForm = ({ onBack }: AdminLoginFormProps) => {
   const [secretKey, setSecretKey] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,8 +30,13 @@ export const AdminLoginForm = ({ onBack }: AdminLoginFormProps) => {
     }
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // Logic for admin role can be added here or via Supabase role check
+      await login(email, password);
+      const role = localStorage.getItem("role");
+      if (role !== "ADMIN" && role !== "CEO") {
+        toast.error("Insufficient privileges");
+        setLoading(false);
+        return;
+      }
       toast.success("Admin access granted!");
       navigate("/admin");
     } catch (error: any) {

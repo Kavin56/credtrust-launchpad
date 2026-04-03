@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "workspace": {
+    "name": "credtrust-launchpad",
+    "createdAt": 1775125462962,
+    "preset": "starter"
+  },
+  "authorizedRoots": [
+    "D:\\credtrust-launchpad"
+  ]
+}

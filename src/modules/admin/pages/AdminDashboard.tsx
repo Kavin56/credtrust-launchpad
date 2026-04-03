@@ -15,13 +15,23 @@ import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const AdminDashboard = () => {
+  const { data: overview, isLoading } = useQuery({
+    queryKey: ["admin-overview"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/overview");
+      return data;
+    },
+  });
   const adminStats = [
-    { title: "Total Members", value: "1,254", icon: Users, color: "text-blue-600", trend: "+12 this week" },
-    { title: "Total Deposits", value: "₹45,85,000", icon: Wallet, color: "text-emerald-600", trend: "+ ₹2.4L growth" },
-    { title: "Outstanding Loans", value: "₹28,40,000", icon: BarChart3, color: "text-amber-600", trend: "0.2% NPA rate" },
-    { title: "Society Capital", value: "₹75,00,000", icon: Building2, color: "text-purple-600", trend: "Stable" },
+    { title: "Total Members", value: overview?.members ?? "—", icon: Users, color: "text-blue-600", trend: "" },
+    { title: "Total Deposits", value: overview ? overview.deposits : "—", icon: Wallet, color: "text-emerald-600", trend: "" },
+    { title: "Outstanding Loans", value: overview ? overview.loans : "—", icon: BarChart3, color: "text-amber-600", trend: "" },
+    { title: "Pending KYC", value: overview?.pendingKyc ?? "—", icon: ShieldCheck, color: "text-purple-600", trend: "" },
   ];
 
   return (
@@ -44,8 +54,11 @@ const AdminDashboard = () => {
           </motion.div>
 
           <div className="flex gap-3">
-            <Button className="bg-[#1a1f36] hover:bg-black text-white">
-               Generate Reports
+            <Button className="bg-[#1a1f36] hover:bg-black text-white" onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1"}/reports/trial-balance/pdf`, "_blank")}>
+               Download Trial Balance (PDF)
+            </Button>
+            <Button className="bg-[#c9a84c] hover:bg-[#d4b65c] text-[#1a1f36]" onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1"}/reports/trial-balance/excel`, "_blank")}>
+               Download Trial Balance (Excel)
             </Button>
             <Button variant="outline" className="border-slate-200">
               Settings
@@ -68,7 +81,7 @@ const AdminDashboard = () => {
                   <stat.icon className={`w-4 h-4 ${stat.color}`} />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
+                  <div className="text-2xl font-bold text-slate-900">{isLoading ? <Skeleton className="h-6 w-16" /> : stat.value}</div>
                   <p className="text-xs text-slate-400 mt-1">{stat.trend}</p>
                 </CardContent>
               </Card>

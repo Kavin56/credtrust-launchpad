@@ -45,6 +45,9 @@ import {
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const quickActions = [
   { label: "Welcome to Yono", icon: Sparkles, bg: "bg-purple-100", color: "text-purple-600" },
@@ -99,6 +102,45 @@ const MemberDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const userName = user?.email?.split('@')[0] || "Member";
+  const token =
+    typeof window !== "undefined"
+      ? localStorage.getItem("accessToken") ||
+        localStorage.getItem("fb_id_token")
+      : null;
+
+  const cached =
+    typeof window !== "undefined"
+      ? localStorage.getItem("member_overview_cache")
+      : null;
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["member-overview"],
+    queryFn: async () => {
+      const { data } = await api.get("/members/me/overview");
+      // cache fresh payload for instant reloads
+      localStorage.setItem("member_overview_cache", JSON.stringify(data));
+      return data;
+    },
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    retry: 0,
+    initialData: cached ? JSON.parse(cached) : undefined,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#f8fafc]">
+        <Header />
+        <div className="max-w-7xl mx-auto p-6 space-y-4">
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans selection:bg-[#c9a84c]/30">
       <Header />
@@ -148,7 +190,9 @@ const MemberDashboard = () => {
                     <div className="space-y-1 mb-8">
                       <p className="text-[12px] font-bold text-white/50 tracking-wider">Combined Balance</p>
                       <div className="flex items-center gap-4">
-                        <span className="text-3xl font-bold font-sans tracking-tight block">₹XXXX.xx</span>
+                        <span className="text-3xl font-bold font-sans tracking-tight block">
+                          ₹{data?.totalBalance?.toFixed(2) ?? "0.00"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -158,7 +202,10 @@ const MemberDashboard = () => {
                   <div className="relative z-10 flex flex-col h-full flex-grow">
                     <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#1a1f36]/40 mb-8">DEPOSITS</h3>
                     <div className="space-y-2 mb-auto">
-                      <p className="text-xl font-bold text-[#1a1f36] leading-tight">Grow your money faster</p>
+                      <p className="text-xl font-bold text-[#1a1f36] leading-tight">Deposits</p>
+                      <p className="text-sm text-gray-500 font-semibold">
+                        {data?.deposits?.length ?? 0} active
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -167,7 +214,10 @@ const MemberDashboard = () => {
                   <div className="relative z-10 flex flex-col h-full flex-grow">
                     <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#1a1f36]/40 mb-8">LOANS</h3>
                     <div className="space-y-2 mb-auto">
-                      <p className="text-xl font-bold text-[#1a1f36] leading-tight">Find the perfect loan</p>
+                      <p className="text-xl font-bold text-[#1a1f36] leading-tight">Loans</p>
+                      <p className="text-sm text-gray-500 font-semibold">
+                        {data?.loans?.length ?? 0} records
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -215,7 +265,11 @@ const MemberDashboard = () => {
                        </div>
                     </div>
                     <h4 className="text-[14px] font-bold text-[#1a1f36] mb-2 leading-tight">Clear Your Pending Dues</h4>
-                    <p className="text-[11px] text-gray-500 font-bold max-w-[200px] mb-6 leading-normal">You have 2 pending installments due this week. Pay now to avoid late fees.</p>
+                    <p className="text-[11px] text-gray-500 font-bold max-w-[200px] mb-6 leading-normal">
+                      {data?.nextEmi
+                        ? `Next EMI ₹${Number(data.nextEmi.totalDue).toFixed(2)} due ${new Date(data.nextEmi.dueDate).toDateString()}`
+                        : "No pending installments."}
+                    </p>
                     <button 
                       onClick={() => navigate('/payments')}
                       className="rounded-full px-10 py-2.5 bg-white border-2 border-indigo-100 text-[#6b21a8] font-bold hover:bg-indigo-50 transition-all text-[12px] shadow-sm active:scale-95"

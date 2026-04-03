@@ -23,16 +23,23 @@ import CardsPage from "./modules/member/pages/CardsPage";
 import ServicesPage from "./modules/member/pages/ServicesPage";
 import ProductDetailPage from "./modules/member/pages/ProductDetailPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000, // 2 minutes cache to avoid repeat fetches
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const ProtectedRoute = ({ children, requireAdmin = false }: { children: React.ReactNode, requireAdmin?: boolean }) => {
   const { user, loading } = useAuth();
   
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
-  
-  // For now, any user can access member dashboard. 
-  // Admin check can be added later via Supabase roles.
+  if (requireAdmin && !["ADMIN", "CEO"].includes(user.role)) {
+    return <Navigate to="/dashboard" />;
+  }
   return <>{children}</>;
 };
 
@@ -44,7 +51,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/loan-apply" element={<ProtectedRoute><LoanApply /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><MemberDashboard /></ProtectedRoute>} />

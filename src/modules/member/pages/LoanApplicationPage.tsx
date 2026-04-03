@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import api from "@/lib/api";
 
 const loanTypes = [
   { 
@@ -75,6 +76,7 @@ const LoanApplicationPage = () => {
   const [selectedLoan, setSelectedLoan] = useState(loanTypes[0]);
   const [amount, setAmount] = useState(50000);
   const [tenure, setTenure] = useState(12);
+  const [collateral, setCollateral] = useState("");
   const navigate = useNavigate();
 
   const calculateEMI = () => {
@@ -88,9 +90,22 @@ const LoanApplicationPage = () => {
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
   
-  const handleSubmit = () => {
-    toast.success("Loan application submitted for approval!");
-    navigate("/accounts?tab=loans");
+  const handleSubmit = async () => {
+    try {
+      await api.post("/loans", {
+        product: selectedLoan.name,
+        principal: amount,
+        rate: selectedLoan.rate,
+        tenureMonths: tenure,
+        sanctionDate: new Date().toISOString(),
+        collateral,
+      });
+      toast.success("Loan application submitted for approval!");
+      navigate("/accounts?tab=loans");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to submit loan");
+    }
   };
 
   return (
@@ -287,7 +302,12 @@ const LoanApplicationPage = () => {
 
                       <div className="space-y-4 pt-4">
                          <Label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Guarantor Member ID / Remarks</Label>
-                         <Input placeholder="Enter ID or Description of security" className="h-14 rounded-2xl border-gray-100" />
+                         <Input
+                           placeholder="Enter ID or Description of security"
+                           className="h-14 rounded-2xl border-gray-100"
+                           value={collateral}
+                           onChange={(e) => setCollateral(e.target.value)}
+                         />
                       </div>
                       <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-start gap-4">
                          <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-1" />
