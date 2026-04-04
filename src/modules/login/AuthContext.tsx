@@ -19,7 +19,7 @@ type AuthUser = {
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, devRole?: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
 }
@@ -48,7 +48,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (cachedUser && cachedToken) {
         try {
           const u = JSON.parse(cachedUser);
-          setUser({ id: u.id, email: u.email, role: "MEMBER" });
+          const cachedRole = localStorage.getItem("role") || "MEMBER";
+          setUser({ id: u.id, email: u.email, role: cachedRole });
           api.defaults.headers.common.Authorization = `Bearer ${cachedToken}`;
           setLoading(false);
         } catch {
@@ -58,36 +59,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const unsub = onAuthStateChanged(auth, async (fbUser) => {
         if (fbUser?.email) {
-          const token = await fbUser.getIdToken(false);
-          api.defaults.headers.common.Authorization = `Bearer ${token}`;
-          localStorage.setItem("fb_user", JSON.stringify({ id: fbUser.uid, email: fbUser.email }));
-          localStorage.setItem("fb_id_token", token);
-          localStorage.setItem("accessToken", token); // for existing axios interceptor compatibility
-          localStorage.setItem("role", "MEMBER");
-          setUser({ id: fbUser.uid, email: fbUser.email, role: "MEMBER" });
+          try {
+            const token = await fbUser.getIdToken(false);
+            api.defaults.headers.common.Authorization = `Bearer ${token}`;
+            localStorage.setItem("fb_user", JSON.stringify({ id: fbUser.uid, email: fbUser.email }));
+            localStorage.setItem("fb_id_token", token);
+            localStorage.setItem("accessToken", token);
+
+            // Fetch the user profile from the backend to get the actual role BEFORE setting loading to false
+            const { data: profile } = await api.get("/members/me");
+            const role = profile.user.role || "MEMBER";
+            localStorage.setItem("role", role);
+            setUser({ id: fbUser.uid, email: fbUser.email, role });
+          } catch (error) {
+            console.error("Failed to fetch user profile, defaulting to MEMBER:", error);
+            localStorage.setItem("role", "MEMBER");
+            setUser({ id: fbUser.uid, email: fbUser.email, role: "MEMBER" });
+          }
         } else {
           setUser(null);
           localStorage.removeItem("fb_user");
           localStorage.removeItem("fb_id_token");
           localStorage.removeItem("accessToken");
+          localStorage.removeItem("role");
         }
         setLoading(false);
       });
 
       // keep token fresh in background without blocking UI
-      const unsubToken = onIdTokenChanged(auth, async (fbUser) => {
-        if (fbUser) {
-          const token = await fbUser.getIdToken(false);
-          api.defaults.headers.common.Authorization = `Bearer ${token}`;
-          localStorage.setItem("fb_id_token", token);
-          localStorage.setItem("accessToken", token);
-        }
-      });
+      if (provider === "firebase") {
+        const unsubToken = onIdTokenChanged(auth, async (fbUser) => {
+          if (fbUser) {
+            const token = await fbUser.getIdToken(false);
+            api.defaults.headers.common.Authorization = `Bearer ${token}`;
+            localStorage.setItem("fb_id_token", token);
+            localStorage.setItem("accessToken", token);
+          }
+        });
 
-      return () => {
-        unsub();
-        unsubToken();
-      };
+        return () => {
+          unsub();
+          unsubToken();
+        };
+      } else {
+        return () => unsub();
+      }
+    } else if (provider === "mock") {
+      const email = localStorage.getItem("email");
+      const role = localStorage.getItem("role");
+      const userId = localStorage.getItem("userId") || "mock-user-123";
+      if (email && role) {
+        setUser({ id: userId, email, role });
+      }
+      setLoading(false);
     } else {
       const token = localStorage.getItem("accessToken");
       const email = localStorage.getItem("email");
@@ -100,16 +124,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, devRole?: string) => {
+    if (provider === "mock") {
+      const role = devRole || (email.toLowerCase().includes("admin") ? "ADMIN" : "MEMBER");
+      const mockUser = { id: "mock-user-" + Date.now(), email, role };
+      localStorage.setItem("email", email);
+      localStorage.setItem("role", role);
+      localStorage.setItem("userId", mockUser.id);
+      localStorage.setItem("accessToken", "mock-token-" + Date.now());
+      setUser(mockUser);
+      return;
+    }
     if (provider === "firebase") {
+      setLoading(true); // Ensure route guards wait while we sync
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const token = await cred.user.getIdToken(false);
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
       localStorage.setItem("fb_user", JSON.stringify({ id: cred.user.uid, email }));
       localStorage.setItem("fb_id_token", token);
       localStorage.setItem("accessToken", token);
-      localStorage.setItem("role", "MEMBER");
-      return;
+      
+      // Wait for the onAuthStateChanged listener to set the user and role
+      // before returning to the login page's navigation logic.
+      return new Promise<void>((resolve) => {
+        const checkUser = setInterval(() => {
+          if (auth.currentUser) {
+            const role = localStorage.getItem("role");
+            if (role) {
+              clearInterval(checkUser);
+              resolve();
+            }
+          }
+        }, 100);
+      });
     }
     const { data } = await api.post("/auth/login", { email, password });
     localStorage.setItem("accessToken", data.accessToken);

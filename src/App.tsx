@@ -10,6 +10,8 @@ import LoginPage from "./modules/login/pages/LoginPage";
 import LoanApply from "./pages/LoanApply";
 import MemberDashboard from "./modules/member/pages/MemberDashboard";
 import AdminDashboard from "./modules/admin/pages/AdminDashboard";
+import AdminIndex from "./pages/AdminIndex";
+import AdminLoginPage from "./modules/admin/pages/AdminLoginPage";
 import KYCForm from "./modules/member/components/KYCForm";
 import ProfilePage from "./modules/member/pages/ProfilePage";
 import AccountsPage from "./modules/member/pages/AccountsPage";
@@ -34,9 +36,11 @@ const queryClient = new QueryClient({
 
 const ProtectedRoute = ({ children, requireAdmin = false }: { children: React.ReactNode, requireAdmin?: boolean }) => {
   const { user, loading } = useAuth();
-  
+
   if (loading) return null;
-  if (!user) return <Navigate to="/login" />;
+  if (!user) {
+    return <Navigate to={requireAdmin ? "/admin/login" : "/login"} />;
+  }
   if (requireAdmin && !["ADMIN", "CEO"].includes(user.role)) {
     return <Navigate to="/dashboard" />;
   }
@@ -51,7 +55,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin" element={<AdminIndex />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/admin/dashboard" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/loan-apply" element={<ProtectedRoute><LoanApply /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><MemberDashboard /></ProtectedRoute>} />

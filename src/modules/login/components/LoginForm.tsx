@@ -24,7 +24,7 @@ export const LoginForm = ({ onToggleForm, onAdminMode }: LoginFormProps) => {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(email, password, "MEMBER");
       toast.success("Logged in successfully");
       navigate("/dashboard");
     } catch (error: any) {

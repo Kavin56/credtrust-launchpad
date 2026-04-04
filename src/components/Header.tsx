@@ -42,6 +42,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/modules/login/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Internal icons for the menu
 const Calendar = (props: any) => (
@@ -142,8 +151,13 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState(null);
   const dropdownRef = useRef(null);
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const userEmail = user?.email || "User";
+  const userInitials = userEmail.substring(0, 2).toUpperCase();
+  const userName = userEmail.split('@')[0];
 
   useEffect(() => {
     setActiveMegaMenu(null);
@@ -267,15 +281,52 @@ const Header = () => {
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
             </button>
 
-            <Link to="/profile" className="flex items-center gap-2 pl-2 group max-w-[140px]">
-              <div className="w-9 h-9 shrink-0 rounded-lg bg-[#1a1f36] border border-white shadow-md flex items-center justify-center text-[#c9a84c] text-[10px] font-black group-hover:scale-110 transition-transform">
-                KS
-              </div>
-              <div className="hidden xl:block overflow-hidden">
-                 <p className="text-[11px] font-black text-[#1a1f36] leading-none uppercase truncate">Kavinkumar</p>
-                 <p className="text-[9px] font-bold text-[#6b21a8] mt-0.5">My Profile</p>
-              </div>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 pl-2 group max-w-[160px] outline-none">
+                  <div className="w-9 h-9 shrink-0 rounded-lg bg-[#1a1f36] border border-white shadow-md flex items-center justify-center text-[#c9a84c] text-[10px] font-black group-hover:scale-110 transition-transform uppercase">
+                    {userInitials}
+                  </div>
+                  <div className="hidden xl:block overflow-hidden text-left">
+                    <p className="text-[11px] font-black text-[#1a1f36] leading-none uppercase truncate">
+                      {userName}
+                    </p>
+                    <div className="flex items-center gap-0.5 mt-0.5">
+                      <p className="text-[9px] font-bold text-[#6b21a8]">My Account</p>
+                      <ChevronDown className="w-2.5 h-2.5 text-[#6b21a8]" />
+                    </div>
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 mt-2 rounded-2xl border-gray-100 shadow-2xl p-2 font-sans bg-white z-[101]">
+                <DropdownMenuLabel className="px-3 py-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                  Personal Account
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-gray-50 my-1" />
+                <DropdownMenuItem 
+                  onClick={() => navigate('/profile')}
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer hover:bg-[#fdf4ff] group focus:bg-[#fdf4ff]"
+                >
+                  <User className="w-4 h-4 text-gray-400 group-hover:text-[#6b21a8]" />
+                  <span className="text-[13px] font-bold text-gray-700 group-hover:text-[#6b21a8]">My Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => navigate('/dashboard')}
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer hover:bg-[#fdf4ff] group focus:bg-[#fdf4ff]"
+                >
+                  <Settings className="w-4 h-4 text-gray-400 group-hover:text-[#6b21a8]" />
+                  <span className="text-[13px] font-bold text-gray-700 group-hover:text-[#6b21a8]">Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-gray-50 my-1" />
+                <DropdownMenuItem 
+                  onClick={logout}
+                  className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer hover:bg-rose-50 group focus:bg-rose-50"
+                >
+                  <LogOut className="w-4 h-4 text-gray-400 group-hover:text-rose-600" />
+                  <span className="text-[13px] font-bold text-gray-700 group-hover:text-rose-600">Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Mobile Menu Button */}
@@ -311,13 +362,18 @@ const Header = () => {
                </nav>
                <div className="pt-6 border-t border-gray-100 flex items-center justify-between px-4">
                   <div className="flex items-center gap-3">
-                     <div className="w-12 h-12 rounded-2xl bg-[#1a1f36] flex items-center justify-center text-[#c9a84c] font-black">KS</div>
+                     <div className="w-12 h-12 rounded-2xl bg-[#1a1f36] flex items-center justify-center text-[#c9a84c] font-black uppercase">
+                       {userInitials}
+                     </div>
                      <div>
-                        <p className="text-sm font-black text-[#1a1f36]">Kavinkumar V S</p>
-                        <p className="text-[11px] font-bold text-[#6b21a8]">CT88219</p>
+                        <p className="text-sm font-black text-[#1a1f36] uppercase">{userName}</p>
+                        <p className="text-[11px] font-bold text-[#6b21a8]">CT882{user?.id?.substring(0, 2) || "19"}</p>
                      </div>
                   </div>
-                  <button className="p-3 bg-[#f8fafc] rounded-2xl text-gray-400 hover:text-rose-600 transition-all">
+                  <button 
+                    onClick={logout}
+                    className="p-3 bg-[#f8fafc] rounded-2xl text-gray-400 hover:text-rose-600 transition-all hover:bg-rose-50"
+                  >
                      <LogOut className="w-5 h-5" />
                   </button>
                </div>

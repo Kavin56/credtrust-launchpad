@@ -11,6 +11,7 @@ export class MembersService {
     const member = await this.prisma.member.findFirst({
       where: { userId },
       include: {
+        user: true,
         accounts: true,
         deposits: true,
         loans: true,
