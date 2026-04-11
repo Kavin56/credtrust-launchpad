@@ -104,6 +104,56 @@ export class LoansService {
     return { status: 'ok' };
   }
 
+  async disburseLoan(loanId: string, disbursedBy: string) {
+    const loan = await this.prisma.loan.findUnique({
+      where: { id: loanId },
+      include: { member: { include: { accounts: { where: { type: 'SAVINGS' }, take: 1 } } } },
+    });
+
+    if (!loan) {
+      throw new NotFoundException('Loan not found');
+    }
+    if (loan.status !== 'APPROVED') {
+      throw new BadRequestException('Loan is not in APPROVED status');
+    }
+    if (!loan.member.accounts || loan.member.accounts.length === 0) {
+      throw new BadRequestException('Member does not have a savings account');
+    }
+
+    const memberSavingsAccount = loan.member.accounts[0];
+
+    return this.prisma.$transaction(async (tx) => {
+      // Update loan status to DISBURSED
+      await tx.loan.update({
+        where: { id: loanId },
+        data: { status: 'DISBURSED', disbursedOn: new Date() },
+      });
+
+      // Credit member's savings account with the principal amount
+      await tx.account.update({
+        where: { id: memberSavingsAccount.id },
+        data: { balance: { increment: Number(loan.principal) } },
+      });
+
+      // Record ledger entry for loan disbursement
+      // Debit: LOAN_PRINCIPAL (Asset - loan given out)
+      // Credit: Member's Savings Account (Liability - member's money increased)
+      await this.ledger.recordJournal(
+        'LOAN_DISBURSEMENT',
+        loan.id,
+        [
+          { accountId: 'LOAN_PRINCIPAL', type: 'DR', amount: Number(loan.principal) },
+          { accountId: memberSavingsAccount.id, type: 'CR', amount: Number(loan.principal) },
+        ],
+        `Loan disbursement for ${loan.product} to member ${loan.memberId}`,
+        disbursedBy,
+        tx,
+      );
+
+      return { status: 'ok', loanId };
+    });
+  }
+
   private buildAmortizationSchedule(
     principal: number,
     annualRate: number,

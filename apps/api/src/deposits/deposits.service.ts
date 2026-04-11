@@ -1,6 +1,7 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDepositDto } from './dto/create-deposit.dto';
+import { PayRdInstallmentDto } from './dto/pay-rd-installment.dto';
 import { addMonths } from 'date-fns';
 import { Decimal } from '@prisma/client/runtime/library';
 import { LedgerService } from '../ledger/ledger.service';
@@ -136,6 +137,76 @@ export class DepositsService {
         this.logger.error(`Failed to process maturity for deposit ${deposit.id}`, error);
       }
     }
+  }
+
+  async payRdInstallment(memberId: string, dto: PayRdInstallmentDto) {
+    const schedule = await this.prisma.depositSchedule.findUnique({
+      where: { id: dto.scheduleId },
+      include: { deposit: true },
+    });
+
+    if (!schedule || schedule.deposit.memberId !== memberId) {
+      throw new NotFoundException('RD Installment schedule not found');
+    }
+    if (schedule.paid) {
+      throw new BadRequestException('Installment already paid');
+    }
+    if (dto.amount < Number(schedule.amount)) {
+      throw new BadRequestException('Paid amount is less than due amount');
+    }
+
+    const account = await this.prisma.account.findUnique({
+      where: { id: dto.accountId },
+    });
+    if (!account || account.memberId !== memberId) {
+      throw new BadRequestException('Invalid account for payment');
+    }
+    if (Number(account.balance) < dto.amount) {
+      throw new BadRequestException('Insufficient balance in payment account');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // Mark schedule as paid
+      await tx.depositSchedule.update({
+        where: { id: dto.scheduleId },
+        data: { paid: true, paidOn: new Date(dto.paidOn) },
+      });
+
+      // Deduct from member's account
+      await tx.account.update({
+        where: { id: account.id },
+        data: { balance: { decrement: dto.amount } },
+      });
+
+      // Record ledger entry
+      // Debit: Member's Savings Account (or Cash)
+      // Credit: DEPOSIT_LIAB (Liability)
+      await this.ledger.recordJournal(
+        'RD_INSTALLMENT',
+        dto.scheduleId,
+        [
+          { accountId: account.id, type: 'DR', amount: dto.amount },
+          { accountId: 'DEPOSIT_LIAB', type: 'CR', amount: dto.amount },
+        ],
+        `RD installment payment for deposit ${schedule.depositId}`,
+        memberId,
+        tx,
+      );
+
+      // Update next due date for the main deposit
+      const remainingSchedules = await tx.depositSchedule.findMany({
+        where: { depositId: schedule.depositId, paid: false },
+        orderBy: { dueDate: 'asc' },
+        take: 1,
+      });
+
+      await tx.deposit.update({
+        where: { id: schedule.depositId },
+        data: { nextDueDate: remainingSchedules[0]?.dueDate || null },
+      });
+
+      return { status: 'ok' };
+    });
   }
 
   private buildRdSchedule(

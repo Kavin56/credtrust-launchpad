@@ -29,6 +29,13 @@ export class ReportsService {
     });
   }
 
+  async rdDue(memberId: string) {
+    return this.prisma.depositSchedule.findMany({
+      where: { deposit: { memberId, kind: 'RD' }, paid: false },
+      orderBy: { dueDate: 'asc' },
+    });
+  }
+
   async trialBalancePdf() {
     const PDFDocument = require('pdfkit');
     const doc = new PDFDocument();

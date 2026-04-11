@@ -51,7 +51,7 @@ A comprehensive, production-ready full-stack application for managing a Credit C
    npm run dev
    ```
 
-The frontend will be available at `http://localhost:8080` and the backend API at `http://localhost:3000/api/v1`.
+The frontend will be available at `http://localhost:5173` (default Vite port) and the backend API at `http://localhost:3000/api/v1`.
 
 ## Architecture Notes
 

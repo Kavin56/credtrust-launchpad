@@ -28,6 +28,12 @@ export class ReportsController {
     return this.reportsService.emiDue(req.user.userId);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Get('rd-due')
+  rdDue(@Req() req: any) {
+    return this.reportsService.rdDue(req.user.userId);
+  }
+
   @Get('trial-balance/pdf')
   async trialBalancePdf(@Res() res: FastifyReply) {
     const buffer = await this.reportsService.trialBalancePdf();

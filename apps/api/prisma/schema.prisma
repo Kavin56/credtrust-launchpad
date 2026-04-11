@@ -135,6 +135,7 @@ model Deposit {
   maturityDate  DateTime
   payoutMode    String
   status        String       @default("ACTIVE")
+  nextDueDate   DateTime?
   schedules     DepositSchedule[]
 }
 
@@ -145,6 +146,7 @@ model DepositSchedule {
   dueDate    DateTime
   amount     Decimal   @db.Decimal(14,2)
   paid       Boolean   @default(false)
+  paidOn     DateTime?
   txnId      String?
 }
 
@@ -159,7 +161,7 @@ model Loan {
   sanctionDate    DateTime
   disbursedOn     DateTime?
   status          LoanStatus  @default(APPLIED)
-  collateral      String?
+  collateral      Collateral[]?
   emiAmount       Decimal?    @db.Decimal(14,2)
   nextDueDate     DateTime?
   schedules       EmiSchedule[]
@@ -244,4 +246,20 @@ model ServiceRequest {
   status      String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, REJECTED
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Collateral {
+  id        String   @id @default(uuid())
+  loanId    String
+  type      String
+  description String?
+  value     Decimal  @db.Decimal(14,2)
+  status    String?
+  fileUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  loan      Loan     @relation(fields: [loanId], references: [id])
+
+  @@index([loanId])
 }

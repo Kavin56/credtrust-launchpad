@@ -9,6 +9,7 @@ import { UsersModule } from './users/user.module';
 import { MembersModule } from './members/members.module';
 import { DepositsModule } from './deposits/deposits.module';
 import { LoansModule } from './loans/loans.module';
+import { CollateralModule } from './collateral/collateral.module';
 import { LedgerModule } from './ledger/ledger.module';
 import { DividendsModule } from './dividends/dividends.module';
 import { ReportsModule } from './reports/reports.module';
@@ -46,6 +47,7 @@ import { ServicesModule } from './services/services.module';
     MembersModule,
     DepositsModule,
     LoansModule,
+    CollateralModule,
     LedgerModule,
     DividendsModule,
     ReportsModule,

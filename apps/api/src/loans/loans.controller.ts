@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards, Param } from '@nestjs/common';
 import { LoansService } from './loans.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { ApplyLoanDto } from './dto/apply-loan.dto';
@@ -25,5 +25,10 @@ export class LoansController {
   @Post('pay')
   pay(@Req() req: any, @Body() dto: PayEmiDto) {
     return this.loansService.payEmi(req.user.userId, dto);
+  }
+
+  @Post('disburse/:id')
+  disburse(@Param('id') id: string, @Req() req: any) {
+    return this.loansService.disburseLoan(id, req.user.userId);
   }
 }
