@@ -3,15 +3,19 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-  import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { ApplyLoanDto } from './dto/apply-loan.dto';
 import { addMonths } from 'date-fns';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PayEmiDto } from './dto/pay-emi.dto';
+import { LedgerService } from '../ledger/ledger.service';
 
 @Injectable()
 export class LoansService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private ledger: LedgerService,
+  ) {}
 
   async apply(memberId: string, dto: ApplyLoanDto) {
     const sanctionDate = new Date(dto.sanctionDate);
@@ -22,6 +26,9 @@ export class LoansService {
       sanctionDate,
     );
     const emiAmount = schedules[0].totalDue;
+    
+    // When a loan is approved/disbursed, we should create a ledger entry.
+    // For now, we just create the loan. Disbursement might be a separate step.
     return this.prisma.loan.create({
       data: {
         memberId,
@@ -59,22 +66,30 @@ export class LoansService {
     if (dto.amount < Number(schedule.totalDue)) {
       throw new BadRequestException('Amount less than due');
     }
-    await this.prisma.$transaction([
-      this.prisma.emiSchedule.update({
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.emiSchedule.update({
         where: { id: dto.scheduleId },
         data: { paid: true, paidOn: new Date(dto.paidOn) },
-      }),
-      this.prisma.transaction.create({
-        data: {
-          refType: 'EMI',
-          refId: dto.scheduleId,
-          drAccountId: dto.accountId,
-          crAccountId: 'LOAN_INCOME',
-          amount: schedule.totalDue,
-          narration: `EMI payment for ${schedule.loanId}`,
-        },
-      }),
-    ]);
+      });
+
+      // Multi-leg journal entry for EMI payment
+      // Debit: Member's Savings Account (or Cash)
+      // Credit: Loan Principal Account
+      // Credit: Loan Interest Income Account
+      await this.ledger.recordJournal(
+        'EMI',
+        dto.scheduleId,
+        [
+          { accountId: dto.accountId, type: 'DR', amount: Number(schedule.totalDue) },
+          { accountId: 'LOAN_PRINCIPAL', type: 'CR', amount: Number(schedule.principalComponent) },
+          { accountId: 'LOAN_INCOME', type: 'CR', amount: Number(schedule.interestComponent) },
+        ],
+        `EMI payment for loan ${schedule.loanId}`,
+        memberId,
+        tx,
+      );
+    });
 
     // update next due
     const remaining = await this.prisma.emiSchedule.findMany({

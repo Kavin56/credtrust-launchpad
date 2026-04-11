@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import configuration from './config/configuration';
 import { validationSchema } from './config/validation';
 import { PrismaModule } from './prisma/prisma.module';
@@ -17,6 +18,8 @@ import { LoggerModule } from 'nestjs-pino';
 import { StorageModule } from './storage/storage.module';
 import { AccountsModule } from './accounts/accounts.module';
 import { AdminModule } from './admin/admin.module';
+import { SharesModule } from './shares/shares.module';
+import { ServicesModule } from './services/services.module';
 
 @Module({
   imports: [
@@ -25,6 +28,7 @@ import { AdminModule } from './admin/admin.module';
       load: [configuration],
       validationSchema,
     }),
+    ScheduleModule.forRoot(),
     LoggerModule.forRoot({
       pinoHttp: {
         transport:
@@ -45,6 +49,8 @@ import { AdminModule } from './admin/admin.module';
     LedgerModule,
     DividendsModule,
     ReportsModule,
+    SharesModule,
+    ServicesModule,
   ],
   providers: [
     {

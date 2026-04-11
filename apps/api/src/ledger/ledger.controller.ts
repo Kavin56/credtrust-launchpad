@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { LedgerService } from './ledger.service';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -13,6 +13,11 @@ export class LedgerController {
   @Get('accounts')
   listAccounts() {
     return this.ledgerService.listAccounts();
+  }
+
+  @Get('transactions/me')
+  getMemberTransactions(@Req() req: any) {
+    return this.ledgerService.getMemberTransactions(req.user.userId);
   }
 
   @Post('transactions')

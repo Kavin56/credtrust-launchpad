@@ -74,12 +74,16 @@ model Member {
   kycStatus   KycStatus     @default(PENDING)
   joinedOn    DateTime      @default(now())
   branchId    String?
+  nomineeName String?
+  nomineeRelation String?
+  nomineeDob  DateTime?
   accounts    Account[]
   deposits    Deposit[]
   loans       Loan[]
   shares      Share[]
   kycDocs     KycDocument[]
   dividendPayouts DividendPayout[]
+  serviceRequests ServiceRequest[]
 }
 
 model KycDocument {
@@ -186,6 +190,7 @@ model LedgerAccount {
 
 model Transaction {
   id           String   @id @default(uuid())
+  groupId      String?  // To group multi-leg transactions
   refType      String
   refId        String
   drAccountId  String
@@ -228,4 +233,15 @@ model AuditLog {
   userAgent String?
   diff      Json?
   createdAt DateTime @default(now())
+}
+
+model ServiceRequest {
+  id          String   @id @default(uuid())
+  memberId    String
+  member      Member   @relation(fields: [memberId], references: [id])
+  type        String
+  details     String?
+  status      String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, REJECTED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

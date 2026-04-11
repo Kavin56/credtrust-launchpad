@@ -1,0 +1,21 @@
+model Member {
+  id          String        @id @default(uuid())
+  userId      String        @unique
+  user        User          @relation(fields: [userId], references: [id])
+  fullName    String
+  dob         DateTime
+  contact     String
+  address     String
+  kycStatus   KycStatus     @default(PENDING)
+  joinedOn    DateTime      @default(now())
+  branchId    String?
+  nomineeName String?
+  nomineeRelation String?
+  nomineeDob  DateTime?
+  accounts    Account[]
+  deposits    Deposit[]
+  loans       Loan[]
+  shares      Share[]
+  kycDocs     KycDocument[]
+  dividendPayouts DividendPayout[]
+}

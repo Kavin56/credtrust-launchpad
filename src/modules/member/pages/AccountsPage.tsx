@@ -1,4 +1,4 @@
-import { Search, ChevronRight, Eye, Home, Smartphone, Info, CreditCard, ChevronDown, Landmark, PiggyBank, CircleDollarSign, Calculator } from 'lucide-react';
+import { Search, ChevronRight, Eye, Home, Smartphone, Info, CreditCard, ChevronDown, Landmark, PiggyBank, CircleDollarSign, Calculator, PieChart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -7,6 +7,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 const AccountsPage = () => {
   const [searchParams] = useSearchParams();
@@ -33,7 +34,17 @@ const AccountsPage = () => {
       return data;
     },
   });
-  
+
+  const { data: transactions, isLoading: txLoading } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: async () => {
+      const { data } = await api.get("/ledger/transactions/me");
+      return data;
+    },
+  });
+
+  const [activeSubTab, setActiveSubTab] = useState(0);
+
   // Update tab if URL param changes
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -148,8 +159,9 @@ const AccountsPage = () => {
                       {subTabs.map((tab, idx) => (
                         <button 
                           key={idx}
+                          onClick={() => setActiveSubTab(idx)}
                           className={`px-6 py-4 text-[13px] font-bold transition-all whitespace-nowrap ${
-                            idx === 0 ? "text-[#6b21a8] border-b-2 border-[#6b21a8]" : "text-gray-400 hover:text-gray-600"
+                            activeSubTab === idx ? "text-[#6b21a8] border-b-2 border-[#6b21a8]" : "text-gray-400 hover:text-gray-600"
                           }`}
                         >
                           {tab}
@@ -157,52 +169,97 @@ const AccountsPage = () => {
                       ))}
                   </div>
 
-                  {/* Summary Grid */}
-                  <div className="grid md:grid-cols-[1fr,320px] gap-10">
-                    <div className="space-y-8">
-                        <div className="grid grid-cols-2 gap-8">
-                          <div className="space-y-1.5">
-                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Account Description</p>
-                              <p className="text-[13px] font-bold text-[#1a1f36]">LOTUS SAVING BANK-ADHAR- CHQ</p>
+                  {activeSubTab === 0 && (
+                    <div className="grid md:grid-cols-[1fr,320px] gap-10">
+                      <div className="space-y-8">
+                          <div className="grid grid-cols-2 gap-8">
+                            <div className="space-y-1.5">
+                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Account Description</p>
+                                <p className="text-[13px] font-bold text-[#1a1f36]">LOTUS SAVING BANK-ADHAR- CHQ</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Currency</p>
+                                <p className="text-[13px] font-bold text-[#1a1f36]">Rupees</p>
+                            </div>
+                            <div className="space-y-1.5">
+                                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Rate of Interest</p>
+                                <p className="text-[13px] font-bold text-[#1a1f36]">2.50%</p>
+                            </div>
                           </div>
-                          <div className="space-y-1.5">
-                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Currency</p>
-                              <p className="text-[13px] font-bold text-[#1a1f36]">Rupees</p>
-                          </div>
-                          <div className="space-y-1.5">
-                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Rate of Interest</p>
-                              <p className="text-[13px] font-bold text-[#1a1f36]">2.50%</p>
-                          </div>
-                        </div>
 
-                        {/* Debit Card */}
-                        <div className="pt-8 border-t border-gray-100">
-                          <h4 className="text-[13px] font-bold text-[#1a1f36] mb-6">Associated Debit Card</h4>
-                          <div className="w-[340px] h-[210px] bg-gradient-to-br from-[#4c1d95] via-[#2d0a4e] to-[#4c1d95] rounded-3xl p-6 text-white relative overflow-hidden group shadow-2xl shadow-purple-950/20">
-                              <div className="relative z-10 flex flex-col h-full">
-                                <div className="flex justify-between items-start mb-10">
-                                    <span className="text-[10px] uppercase font-bold tracking-tighter opacity-50">CREDTRUST</span>
-                                    <span className="text-[14px] font-bold text-white/90">VISA</span>
+                          {/* Debit Card */}
+                          <div className="pt-8 border-t border-gray-100">
+                            <h4 className="text-[13px] font-bold text-[#1a1f36] mb-6">Associated Debit Card</h4>
+                            <div className="w-[340px] h-[210px] bg-gradient-to-br from-[#4c1d95] via-[#2d0a4e] to-[#4c1d95] rounded-3xl p-6 text-white relative overflow-hidden group shadow-2xl shadow-purple-950/20">
+                                <div className="relative z-10 flex flex-col h-full">
+                                  <div className="flex justify-between items-start mb-10">
+                                      <span className="text-[10px] uppercase font-bold tracking-tighter opacity-50">CREDTRUST</span>
+                                      <span className="text-[14px] font-bold text-white/90">VISA</span>
+                                  </div>
+                                  <p className="text-[18px] font-bold tracking-[0.2em] font-mono mb-auto">XXXX XXXX XXXX 7615</p>
+                                  <p className="text-[14px] font-bold uppercase tracking-wide">KAVINKUMAR V S</p>
                                 </div>
-                                <p className="text-[18px] font-bold tracking-[0.2em] font-mono mb-auto">XXXX XXXX XXXX 7615</p>
-                                <p className="text-[14px] font-bold uppercase tracking-wide">KAVINKUMAR V S</p>
-                              </div>
-                              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+                            </div>
                           </div>
-                        </div>
-                    </div>
+                      </div>
 
-                    <div className="bg-[#f1f5f9] rounded-[32px] p-8 space-y-6 self-start border border-gray-100 h-fit">
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
-                          <p className="text-[12px] font-bold text-gray-500 uppercase tracking-tight">Available Balance</p>
-                          <p className="text-[15px] font-black text-[#1a1f36]">₹{accounts?.[0]?.balance ? Number(accounts[0].balance).toLocaleString() : "0.00"}</p>
-                        </div>
-                        <div className="flex justify-between items-center py-2">
-                          <p className="text-[12px] font-bold text-gray-500 uppercase tracking-tight">Hold Amount</p>
-                          <p className="text-[15px] font-black text-[#1a1f36]">₹0.00</p>
-                        </div>
+                      <div className="bg-[#f1f5f9] rounded-[32px] p-8 space-y-6 self-start border border-gray-100 h-fit">
+                          <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
+                            <p className="text-[12px] font-bold text-gray-500 uppercase tracking-tight">Available Balance</p>
+                            <p className="text-[15px] font-black text-[#1a1f36]">₹{accounts?.[0]?.balance ? Number(accounts[0].balance).toLocaleString() : "0.00"}</p>
+                          </div>
+                          <div className="flex justify-between items-center py-2">
+                            <p className="text-[12px] font-bold text-gray-500 uppercase tracking-tight">Hold Amount</p>
+                            <p className="text-[15px] font-black text-[#1a1f36]">₹0.00</p>
+                          </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
+                  
+                  {activeSubTab === 1 && (
+                    <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
+                       <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+                          <h3 className="text-[15px] font-bold text-[#1a1f36]">Recent Transactions</h3>
+                          <button className="text-[12px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-colors">Download Statement</button>
+                       </div>
+                       <div className="overflow-x-auto">
+                          <table className="w-full">
+                             <thead>
+                                <tr className="bg-gray-50/50 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                   <th className="px-6 py-3 text-left">Date</th>
+                                   <th className="px-6 py-3 text-left">Description</th>
+                                   <th className="px-6 py-3 text-left">Ref Type</th>
+                                   <th className="px-6 py-3 text-right">Amount</th>
+                                </tr>
+                             </thead>
+                             <tbody className="divide-y divide-gray-50">
+                                {txLoading && <tr><td colSpan={4} className="p-6 text-center"><Skeleton className="h-10 w-full" /></td></tr>}
+                                {!txLoading && transactions?.length === 0 && (
+                                  <tr><td colSpan={4} className="p-6 text-center text-sm text-gray-400">No transactions found.</td></tr>
+                                )}
+                                {!txLoading && transactions?.map((tx: any) => {
+                                  const isCredit = accounts?.some((a:any) => a.id === tx.crAccountId);
+                                  return (
+                                   <tr key={tx.id} className="hover:bg-gray-50/50 transition-colors">
+                                      <td className="px-6 py-4 text-[12px] font-bold text-gray-500">{new Date(tx.txnDate).toLocaleDateString()}</td>
+                                      <td className="px-6 py-4 text-[12px] font-bold text-[#1a1f36]">{tx.narration}</td>
+                                      <td className="px-6 py-4 text-[11px] font-bold text-gray-400">{tx.refType}</td>
+                                      <td className={`px-6 py-4 text-[13px] font-black text-right ${isCredit ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                         {isCredit ? '+' : '-'}₹{Number(tx.amount).toLocaleString()}
+                                      </td>
+                                   </tr>
+                                  );
+                                })}
+                             </tbody>
+                          </table>
+                       </div>
+                    </div>
+                  )}
+                  
+                  {activeSubTab > 1 && (
+                    <div className="p-8 text-center text-gray-400 text-sm">Select a different tab.</div>
+                  )}
                 </>
              ) : activeTabIndex === 1 ? (
                 <div className="space-y-8">
@@ -333,15 +390,79 @@ const AccountsPage = () => {
                       </Link>
                    </div>
                 </div>
-             ) : (
-                <div className="h-60 flex flex-col items-center justify-center text-center space-y-4 bg-gray-50/50 rounded-[40px] border border-gray-100 border-dashed">
-                   <Landmark className="w-12 h-12 text-gray-300" />
-                   <div>
-                      <p className="text-[14px] font-bold text-gray-500">Feature Pending</p>
-                      <p className="text-[11px] text-gray-400">Application for {accountTabs[activeTabIndex]} will be available soon.</p>
-                   </div>
-                </div>
-             )}
+                  ) : activeSubTab === 3 ? (
+                    <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-8 space-y-8">
+                       <div className="flex items-center justify-between border-b border-gray-50 pb-6">
+                          <div className="flex items-center gap-4">
+                             <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-[#6b21a8]">
+                                <PieChart className="w-6 h-6" />
+                             </div>
+                             <div>
+                                <h3 className="text-[17px] font-bold text-[#1a1f36]">Spend Analysis</h3>
+                                <p className="text-[12px] text-gray-400">Categorized view of your recent expenditures</p>
+                             </div>
+                          </div>
+                       </div>
+                       
+                       <div className="grid md:grid-cols-2 gap-10 items-center">
+                          <div className="h-[300px] w-full">
+                             <ResponsiveContainer width="100%" height="100%">
+                                <RechartsPieChart>
+                                   <Pie
+                                      data={[
+                                        { name: 'Loan EMIs', value: 15000, color: '#6b21a8' },
+                                        { name: 'Investments', value: 10000, color: '#10b981' },
+                                        { name: 'Share Purchases', value: 5000, color: '#f59e0b' },
+                                        { name: 'Transfers', value: 8000, color: '#3b82f6' },
+                                      ]}
+                                      cx="50%"
+                                      cy="50%"
+                                      innerRadius={80}
+                                      outerRadius={110}
+                                      paddingAngle={5}
+                                      dataKey="value"
+                                   >
+                                      {[
+                                        { name: 'Loan EMIs', value: 15000, color: '#6b21a8' },
+                                        { name: 'Investments', value: 10000, color: '#10b981' },
+                                        { name: 'Share Purchases', value: 5000, color: '#f59e0b' },
+                                        { name: 'Transfers', value: 8000, color: '#3b82f6' },
+                                      ].map((entry, index) => (
+                                         <Cell key={`cell-${index}`} fill={entry.color} />
+                                      ))}
+                                   </Pie>
+                                   <Tooltip 
+                                      formatter={(value: number) => `₹${value.toLocaleString()}`}
+                                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
+                                   />
+                                </RechartsPieChart>
+                             </ResponsiveContainer>
+                          </div>
+                          
+                          <div className="space-y-4">
+                             {[
+                                { name: 'Loan EMIs', value: 15000, color: 'bg-[#6b21a8]', percent: '39%' },
+                                { name: 'Investments', value: 10000, color: 'bg-emerald-500', percent: '26%' },
+                                { name: 'Transfers', value: 8000, color: 'bg-blue-500', percent: '21%' },
+                                { name: 'Share Purchases', value: 5000, color: 'bg-amber-500', percent: '14%' },
+                             ].map((cat, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-4 rounded-2xl hover:bg-gray-50 transition-colors">
+                                   <div className="flex items-center gap-3">
+                                      <div className={`w-3 h-3 rounded-full ${cat.color}`} />
+                                      <span className="text-[13px] font-bold text-[#1a1f36]">{cat.name}</span>
+                                   </div>
+                                   <div className="text-right">
+                                      <p className="text-[14px] font-black text-[#1a1f36]">₹{cat.value.toLocaleString()}</p>
+                                      <p className="text-[10px] font-bold text-gray-400">{cat.percent}</p>
+                                   </div>
+                                </div>
+                             ))}
+                          </div>
+                       </div>
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-gray-400 text-sm">Select a different tab.</div>
+                  )}
           </main>
         </div>
       </div>

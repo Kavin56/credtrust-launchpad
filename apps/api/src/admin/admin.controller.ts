@@ -20,4 +20,49 @@ export class AdminController {
     ]);
     return { members, loans, deposits, pendingKyc };
   }
+
+  @Get('pending-approvals')
+  async pendingApprovals() {
+    const pendingKyc = await this.prisma.kycDocument.findMany({
+      where: { status: 'PENDING' },
+      include: { member: true },
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const pendingLoans = await this.prisma.loan.findMany({
+      where: { status: 'APPLIED' },
+      include: { member: true },
+      take: 5,
+      orderBy: { sanctionDate: 'desc' },
+    });
+
+    const approvals = [
+      ...pendingKyc.map(k => ({
+        id: k.id,
+        name: k.member.fullName,
+        type: 'KYC Verification',
+        date: k.createdAt,
+        priority: 'High',
+      })),
+      ...pendingLoans.map(l => ({
+        id: l.id,
+        name: l.member.fullName,
+        type: l.product,
+        date: l.sanctionDate,
+        priority: 'Medium',
+      })),
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return approvals;
+  }
+
+  @Get('ledger-activity')
+  async ledgerActivity() {
+    const txns = await this.prisma.transaction.findMany({
+      take: 10,
+      orderBy: { txnDate: 'desc' },
+    });
+    return txns;
+  }
 }
