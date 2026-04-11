@@ -150,6 +150,17 @@ export class LoansService {
         tx,
       );
 
+      // Audit log for loan disbursement
+      await (tx as any).auditLog.create({
+        data: {
+          action: 'APPROVE', // Using APPROVE for disbursement as it's an approval of funds
+          actorId: disbursedBy,
+          entity: 'Loan',
+          entityId: loan.id,
+          diff: { oldStatus: 'APPROVED', newStatus: 'DISBURSED' },
+        },
+      });
+
       return { status: 'ok', loanId };
     });
   }

@@ -167,7 +167,7 @@ export class DepositsService {
 
     return this.prisma.$transaction(async (tx) => {
       // Mark schedule as paid
-      await tx.depositSchedule.update({
+      await (tx as any).depositSchedule.update({
         where: { id: dto.scheduleId },
         data: { paid: true, paidOn: new Date(dto.paidOn) },
       });
@@ -193,6 +193,17 @@ export class DepositsService {
         tx,
       );
 
+      // Audit log for RD installment payment
+      await (tx as any).auditLog.create({
+        data: {
+          action: 'UPDATE',
+          actorId: memberId,
+          entity: 'DepositSchedule',
+          entityId: schedule.id,
+          diff: { oldPaid: false, newPaid: true },
+        },
+      });
+
       // Update next due date for the main deposit
       const remainingSchedules = await tx.depositSchedule.findMany({
         where: { depositId: schedule.depositId, paid: false },
@@ -200,7 +211,7 @@ export class DepositsService {
         take: 1,
       });
 
-      await tx.deposit.update({
+      await (tx as any).deposit.update({
         where: { id: schedule.depositId },
         data: { nextDueDate: remainingSchedules[0]?.dueDate || null },
       });

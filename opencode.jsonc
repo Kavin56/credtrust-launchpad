@@ -12,5 +12,5 @@
   "plugin": [
     "opencode-scheduler"
   ],
-  "model": "opencode/gpt-5-nano"
+  "model": "google/gemini-2.5-flash"
 }
