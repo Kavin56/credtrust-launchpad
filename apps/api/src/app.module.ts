@@ -4,14 +4,17 @@ import configuration from './config/configuration';
 import { validationSchema } from './config/validation';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/user.module';
+import { UsersModule } from './users/users.module';
 import { MembersModule } from './members/members.module';
 import { DepositsModule } from './deposits/deposits.module';
 import { LoansModule } from './loans/loans.module';
 import { LedgerModule } from './ledger/ledger.module';
 import { DividendsModule } from './dividends/dividends.module';
 import { ReportsModule } from './reports/reports.module';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { NotificationsModule } from './notifications/notifications.module';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { CommonModule } from './common/common.module';
+import { RolesGuard } from './common/guards/roles.guard';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { LoggerModule } from 'nestjs-pino';
 import { StorageModule } from './storage/storage.module';
@@ -20,6 +23,7 @@ import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
+    CommonModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
@@ -45,11 +49,16 @@ import { AdminModule } from './admin/admin.module';
     LedgerModule,
     DividendsModule,
     ReportsModule,
+    NotificationsModule,
   ],
   providers: [
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
   ],
 })

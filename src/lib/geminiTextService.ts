@@ -30,6 +30,10 @@ function getAI(): GoogleGenAI {
   return new GoogleGenAI({ apiKey: key });
 }
 
+async function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export async function sendMessage(
   message: string,
   sessionId: string = "default"
@@ -55,40 +59,63 @@ export async function sendMessage(
     parts: [{ text: msg.content }],
   }));
 
-  try {
-    const ai = getAI();
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents,
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        temperature: 0.7,
-        maxOutputTokens: 300,
-      },
-    });
+  const MAX_RETRIES = 3;
+  let retryCount = 0;
 
-    const text = response.text || "I'm sorry, I couldn't process that. Please try again.";
+  while (retryCount <= MAX_RETRIES) {
+    try {
+      const ai = getAI();
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents,
+        config: {
+          systemInstruction: SYSTEM_PROMPT,
+          temperature: 0.7,
+          maxOutputTokens: 300,
+        },
+      });
 
-    history.push({ role: "model", content: text });
+      const text = response.text || "I'm sorry, I couldn't process that. Please try again.";
+      history.push({ role: "model", content: text });
 
-    if (history.length > 20) {
-      chatHistories.set(sessionId, history.slice(-20));
+      if (history.length > 20) {
+        chatHistories.set(sessionId, history.slice(-20));
+      }
+
+      return text;
+    } catch (error: any) {
+      const isRetryable = error?.message?.includes("503") || 
+                        error?.message?.includes("Service Unavailable") || 
+                        error?.message?.includes("CAPACITY_EXHAUSTED") ||
+                        error?.status === 503;
+
+      if (isRetryable && retryCount < MAX_RETRIES) {
+        retryCount++;
+        const backoff = Math.pow(2, retryCount) * 1000;
+        console.warn(`Gemini API busy (503/Capacity). Retrying in ${backoff}ms... (Attempt ${retryCount}/${MAX_RETRIES})`);
+        await delay(backoff);
+        continue;
+      }
+
+      console.error("Gemini API error after retries:", error?.message || error);
+
+      if (error?.message?.includes("API_KEY_INVALID") || error?.message?.includes("invalid API key")) {
+        return "Invalid API key. Please check your VITE_GEMINI_API_KEY in the .env file.";
+      }
+      
+      if (error?.message?.includes("CAPACITY_EXHAUSTED") || error?.status === 503) {
+        return "Our Smart Assistant is experiencing high demand right now. Please try again in a moment, or call 1800 425 1444 for immediate help.";
+      }
+
+      if (error?.message?.includes("not found") || error?.message?.includes("404")) {
+        return "Model not available. The AI service may be temporarily unavailable.";
+      }
+
+      return `Sorry, I encountered an error: ${error?.message || "Unknown error"}. Please call 1800 425 1444 for help.`;
     }
-
-    return text;
-  } catch (error: unknown) {
-    const err = error as Error;
-    console.error("Gemini API error:", err?.message || error);
-
-    if (err?.message?.includes("API_KEY_INVALID") || err?.message?.includes("invalid API key")) {
-      return "Invalid API key. Please check your VITE_GEMINI_API_KEY in the .env file.";
-    }
-    if (err?.message?.includes("not found") || err?.message?.includes("404")) {
-      return "Model not available. The AI service may be temporarily unavailable.";
-    }
-
-    return `Sorry, I encountered an error: ${err?.message || "Unknown error"}. Please call 1800 425 1444 for help.`;
   }
+  
+  return "I'm having trouble connecting to my brain right now. Please call us at 1800 425 1444 for assistance!";
 }
 
 export function clearChatHistory(sessionId: string = "default"): void {

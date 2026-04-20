@@ -27,6 +27,23 @@ export class RegisterDto {
   @IsNotEmpty()
   address: string;
 
+  @IsNotEmpty()
+  @MinLength(12)
+  aadhaarNumber: string;
+
+  @IsNotEmpty()
+  @MinLength(10)
+  panNumber: string;
+
+  @IsNotEmpty()
+  nomineeName: string;
+
+  @IsNotEmpty()
+  nomineeRelation: string;
+
+  @IsNotEmpty()
+  nomineeAge: number;
+
   @IsEnum(Role)
   role: Role;
 }

@@ -1,29 +1,61 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  UseGuards,
+  Query,
+  Patch,
+} from '@nestjs/common';
 import { LoansService } from './loans.service';
-import { JwtAuthGuard } from '../auth/jwt.guard';
 import { ApplyLoanDto } from './dto/apply-loan.dto';
-import { PayEmiDto } from './dto/pay-emi.dto';
+import { LoanRepaymentDto } from './dto/repayment.dto';
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Roles } from '../common/guards/roles.guard';
+import { Role } from '@prisma/client';
 
 @ApiTags('loans')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(FirebaseAuthGuard, JwtAuthGuard)
 @Controller('loans')
 export class LoansController {
   constructor(private readonly loansService: LoansService) {}
 
+  @Roles(Role.ADMIN, Role.CEO)
   @Get()
-  list(@Req() req: any) {
-    return this.loansService.list(req.user.userId);
+  findAll(@Query('memberId') memberId?: string) {
+    return this.loansService.list(memberId);
   }
 
-  @Post()
-  apply(@Req() req: any, @Body() dto: ApplyLoanDto) {
-    return this.loansService.apply(req.user.userId, dto);
+  @Post('apply')
+  apply(@Body() dto: ApplyLoanDto) {
+    return this.loansService.apply(dto);
   }
 
-  @Post('pay')
-  pay(@Req() req: any, @Body() dto: PayEmiDto) {
-    return this.loansService.payEmi(req.user.userId, dto);
+  @Roles(Role.ADMIN, Role.CEO)
+  @Patch(':id/approve')
+  approve(@Param('id') id: string) {
+    return this.loansService.approveLoan(id);
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.loansService.getLoan(id);
+  }
+
+  @Post(':id/repay')
+  repay(@Param('id') id: string, @Body() dto: LoanRepaymentDto) {
+    return this.loansService.repay(id, dto);
+  }
+
+  @Get('check-eligibility')
+  checkEligibility(
+    @Query('memberId') memberId: string,
+    @Query('amount') amount: number,
+  ) {
+    return this.loansService.checkEligibility(memberId, Number(amount));
   }
 }
