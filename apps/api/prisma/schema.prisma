@@ -13,253 +13,205 @@ enum Role {
   TELLER
   COLLECTOR
   MEMBER
+  DIRECTOR
 }
 
 enum KycStatus {
   PENDING
-  UNDER_REVIEW
   APPROVED
   REJECTED
 }
 
-enum AccountStatus {
+enum MemberStatus {
   ACTIVE
-  FROZEN
-  CLOSED
+  INACTIVE
+  EXITED
 }
 
-enum DepositKind {
-  FD
+enum DepositType {
   RD
+  FD
+  SAVINGS
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  INTEREST
+  DIVIDEND
+  PENALTY
+  SHARE_PURCHASE
 }
 
 enum LoanStatus {
-  APPLIED
+  PENDING
   APPROVED
-  DISBURSED
+  REJECTED
+  ACTIVE
   CLOSED
-  DEFAULTED
-}
-
-enum AuditAction {
-  CREATE
-  UPDATE
-  DELETE
-  LOGIN
-  APPROVE
-  REJECT
+  OVERDUE
 }
 
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  passwordHash String
-  role         Role
-  status       String   @default("ACTIVE")
-  lastLoginAt  DateTime?
-  createdAt    DateTime @default(now())
-  createdBy    String?
-  member       Member?
-  auditLogs    AuditLog[]
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  role          Role      @default(MEMBER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+  member        Member?
+  auditLogs     AuditLog[]
 }
 
 model Member {
-  id          String        @id @default(uuid())
-  userId      String        @unique
-  user        User          @relation(fields: [userId], references: [id])
-  fullName    String
-  dob         DateTime
-  contact     String
-  address     String
-  kycStatus   KycStatus     @default(PENDING)
-  joinedOn    DateTime      @default(now())
-  branchId    String?
-  nomineeName String?
-  nomineeRelation String?
-  nomineeDob  DateTime?
-  accounts    Account[]
-  deposits    Deposit[]
-  loans       Loan[]
-  shares      Share[]
-  kycDocs     KycDocument[]
-  dividendPayouts DividendPayout[]
-  serviceRequests ServiceRequest[]
+  id                String       @id @default(cuid())
+  memberId          String       @unique // MEM0001
+  userId            String       @unique
+  user              User         @relation(fields: [userId], references: [id])
+  fullName          String
+  dob               DateTime
+  contact           String
+  address           String
+  aadhaarNumber     String       @unique // Encrypted
+  panNumber         String       @unique // Encrypted
+  photoUrl          String?
+  nomineeName       String?
+  nomineeRelation   String?
+  nomineeAge        Int?
+  kycStatus         KycStatus    @default(PENDING)
+  status            MemberStatus @default(ACTIVE)
+  joinedAt          DateTime     @default(now())
+  deactivatedAt     DateTime?
+  exitDate          DateTime?
+  exitReason        String?
+  
+  // Financial relations
+  shareAccounts    ShareAccount[]
+  depositAccounts  DepositAccount[]
+  loans            Loan[]
 }
 
-model KycDocument {
-  id         String    @id @default(uuid())
-  memberId   String
-  member     Member    @relation(fields: [memberId], references: [id])
-  type       String
-  docNumber  String
-  fileUrl    String
-  status     KycStatus @default(PENDING)
-  verifiedBy String?
-  verifiedAt DateTime?
-  createdAt  DateTime  @default(now())
+model ShareAccount {
+  id              String   @id @default(cuid())
+  memberId        String
+  member          Member   @relation(fields: [memberId], references: [id])
+  sharesOwned     Int      @default(0)
+  shareValue      Decimal  @db.Decimal(15, 2)
+  processingFee   Decimal  @db.Decimal(15, 2)
+  totalAmount     Decimal  @db.Decimal(15, 2)
+  createdAt       DateTime @default(now())
 }
 
-model Share {
-  id           String   @id @default(uuid())
-  memberId     String
-  member       Member   @relation(fields: [memberId], references: [id])
-  certificateNo String
-  units        Int
-  faceValue    Decimal  @db.Decimal(12,2)
-  issuedAt     DateTime @default(now())
+model DepositAccount {
+  id              String           @id @default(cuid())
+  accountNumber   String           @unique
+  memberId        String
+  member          Member           @relation(fields: [memberId], references: [id])
+  type            DepositType
+  balance         Decimal          @db.Decimal(15, 2) @default(0)
+  interestRate    Decimal          @db.Decimal(5, 2)
+  maturityAmount  Decimal?         @db.Decimal(15, 2)
+  maturityDate    DateTime?
+  isMatured       Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  transactions    DepositTransaction[]
 }
 
-model Account {
-  id        String        @id @default(uuid())
-  memberId  String
-  member    Member        @relation(fields: [memberId], references: [id])
-  type      String
-  number    String        @unique
-  balance   Decimal       @db.Decimal(14,2) @default(0)
-  status    AccountStatus @default(ACTIVE)
-  createdAt DateTime      @default(now())
-  deposits  Deposit[]
-}
-
-model Deposit {
-  id            String       @id @default(uuid())
-  memberId      String
-  member        Member       @relation(fields: [memberId], references: [id])
-  accountId     String
-  account       Account      @relation(fields: [accountId], references: [id])
-  kind          DepositKind
-  principal     Decimal      @db.Decimal(14,2)
-  rate          Decimal      @db.Decimal(7,4)
-  tenureMonths  Int
-  startDate     DateTime
-  maturityDate  DateTime
-  payoutMode    String
-  status        String       @default("ACTIVE")
-  nextDueDate   DateTime?
-  schedules     DepositSchedule[]
-}
-
-model DepositSchedule {
-  id         String    @id @default(uuid())
-  depositId  String
-  deposit    Deposit   @relation(fields: [depositId], references: [id])
-  dueDate    DateTime
-  amount     Decimal   @db.Decimal(14,2)
-  paid       Boolean   @default(false)
-  paidOn     DateTime?
-  txnId      String?
+model DepositTransaction {
+  id                String          @id @default(cuid())
+  accountId         String
+  account           DepositAccount  @relation(fields: [accountId], references: [id])
+  amount            Decimal         @db.Decimal(15, 2)
+  type              TransactionType
+  paymentMode       String          // CASH, CHEQUE, ONLINE
+  referenceNumber   String?
+  balanceAfter      Decimal         @db.Decimal(15, 2)
+  createdAt         DateTime        @default(now())
 }
 
 model Loan {
-  id              String      @id @default(uuid())
+  id              String       @id @default(cuid())
+  loanNumber      String       @unique
   memberId        String
-  member          Member      @relation(fields: [memberId], references: [id])
-  product         String
-  principal       Decimal     @db.Decimal(14,2)
-  rate            Decimal     @db.Decimal(7,4)
-  tenureMonths    Int
-  sanctionDate    DateTime
-  disbursedOn     DateTime?
-  status          LoanStatus  @default(APPLIED)
-  collateral      Collateral[]?
-  emiAmount       Decimal?    @db.Decimal(14,2)
-  nextDueDate     DateTime?
-  schedules       EmiSchedule[]
+  member          Member       @relation(fields: [memberId], references: [id])
+  type            String       // Personal, Home, Gold etc
+  amount          Decimal      @db.Decimal(15, 2)
+  interestRate    Decimal      @db.Decimal(5, 2)
+  purpose         String
+  guarantorDetail String?
+  status          LoanStatus   @default(PENDING)
+  termMonths      Int
+  disbursedAt     DateTime?
+  closedAt        DateTime?
+  emiSchedule     EmiSchedule[]
+  repayments      LoanRepayment[]
+  createdAt       DateTime     @default(now())
 }
 
 model EmiSchedule {
-  id                  String   @id @default(uuid())
-  loanId              String
-  loan                Loan     @relation(fields: [loanId], references: [id])
-  dueDate             DateTime
-  principalComponent  Decimal  @db.Decimal(14,2)
-  interestComponent   Decimal  @db.Decimal(14,2)
-  totalDue            Decimal  @db.Decimal(14,2)
-  paid                Boolean  @default(false)
-  paidOn              DateTime?
-  penalty             Decimal? @db.Decimal(12,2)
+  id              String   @id @default(cuid())
+  loanId          String
+  loan            Loan     @relation(fields: [loanId], references: [id])
+  dueDate         DateTime
+  principalPart   Decimal  @db.Decimal(15, 2)
+  interestPart    Decimal  @db.Decimal(15, 2)
+  totalEmi        Decimal  @db.Decimal(15, 2)
+  isPaid          Boolean  @default(false)
+  paidAt          DateTime?
+}
+
+model LoanRepayment {
+  id              String   @id @default(cuid())
+  loanId          String
+  loan            Loan     @relation(fields: [loanId], references: [id])
+  amount          Decimal  @db.Decimal(15, 2)
+  penaltyAmount   Decimal  @db.Decimal(15, 2) @default(0)
+  paymentMode     String
+  referenceNumber String?
+  createdAt       DateTime @default(now())
 }
 
 model LedgerAccount {
-  id        String  @id @default(uuid())
-  code      String  @unique
-  name      String
-  type      String
-  parentId  String?
-  parent    LedgerAccount? @relation("SubAccounts", fields: [parentId], references: [id])
-  children  LedgerAccount[] @relation("SubAccounts")
+  id            String   @id @default(cuid())
+  code          String   @unique // e.g. 1001
+  name          String
+  category      String   // Asset, Liability, Income, Expense
+  balance       Decimal  @db.Decimal(15, 2) @default(0)
+  createdAt     DateTime @default(now())
+  entries       LedgerEntry[]
 }
 
-model Transaction {
-  id           String   @id @default(uuid())
-  groupId      String?  // To group multi-leg transactions
-  refType      String
-  refId        String
-  drAccountId  String
-  crAccountId  String
-  amount       Decimal  @db.Decimal(14,2)
-  narration    String
-  txnDate      DateTime @default(now())
-  createdBy    String?
-}
-
-model Dividend {
-  id            String      @id @default(uuid())
-  fiscalYear    String
-  totalProfit   Decimal     @db.Decimal(14,2)
-  declaredOn    DateTime
-  payoutRate    Decimal     @db.Decimal(7,4)
-  status        String      @default("DECLARED")
-  payouts       DividendPayout[]
-}
-
-model DividendPayout {
-  id          String   @id @default(uuid())
-  dividendId  String
-  dividend    Dividend @relation(fields: [dividendId], references: [id])
-  memberId    String
-  member      Member   @relation(fields: [memberId], references: [id])
-  amount      Decimal  @db.Decimal(14,2)
-  paidOn      DateTime?
-  txnId       String?
+model LedgerEntry {
+  id              String         @id @default(cuid())
+  accountId       String
+  account         LedgerAccount  @relation(fields: [accountId], references: [id])
+  debit           Decimal        @db.Decimal(15, 2) @default(0)
+  credit          Decimal        @db.Decimal(15, 2) @default(0)
+  description     String
+  referenceType   String?        // LOAN, DEPOSIT, EXPENSE
+  referenceId     String?
+  createdAt       DateTime       @default(now())
 }
 
 model AuditLog {
-  id        String      @id @default(uuid())
-  actorId   String?
-  actor     User?       @relation(fields: [actorId], references: [id])
-  action    AuditAction
-  entity    String
-  entityId  String
-  ip        String?
-  userAgent String?
-  diff      Json?
-  createdAt DateTime @default(now())
-}
-
-model ServiceRequest {
-  id          String   @id @default(uuid())
-  memberId    String
-  member      Member   @relation(fields: [memberId], references: [id])
-  type        String
-  details     String?
-  status      String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, REJECTED
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String
+  module      String
+  details     String?  @db.Text
+  ipAddress   String?
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
 
-model Collateral {
-  id        String   @id @default(uuid())
-  loanId    String
-  type      String
-  description String?
-  value     Decimal  @db.Decimal(14,2)
-  status    String?
-  fileUrl   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  loan      Loan     @relation(fields: [loanId], references: [id])
-
-  @@index([loanId])
+model Notification {
+  id          String   @id @default(cuid())
+  memberId    String?
+  title       String
+  message     String
+  type        String   // EMAIL, SMS, APP
+  isRead      Boolean  @default(false)
+  sentAt      DateTime @default(now())
 }

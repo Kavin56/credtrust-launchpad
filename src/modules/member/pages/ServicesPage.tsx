@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Settings, 
   Percent, 
@@ -26,16 +26,13 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
-import { toast } from "sonner";
 
-const ServiceDirectory = ({ title, items, onRequest }: any) => (
+const ServiceDirectory = ({ title, items }: any) => (
   <div className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-sm space-y-6">
      <h3 className="text-[13px] font-black text-gray-400 uppercase tracking-widest px-4">{title}</h3>
      <div className="grid md:grid-cols-2 gap-4">
-        {items.map((item: any, i: number) => (
-           <div key={i} onClick={() => onRequest(item.name)} className="p-6 bg-gray-50/50 rounded-3xl border border-transparent hover:border-indigo-100 transition-all flex items-center justify-between group cursor-pointer active:scale-95">
+        {items.map((item, i) => (
+           <div key={i} className="p-6 bg-gray-50/50 rounded-3xl border border-transparent hover:border-indigo-100 transition-all flex items-center justify-between group cursor-pointer active:scale-95">
               <div className="flex items-center gap-4">
                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-gray-400 group-hover:text-[#6b21a8] shadow-sm transition-all">
                     <item.icon className="w-6 h-6" />
@@ -50,35 +47,6 @@ const ServiceDirectory = ({ title, items, onRequest }: any) => (
 );
 
 const ServicesPage = () => {
-  const queryClient = useQueryClient();
-  const { data: requests, isLoading } = useQuery({
-    queryKey: ["service-requests"],
-    queryFn: async () => {
-      const { data } = await api.get("/services/requests/me");
-      return data;
-    },
-  });
-
-  const requestMutation = useMutation({
-    mutationFn: async (type: string) => {
-      const { data } = await api.post("/services/requests", { type, details: "Requested via portal" });
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Service request submitted successfully!");
-      queryClient.invalidateQueries({ queryKey: ["service-requests"] });
-    },
-    onError: () => {
-      toast.error("Failed to submit request");
-    }
-  });
-
-  const handleRequest = (type: string) => {
-    if (window.confirm(`Are you sure you want to request: ${type}?`)) {
-      requestMutation.mutate(type);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans selection:bg-[#c9a84c]/30">
       <Header />
@@ -111,7 +79,6 @@ const ServicesPage = () => {
               <div className="grid gap-8">
                  <ServiceDirectory 
                     title="Account Related"
-                    onRequest={handleRequest}
                     items={[
                        { name: "Order Certificate", icon: FileCheck },
                        { name: "Statement Requests", icon: FileText },
@@ -122,7 +89,6 @@ const ServicesPage = () => {
 
                  <ServiceDirectory 
                     title="Tax & Finance"
-                    onRequest={handleRequest}
                     items={[
                        { name: "Form 15G / 15H", icon: Percent },
                        { name: "Interest Certificate", icon: Zap },
@@ -133,7 +99,6 @@ const ServicesPage = () => {
 
                  <ServiceDirectory 
                     title="Cheque & Security"
-                    onRequest={handleRequest}
                     items={[
                        { name: "Order Cheque Book", icon: FileText },
                        { name: "e-Secure Lock", icon: Lock },
@@ -163,15 +128,16 @@ const ServicesPage = () => {
               <div className="bg-white rounded-[40px] border border-gray-100 p-8 space-y-8 shadow-sm">
                  <h4 className="text-[12px] font-bold text-gray-400 uppercase tracking-widest">Recent Requests</h4>
                  <div className="space-y-6">
-                    {isLoading && <p className="text-sm text-gray-400">Loading...</p>}
-                    {!isLoading && requests?.length === 0 && <p className="text-sm text-gray-400">No recent requests.</p>}
-                    {!isLoading && requests?.map((req: any) => (
-                       <div key={req.id} className="flex flex-col gap-1 border-l-4 border-[#6b21a8] pl-4">
-                          <p className="text-[13px] font-bold text-[#1a1f36]">{req.type}</p>
+                    {[
+                      { name: "Interest Certificate", status: "Completed", date: "Yesterday" },
+                      { name: "Cheque Book Order", status: "In Transit", date: "02 Apr 2026" }
+                    ].map((req, i) => (
+                       <div key={i} className="flex flex-col gap-1 border-l-4 border-[#6b21a8] pl-4">
+                          <p className="text-[13px] font-bold text-[#1a1f36]">{req.name}</p>
                           <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-tighter">
-                             <span className={req.status === 'COMPLETED' ? 'text-emerald-600' : 'text-amber-600'}>{req.status}</span>
+                             <span className={req.status === 'Completed' ? 'text-emerald-600' : 'text-amber-600'}>{req.status}</span>
                              <span className="text-gray-300">•</span>
-                             <span className="text-gray-400">{new Date(req.createdAt).toLocaleDateString()}</span>
+                             <span className="text-gray-400">{req.date}</span>
                           </div>
                        </div>
                     ))}

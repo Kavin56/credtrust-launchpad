@@ -20,12 +20,8 @@ async function main() {
   const ledgerAccounts = [
     { code: 'CASH', name: 'Cash on Hand', type: 'ASSET' },
     { code: 'BANK', name: 'Bank', type: 'ASSET' },
-    { code: 'LOAN_PRINCIPAL', name: 'Loan Principal', type: 'ASSET' },
     { code: 'LOAN_INCOME', name: 'Loan Interest Income', type: 'INCOME' },
     { code: 'DEPOSIT_LIAB', name: 'Deposit Liability', type: 'LIABILITY' },
-    { code: 'SHARE_CAPITAL', name: 'Share Capital', type: 'EQUITY' },
-    { code: 'RETAINED_EARNINGS', name: 'Retained Earnings', type: 'EQUITY' },
-    { code: 'DIVIDEND_PAYABLE', name: 'Dividend Payable', type: 'LIABILITY' },
   ];
   for (const acc of ledgerAccounts) {
     await prisma.ledgerAccount.upsert({

@@ -27,23 +27,6 @@ const AdminDashboard = () => {
       return data;
     },
   });
-
-  const { data: pendingApprovals, isLoading: pendingLoading } = useQuery({
-    queryKey: ["admin-pending-approvals"],
-    queryFn: async () => {
-      const { data } = await api.get("/admin/pending-approvals");
-      return data;
-    },
-  });
-
-  const { data: ledgerActivity, isLoading: ledgerLoading } = useQuery({
-    queryKey: ["admin-ledger-activity"],
-    queryFn: async () => {
-      const { data } = await api.get("/admin/ledger-activity");
-      return data;
-    },
-  });
-
   const adminStats = [
     { title: "Total Members", value: overview?.members ?? "—", icon: Users, color: "text-blue-600", trend: "" },
     { title: "Total Deposits", value: overview ? overview.deposits : "—", icon: Wallet, color: "text-emerald-600", trend: "" },
@@ -79,27 +62,6 @@ const AdminDashboard = () => {
             </Button>
             <Button variant="outline" className="border-slate-200">
               Settings
-            </Button>
-            <Button 
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-              onClick={async () => {
-                const profit = prompt("Enter total profit for the year:");
-                const rate = prompt("Enter dividend payout rate (e.g., 0.10 for 10%):");
-                if (profit && rate) {
-                  try {
-                    await api.post("/dividends/declare", {
-                      fiscalYear: new Date().getFullYear().toString(),
-                      totalProfit: Number(profit),
-                      payoutRate: Number(rate)
-                    });
-                    alert("Dividend declared successfully!");
-                  } catch (e) {
-                    alert("Failed to declare dividend.");
-                  }
-                }
-              }}
-            >
-              Declare Dividend
             </Button>
           </div>
         </div>
@@ -137,14 +99,16 @@ const AdminDashboard = () => {
                   <CardDescription>KYC and Loan requests awaiting verification</CardDescription>
                 </div>
                 <div className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full">
-                  {pendingApprovals?.length || 0} Pending
+                  12 Pending
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {pendingLoading && <Skeleton className="h-20 w-full" />}
-                  {!pendingLoading && pendingApprovals?.length === 0 && <p className="text-sm text-gray-400">No pending approvals.</p>}
-                  {!pendingLoading && pendingApprovals?.map((item: any, i: number) => (
+                  {[
+                    { name: "Suresh Kumar", type: "KYC Verification", date: "2 hours ago", priority: "High" },
+                    { name: "Priya Murugan", type: "Gold Loan", date: "5 hours ago", priority: "Medium" },
+                    { name: "Velu Pillai", type: "KYC Verification", date: "1 day ago", priority: "Low" },
+                  ].map((item, i) => (
                     <div key={i} className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:bg-slate-50 transition-all cursor-pointer group">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500">
@@ -152,7 +116,7 @@ const AdminDashboard = () => {
                         </div>
                         <div>
                           <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{item.name}</div>
-                          <div className="text-xs text-slate-400">{item.type} • {new Date(item.date).toLocaleDateString()}</div>
+                          <div className="text-xs text-slate-400">{item.type} • {item.date}</div>
                         </div>
                       </div>
                       <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-900" />
@@ -170,21 +134,11 @@ const AdminDashboard = () => {
                 <CardTitle className="text-lg">Recent Ledger Activity</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {ledgerLoading && <Skeleton className="h-40 w-full" />}
-                  {!ledgerLoading && ledgerActivity?.length === 0 && <p className="text-sm text-gray-400">No recent activity.</p>}
-                  {!ledgerLoading && ledgerActivity?.map((txn: any) => (
-                    <div key={txn.id} className="flex items-center justify-between border-b border-gray-50 pb-3 last:border-0 last:pb-0">
-                      <div>
-                        <p className="text-sm font-bold text-slate-900">{txn.narration}</p>
-                        <p className="text-xs text-slate-400">{txn.refType} • {new Date(txn.txnDate).toLocaleDateString()}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-black text-slate-900">₹{Number(txn.amount).toLocaleString()}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">{txn.drAccountId} → {txn.crAccountId}</p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="h-40 flex items-center justify-center bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                  <div className="flex flex-col items-center text-slate-400">
+                    <TrendingUp className="w-10 h-10 mb-2 opacity-20" />
+                    <p className="text-sm">Activity graph placeholder</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>

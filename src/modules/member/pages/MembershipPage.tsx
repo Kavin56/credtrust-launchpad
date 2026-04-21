@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Award, 
   ChevronRight, 
@@ -17,69 +17,11 @@ import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
-import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
 
 const MembershipPage = () => {
-  const queryClient = useQueryClient();
-  const [unitsToBuy, setUnitsToBuy] = useState(10);
-  const [selectedAccount, setSelectedAccount] = useState("");
   const sharePrice = 100;
-
-  const { data: overview, isLoading: isOverviewLoading } = useQuery({
-    queryKey: ["member-overview"],
-    queryFn: async () => {
-      const { data } = await api.get("/members/me/overview");
-      return data;
-    },
-  });
-
-  const { data: shares, isLoading: isSharesLoading } = useQuery({
-    queryKey: ["member-shares"],
-    queryFn: async () => {
-      const { data } = await api.get("/shares/me");
-      return data;
-    },
-  });
-
-  const purchaseMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedAccount) throw new Error("Please select an account to pay from");
-      const { data } = await api.post("/shares/purchase", {
-        units: unitsToBuy,
-        accountId: selectedAccount,
-      });
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Shares purchased successfully!");
-      queryClient.invalidateQueries({ queryKey: ["member-shares"] });
-      queryClient.invalidateQueries({ queryKey: ["member-overview"] });
-      setUnitsToBuy(10);
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || error.message || "Failed to purchase shares");
-    },
-  });
-
-  if (isOverviewLoading || isSharesLoading) {
-    return (
-      <div className="min-h-screen bg-[#f8fafc]">
-        <Header />
-        <div className="max-w-7xl mx-auto p-6 space-y-4">
-          <Skeleton className="h-40 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </div>
-    );
-  }
-
-  const totalShares = shares?.reduce((sum: number, s: any) => sum + s.units, 0) || 0;
-  const membershipId = overview?.member?.id || "Pending";
-  const memberName = overview?.member?.name || "Member";
-  const accounts = overview?.accounts || [];
+  const totalShares = 250;
+  const membershipId = "CT-2024-8967";
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans selection:bg-[#c9a84c]/30">
@@ -117,6 +59,10 @@ const MembershipPage = () => {
                      <p className="text-white/60 text-[11px] font-bold uppercase tracking-widest">Total Share Capital</p>
                      <div className="flex items-baseline gap-2">
                         <span className="text-[42px] font-black tracking-tight">₹{(totalShares * sharePrice).toLocaleString()}</span>
+                        <span className="text-emerald-400 text-sm font-bold flex items-center gap-1">
+                           <TrendingUp className="w-4 h-4" />
+                           +12%
+                        </span>
                      </div>
                   </div>
 
@@ -127,7 +73,7 @@ const MembershipPage = () => {
                      </div>
                      <div className="space-y-1">
                         <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Member ID</p>
-                        <p className="text-[18px] font-bold text-[#c9a84c]">{membershipId.split('-')[0]}</p>
+                        <p className="text-[18px] font-bold text-[#c9a84c]">{membershipId}</p>
                      </div>
                   </div>
                </div>
@@ -152,47 +98,21 @@ const MembershipPage = () => {
                         <span className="text-[12px] font-bold text-[#6b21a8]">₹100 / Share</span>
                      </div>
                      <div className="flex items-center gap-4">
-                        <button 
-                          onClick={() => setUnitsToBuy(Math.max(1, unitsToBuy - 1))}
-                          className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-xl font-bold shadow-sm hover:bg-gray-50"
-                        >-</button>
+                        <button className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-xl font-bold shadow-sm hover:bg-gray-50">-</button>
                         <div className="flex-grow text-center text-3xl font-black text-[#1a1f36]">
-                           {unitsToBuy}
+                           10
                         </div>
-                        <button 
-                          onClick={() => setUnitsToBuy(unitsToBuy + 1)}
-                          className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-xl font-bold shadow-sm hover:bg-gray-50"
-                        >+</button>
+                        <button className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-xl font-bold shadow-sm hover:bg-gray-50">+</button>
                      </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[12px] font-bold text-gray-500 uppercase tracking-widest">Pay From Account</label>
-                    <select 
-                      className="w-full p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#6b21a8]"
-                      value={selectedAccount}
-                      onChange={(e) => setSelectedAccount(e.target.value)}
-                    >
-                      <option value="">Select an account</option>
-                      {accounts.map((acc: any) => (
-                        <option key={acc.id} value={acc.id}>
-                          {acc.type} - {acc.number} (Bal: ₹{Number(acc.balance).toFixed(2)})
-                        </option>
-                      ))}
-                    </select>
                   </div>
 
                   <div className="flex items-center justify-between p-4 bg-purple-50/50 rounded-2xl border border-purple-100/30">
                      <span className="text-[13px] font-bold text-[#1a1f36]">Estimated Value</span>
-                     <span className="text-[18px] font-black text-[#6b21a8]">₹{(unitsToBuy * sharePrice).toLocaleString()}</span>
+                     <span className="text-[18px] font-black text-[#6b21a8]">₹1,000</span>
                   </div>
 
-                  <Button 
-                    onClick={() => purchaseMutation.mutate()}
-                    disabled={purchaseMutation.isPending || !selectedAccount}
-                    className="w-full bg-[#1a1f36] text-white rounded-2xl h-14 font-bold text-[15px] hover:bg-[#2d3356] transition-all disabled:opacity-50"
-                  >
-                     {purchaseMutation.isPending ? "Processing..." : "Confirm Purchase"}
+                  <Button className="w-full bg-[#1a1f36] text-white rounded-2xl h-14 font-bold text-[15px] hover:bg-[#2d3356] transition-all">
+                     Confirm Purchase
                   </Button>
                </div>
             </div>
@@ -228,17 +148,17 @@ const MembershipPage = () => {
                      </div>
 
                      <div className="py-4 border-y border-[#c9a84c]/10">
-                        <h4 className="text-[22px] font-bold text-[#1a1f36] tracking-wide uppercase">{memberName}</h4>
+                        <h4 className="text-[22px] font-bold text-[#1a1f36] tracking-wide uppercase">Member Name (Mock)</h4>
                      </div>
 
                      <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-left max-w-md mx-auto">
                         <div className="space-y-0.5">
                            <p className="text-[8px] text-gray-400 font-bold uppercase leading-none">Member ID</p>
-                           <p className="text-[13px] font-bold text-[#1a1f36] tracking-wider">{membershipId.split('-')[0]}</p>
+                           <p className="text-[13px] font-bold text-[#1a1f36] tracking-wider">{membershipId}</p>
                         </div>
                         <div className="space-y-0.5">
                            <p className="text-[8px] text-gray-400 font-bold uppercase leading-none">Date of Issue</p>
-                           <p className="text-[13px] font-bold text-[#1a1f36]">{new Date().toLocaleDateString()}</p>
+                           <p className="text-[13px] font-bold text-[#1a1f36]">01-Apr-2024</p>
                         </div>
                         <div className="space-y-0.5">
                            <p className="text-[8px] text-gray-400 font-bold uppercase leading-none">Shares Owned</p>
@@ -289,25 +209,30 @@ const MembershipPage = () => {
                      <thead>
                         <tr className="bg-gray-50/50 text-[11px] font-bold text-gray-400 uppercase tracking-widest uppercase">
                            <th className="px-8 py-4 text-left">Date</th>
-                           <th className="px-8 py-4 text-left">Certificate</th>
+                           <th className="px-8 py-4 text-left">Transaction</th>
                            <th className="px-8 py-4 text-center">Shares</th>
                            <th className="px-8 py-4 text-right">Amount</th>
+                           <th className="px-8 py-4 text-center">Status</th>
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-gray-50">
-                        {shares?.map((share: any, idx: number) => (
+                        {[
+                           { date: "01-Apr-2024", type: "Initial Purchases", shares: 200, amount: "₹20,000", status: "Completed" },
+                           { date: "15-Mar-2024", type: "Top-up Purchases", shares: 50, amount: "₹5,000", status: "Completed" },
+                           { date: "28-Feb-2024", type: "Dividend Credit", shares: "-", amount: "₹2,400", status: "Credited" },
+                        ].map((row, idx) => (
                            <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                              <td className="px-8 py-5 text-[13px] font-bold text-gray-500">{new Date(share.issuedAt).toLocaleDateString()}</td>
-                              <td className="px-8 py-5 text-[13px] font-bold text-[#1a1f36]">{share.certificateNo}</td>
-                              <td className="px-8 py-5 text-[13px] font-black text-center text-[#1a1f36]">{share.units}</td>
-                              <td className="px-8 py-5 text-[13px] font-black text-right text-emerald-600">₹{(share.units * sharePrice).toLocaleString()}</td>
+                              <td className="px-8 py-5 text-[13px] font-bold text-gray-500">{row.date}</td>
+                              <td className="px-8 py-5 text-[13px] font-bold text-[#1a1f36]">{row.type}</td>
+                              <td className="px-8 py-5 text-[13px] font-black text-center text-[#1a1f36]">{row.shares}</td>
+                              <td className="px-8 py-5 text-[13px] font-black text-right text-emerald-600">{row.amount}</td>
+                              <td className="px-8 py-5 text-center">
+                                 <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full">
+                                    {row.status}
+                                 </span>
+                              </td>
                            </tr>
                         ))}
-                        {(!shares || shares.length === 0) && (
-                          <tr>
-                            <td colSpan={4} className="px-8 py-8 text-center text-gray-400 text-sm">No share purchases yet.</td>
-                          </tr>
-                        )}
                      </tbody>
                   </table>
                </div>

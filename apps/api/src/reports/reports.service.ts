@@ -6,64 +6,47 @@ export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
   async trialBalance() {
-    const txns = await this.prisma.transaction.findMany();
+    const entries = await this.prisma.ledgerEntry.findMany({
+        include: { ledgerAccount: true }
+    });
     const balances: Record<string, number> = {};
-    txns.forEach((t) => {
-      balances[t.drAccountId] = (balances[t.drAccountId] || 0) + Number(t.amount);
-      balances[t.crAccountId] = (balances[t.crAccountId] || 0) - Number(t.amount);
+    entries.forEach((e) => {
+      const current = balances[e.ledgerAccount.name] || 0;
+      balances[e.ledgerAccount.name] = current + (Number(e.drAmount) - Number(e.crAmount));
     });
     return balances;
   }
 
   async cashBook() {
-    return this.prisma.transaction.findMany({
-      where: { OR: [{ drAccountId: 'CASH' }, { crAccountId: 'CASH' }] },
-      orderBy: { txnDate: 'desc' },
+    return this.prisma.ledgerEntry.findMany({
+      where: { ledgerAccount: { name: 'Cash' } },
+      include: { generalLedger: true },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
-  async emiDue(memberId: string) {
+  async emiDue(memberId?: string) {
     return this.prisma.emiSchedule.findMany({
-      where: { loan: { memberId }, paid: false },
+      where: { 
+          isPaid: false,
+          ...(memberId ? { loan: { memberId } } : {})
+      },
+      include: { loan: { include: { member: true } } },
       orderBy: { dueDate: 'asc' },
     });
   }
 
-  async rdDue(memberId: string) {
-    return this.prisma.depositSchedule.findMany({
-      where: { deposit: { memberId, kind: 'RD' }, paid: false },
-      orderBy: { dueDate: 'asc' },
-    });
-  }
-
-  async trialBalancePdf() {
-    const PDFDocument = require('pdfkit');
-    const doc = new PDFDocument();
-    const buffers: Buffer[] = [];
-    doc.on('data', buffers.push.bind(buffers));
-    doc.fontSize(18).text('Trial Balance', { align: 'center' });
-    doc.moveDown();
-    const balances = await this.trialBalance();
-    doc.fontSize(12);
-    Object.entries(balances).forEach(([acc, bal]) => {
-      doc.text(`${acc}: ${bal.toFixed(2)}`);
-    });
-    doc.end();
-    return Buffer.concat(buffers);
-  }
-
-  async trialBalanceExcel() {
-    const ExcelJS = require('exceljs');
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet('Trial Balance');
-    sheet.columns = [
-      { header: 'Account', key: 'account' },
-      { header: 'Balance', key: 'balance' },
-    ];
-    const balances = await this.trialBalance();
-    Object.entries(balances).forEach(([acc, bal]) => {
-      sheet.addRow({ account: acc, balance: bal });
-    });
-    return workbook.xlsx.writeBuffer();
+  async balanceSheet() {
+      // Very basic balance sheet summary
+      const accounts = await this.prisma.ledgerAccount.findMany();
+      const assets = accounts.filter(a => a.type.startsWith('ASSET'));
+      const liabilities = accounts.filter(a => a.type.startsWith('LIABILITY'));
+      
+      return {
+          assets: assets.map(a => ({ name: a.name, balance: a.balance })),
+          liabilities: liabilities.map(a => ({ name: a.name, balance: a.balance })),
+          totalAssets: assets.reduce((acc, a) => acc + Number(a.balance), 0),
+          totalLiabilities: liabilities.reduce((acc, a) => acc + Number(a.balance), 0),
+      };
   }
 }

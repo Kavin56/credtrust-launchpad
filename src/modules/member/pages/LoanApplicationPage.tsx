@@ -309,18 +309,6 @@ const LoanApplicationPage = () => {
                            onChange={(e) => setCollateral(e.target.value)}
                          />
                       </div>
-                      <div className="space-y-4 pt-4">
-                         <Label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Upload Collateral Document (Optional)</Label>
-                         <Input
-                           type="file"
-                           className="h-14 rounded-2xl border-gray-100 pt-3"
-                           onChange={(e) => {
-                             if (e.target.files && e.target.files[0]) {
-                               toast.success("Document attached successfully");
-                             }
-                           }}
-                         />
-                      </div>
                       <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-start gap-4">
                          <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-1" />
                          <div className="space-y-1">

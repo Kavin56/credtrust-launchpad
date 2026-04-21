@@ -6,12 +6,14 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { Role } from '@prisma/client';
 import * as admin from 'firebase-admin';
+import { EncryptionService } from '../common/utils/encryption.util';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly encryptionService: EncryptionService,
   ) {}
 
   private firebaseApp =
@@ -67,23 +69,48 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const hash = await bcrypt.hash(dto.password, 10);
+    const memberId = await this.generateMemberId();
+
+    const encryptedAadhaar = this.encryptionService.encrypt(dto.aadhaarNumber);
+    const encryptedPan = this.encryptionService.encrypt(dto.panNumber);
+
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
         passwordHash: hash,
-        role: dto.role,
+        role: dto.role || Role.MEMBER,
         member: {
           create: {
+            memberId,
             fullName: dto.fullName,
             dob: new Date(dto.dob),
             contact: dto.contact,
             address: dto.address,
+            aadhaarNumber: encryptedAadhaar,
+            panNumber: encryptedPan,
+            nomineeName: dto.nomineeName,
+            nomineeRelation: dto.nomineeRelation,
+            nomineeAge: dto.nomineeAge,
           },
         },
       },
       include: { member: true },
     });
     return this.buildTokens(user.id, user.email, user.role);
+  }
+
+  private async generateMemberId(): Promise<string> {
+    const lastMember = await this.prisma.member.findFirst({
+      orderBy: { memberId: 'desc' },
+    });
+
+    if (!lastMember) {
+      return 'MEM0001';
+    }
+
+    const lastId = parseInt(lastMember.memberId.replace('MEM', ''), 10);
+    const nextId = (lastId + 1).toString().padStart(4, '0');
+    return `MEM${nextId}`;
   }
 
   async refresh(refreshToken: string) {

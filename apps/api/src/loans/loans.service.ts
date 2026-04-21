@@ -7,161 +7,136 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ApplyLoanDto } from './dto/apply-loan.dto';
 import { addMonths } from 'date-fns';
 import { Decimal } from '@prisma/client/runtime/library';
-import { PayEmiDto } from './dto/pay-emi.dto';
-import { LedgerService } from '../ledger/ledger.service';
+import { LoanRepaymentDto } from './dto/repayment.dto';
+import { LoanStatus } from '@prisma/client';
 
 @Injectable()
 export class LoansService {
-  constructor(
-    private prisma: PrismaService,
-    private ledger: LedgerService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
-  async apply(memberId: string, dto: ApplyLoanDto) {
-    const sanctionDate = new Date(dto.sanctionDate);
-    const schedules = this.buildAmortizationSchedule(
-      dto.principal,
-      dto.rate,
-      dto.tenureMonths,
-      sanctionDate,
+  async checkEligibility(memberId: string, amount: number) {
+    const member = await this.prisma.member.findUnique({
+      where: { id: memberId },
+      include: { shareAccounts: true },
+    });
+
+    if (!member) throw new NotFoundException('Member not found');
+
+    const totalShares = member.shareAccounts.reduce(
+      (acc, s) => acc + Number(s.totalAmount),
+      0,
     );
-    const emiAmount = schedules[0].totalDue;
-    
-    // When a loan is approved/disbursed, we should create a ledger entry.
-    // For now, we just create the loan. Disbursement might be a separate step.
+
+    // Simple business rule: Loan amount cannot exceed 10x share capital
+    if (amount > totalShares * 10) {
+      return {
+        eligible: false,
+        reason: `Loan amount ${amount} exceeds 10x share capital (${totalShares * 10})`,
+        limit: totalShares * 10,
+      };
+    }
+
+    return { eligible: true };
+  }
+
+  async apply(dto: ApplyLoanDto) {
+    const eligibility = await this.checkEligibility(dto.memberId, dto.amount);
+    if (!eligibility.eligible) {
+      throw new BadRequestException(eligibility.reason);
+    }
+
+    const totalLoans = await this.prisma.loan.count();
+    const loanNumber = `L${(totalLoans + 1).toString().padStart(8, '0')}`;
+
+    const principal = new Decimal(dto.amount);
+    const rate = new Decimal(dto.interestRate);
+    const term = dto.termMonths;
+
+    const schedules = this.buildAmortizationSchedule(
+      dto.amount,
+      dto.interestRate,
+      dto.termMonths,
+      new Date(),
+    );
+
     return this.prisma.loan.create({
       data: {
-        memberId,
-        product: dto.product,
-        principal: new Decimal(dto.principal),
-        rate: new Decimal(dto.rate),
-        tenureMonths: dto.tenureMonths,
-        sanctionDate,
-        status: 'APPROVED',
-        collateral: dto.collateral,
-        emiAmount,
-        nextDueDate: schedules[0].dueDate,
-        schedules: { createMany: { data: schedules } },
+        loanNumber,
+        memberId: dto.memberId,
+        type: dto.type,
+        amount: principal,
+        interestRate: rate,
+        termMonths: term,
+        purpose: dto.purpose,
+        guarantorDetail: dto.guarantorDetail,
+        status: LoanStatus.PENDING,
+        emiSchedule: { createMany: { data: schedules } },
       },
-      include: { schedules: true },
+      include: { emiSchedule: true },
     });
   }
 
-  async list(memberId: string) {
-    return this.prisma.loan.findMany({
-      where: { memberId },
-      include: { schedules: true },
-    });
-  }
-
-  async payEmi(memberId: string, dto: PayEmiDto) {
-    const schedule = await this.prisma.emiSchedule.findUnique({
-      where: { id: dto.scheduleId },
-      include: { loan: true },
-    });
-    if (!schedule || schedule.loan.memberId !== memberId) {
-      throw new NotFoundException('Schedule not found');
-    }
-    if (schedule.paid) throw new BadRequestException('Already paid');
-    if (dto.amount < Number(schedule.totalDue)) {
-      throw new BadRequestException('Amount less than due');
-    }
-
-    await this.prisma.$transaction(async (tx) => {
-      await tx.emiSchedule.update({
-        where: { id: dto.scheduleId },
-        data: { paid: true, paidOn: new Date(dto.paidOn) },
-      });
-
-      // Multi-leg journal entry for EMI payment
-      // Debit: Member's Savings Account (or Cash)
-      // Credit: Loan Principal Account
-      // Credit: Loan Interest Income Account
-      await this.ledger.recordJournal(
-        'EMI',
-        dto.scheduleId,
-        [
-          { accountId: dto.accountId, type: 'DR', amount: Number(schedule.totalDue) },
-          { accountId: 'LOAN_PRINCIPAL', type: 'CR', amount: Number(schedule.principalComponent) },
-          { accountId: 'LOAN_INCOME', type: 'CR', amount: Number(schedule.interestComponent) },
-        ],
-        `EMI payment for loan ${schedule.loanId}`,
-        memberId,
-        tx,
-      );
-    });
-
-    // update next due
-    const remaining = await this.prisma.emiSchedule.findMany({
-      where: { loanId: schedule.loanId, paid: false },
-      orderBy: { dueDate: 'asc' },
-      take: 1,
-    });
-    await this.prisma.loan.update({
-      where: { id: schedule.loanId },
-      data: { nextDueDate: remaining[0]?.dueDate },
-    });
-    return { status: 'ok' };
-  }
-
-  async disburseLoan(loanId: string, disbursedBy: string) {
-    const loan = await this.prisma.loan.findUnique({
+  async approveLoan(loanId: string) {
+    return this.prisma.loan.update({
       where: { id: loanId },
-      include: { member: { include: { accounts: { where: { type: 'SAVINGS' }, take: 1 } } } },
+      data: {
+        status: LoanStatus.APPROVED,
+        disbursedAt: new Date(),
+      },
     });
+  }
 
-    if (!loan) {
-      throw new NotFoundException('Loan not found');
-    }
-    if (loan.status !== 'APPROVED') {
-      throw new BadRequestException('Loan is not in APPROVED status');
-    }
-    if (!loan.member.accounts || loan.member.accounts.length === 0) {
-      throw new BadRequestException('Member does not have a savings account');
-    }
-
-    const memberSavingsAccount = loan.member.accounts[0];
-
+  async repay(loanId: string, dto: LoanRepaymentDto) {
     return this.prisma.$transaction(async (tx) => {
-      // Update loan status to DISBURSED
-      await tx.loan.update({
+      const loan = await tx.loan.findUnique({
         where: { id: loanId },
-        data: { status: 'DISBURSED', disbursedOn: new Date() },
+        include: { emiSchedule: { where: { isPaid: false }, orderBy: { dueDate: 'asc' } } },
       });
 
-      // Credit member's savings account with the principal amount
-      await tx.account.update({
-        where: { id: memberSavingsAccount.id },
-        data: { balance: { increment: Number(loan.principal) } },
-      });
+      if (!loan) throw new NotFoundException('Loan not found');
 
-      // Record ledger entry for loan disbursement
-      // Debit: LOAN_PRINCIPAL (Asset - loan given out)
-      // Credit: Member's Savings Account (Liability - member's money increased)
-      await this.ledger.recordJournal(
-        'LOAN_DISBURSEMENT',
-        loan.id,
-        [
-          { accountId: 'LOAN_PRINCIPAL', type: 'DR', amount: Number(loan.principal) },
-          { accountId: memberSavingsAccount.id, type: 'CR', amount: Number(loan.principal) },
-        ],
-        `Loan disbursement for ${loan.product} to member ${loan.memberId}`,
-        disbursedBy,
-        tx,
-      );
-
-      // Audit log for loan disbursement
-      await (tx as any).auditLog.create({
+      const repayment = await tx.loanRepayment.create({
         data: {
-          action: 'APPROVE', // Using APPROVE for disbursement as it's an approval of funds
-          actorId: disbursedBy,
-          entity: 'Loan',
-          entityId: loan.id,
-          diff: { oldStatus: 'APPROVED', newStatus: 'DISBURSED' },
+          loanId,
+          amount: new Decimal(dto.amount),
+          penaltyAmount: new Decimal(dto.penaltyAmount || 0),
+          paymentMode: dto.paymentMode,
+          referenceNumber: dto.referenceNumber,
         },
       });
 
-      return { status: 'ok', loanId };
+      // Simple implementation: Mark first unpaid EMI as paid if amount matches
+      if (loan.emiSchedule.length > 0) {
+        const nextEmi = loan.emiSchedule[0];
+        if (new Decimal(dto.amount).greaterThanOrEqualTo(nextEmi.totalEmi)) {
+          await tx.emiSchedule.update({
+            where: { id: nextEmi.id },
+            data: { isPaid: true, paidAt: new Date() },
+          });
+        }
+      }
+
+      return repayment;
+    });
+  }
+
+  async getLoan(id: string) {
+    const loan = await this.prisma.loan.findUnique({
+      where: { id },
+      include: {
+        member: true,
+        emiSchedule: { orderBy: { dueDate: 'asc' } },
+        repayments: { orderBy: { createdAt: 'desc' } },
+      },
+    });
+    if (!loan) throw new NotFoundException('Loan not found');
+    return loan;
+  }
+
+  async list(memberId?: string) {
+    return this.prisma.loan.findMany({
+      where: memberId ? { memberId } : {},
+      include: { member: true },
     });
   }
 
@@ -175,18 +150,21 @@ export class LoansService {
     const emi =
       (principal * r * Math.pow(1 + r, tenureMonths)) /
       (Math.pow(1 + r, tenureMonths) - 1);
+    
     const schedule = [];
     let balance = principal;
+    
     for (let i = 1; i <= tenureMonths; i++) {
-      const interest = balance * r;
-      const principalComponent = emi - interest;
-      balance -= principalComponent;
-      schedule.push({
-        dueDate: addMonths(startDate, i),
-        principalComponent: new Decimal(principalComponent.toFixed(2)),
-        interestComponent: new Decimal(interest.toFixed(2)),
-        totalDue: new Decimal(emi.toFixed(2)),
-      });
+        const interest = balance * r;
+        const principalPart = emi - interest;
+        balance -= principalPart;
+        
+        schedule.push({
+          dueDate: addMonths(startDate, i),
+          principalPart: new Decimal(principalPart.toFixed(2)),
+          interestPart: new Decimal(interest.toFixed(2)),
+          totalEmi: new Decimal(emi.toFixed(2)),
+        });
     }
     return schedule;
   }

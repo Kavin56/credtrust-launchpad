@@ -129,6 +129,29 @@ const MemberDashboard = () => {
     initialData: cached ? JSON.parse(cached) : undefined,
   });
 
+  // Calculate Credit Score based on data
+  const calculateScore = () => {
+    if (!data) return { cibil: 300, health: 33 };
+    
+    let base = 700;
+    // Add points for balance
+    if (data.totalBalance > 50000) base += 50;
+    else if (data.totalBalance > 10000) base += 20;
+    
+    // Add/Sub for loans
+    const loanCount = data.loans?.length || 0;
+    if (loanCount === 0) base += 30; // Clean record
+    else if (loanCount > 2) base -= 40; // High debt burden
+    
+    // Clamp
+    const cibil = Math.min(Math.max(base, 300), 900);
+    const health = Math.round((cibil / 900) * 100);
+    
+    return { cibil, health };
+  };
+
+  const { cibil, health } = calculateScore();
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#f8fafc]">
@@ -282,16 +305,70 @@ const MemberDashboard = () => {
 
             {/* PROMOTIONAL BANNERS (High-Fidelity) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-gradient-to-br from-[#1a1f36] via-[#2d3356] to-[#1a1f36] p-10 rounded-[40px] text-white flex items-center justify-between group cursor-pointer overflow-hidden relative shadow-xl shadow-indigo-900/10">
-                <div className="relative z-10">
-                  <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center mb-4">
-                    <Activity className="w-5 h-5 text-[#c9a84c]" />
+              <div className="bg-gradient-to-br from-[#1a1f36] via-[#2d3356] to-[#1a1f36] p-10 rounded-[40px] text-white flex flex-col md:flex-row items-center justify-between group cursor-pointer overflow-hidden relative shadow-xl shadow-indigo-900/10 min-h-[220px]">
+                <div className="relative z-10 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#c9a84c]/20 flex items-center justify-center">
+                      <ShieldCheck className="w-5 h-5 text-[#c9a84c]" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest leading-none">Credit Health</p>
+                      <h4 className="text-xl font-bold">Financial Score</h4>
+                    </div>
                   </div>
-                  <p className="text-[10px] font-bold text-white/40 mb-1 uppercase tracking-widest">Financial Health</p>
-                  <h4 className="text-xl font-bold flex items-center gap-2">Credit Score <ArrowRight className="w-4 h-4 text-[#c9a84c] group-hover:translate-x-1 transition-transform" /></h4>
+                  
+                  <div className="space-y-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-black font-sans tracking-tight text-white">{health}</span>
+                      <span className="text-white/40 text-sm font-bold">/ 100</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                       <div className="h-1.5 w-32 bg-white/10 rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${health}%` }}
+                            transition={{ duration: 1.5, ease: "easeOut" }}
+                            className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-emerald-500" 
+                          />
+                       </div>
+                       <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-tight">Excellent</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="absolute right-0 bottom-0 opacity-10 -translate-x-4 translate-y-4">
-                  <Activity size={160} />
+
+                <div className="relative mt-8 md:mt-0 flex flex-col items-center">
+                   <svg className="w-32 h-32 transform -rotate-90">
+                      <circle
+                        cx="64"
+                        cy="64"
+                        r="58"
+                        stroke="currentColor"
+                        strokeWidth="8"
+                        fill="transparent"
+                        className="text-white/5"
+                      />
+                      <motion.circle
+                        cx="64"
+                        cy="64"
+                        r="58"
+                        stroke="currentColor"
+                        strokeWidth="8"
+                        fill="transparent"
+                        strokeDasharray={364.4}
+                        initial={{ strokeDashoffset: 364.4 }}
+                        animate={{ strokeDashoffset: 364.4 - (364.4 * cibil) / 900 }}
+                        transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
+                        className="text-[#c9a84c]"
+                      />
+                   </svg>
+                   <div className="absolute inset-0 flex flex-col items-center justify-center pt-2">
+                      <span className="text-2xl font-bold text-white leading-none">{cibil}</span>
+                      <span className="text-[9px] font-bold text-white/30 uppercase tracking-widest mt-1">CIBIL / 900</span>
+                   </div>
+                </div>
+
+                <div className="absolute right-0 bottom-0 opacity-5 -translate-x-4 translate-y-4 pointer-events-none">
+                  <Activity size={200} />
                 </div>
               </div>
               <div className="bg-[#c9a84c] p-10 rounded-[40px] text-[#1a1f36] flex items-center justify-between group cursor-pointer overflow-hidden relative shadow-xl shadow-[#c9a84c]/20">

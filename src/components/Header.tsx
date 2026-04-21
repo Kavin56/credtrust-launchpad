@@ -43,6 +43,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/modules/login/AuthContext";
+import NotificationDrawer from "./NotificationDrawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +54,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 // Internal icons for the menu
+// ... (omitting svgs for brevity, keeping existing logic)
 const Calendar = (props: any) => (
   <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
 );
@@ -64,6 +66,7 @@ const GraduationCap = (props: any) => (
 );
 
 const megaMenuData = {
+  // ... (keeping existing data)
   Deposits: {
     products: [
       { name: "Fixed Deposit", icon: ShieldCheck, path: "/product/deposits/fixed-deposit" },
@@ -149,6 +152,7 @@ const megaMenuData = {
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState(null);
   const dropdownRef = useRef(null);
   const { user, logout } = useAuth();
@@ -276,7 +280,10 @@ const Header = () => {
 
           {/* Right Header Utilities */}
           <div className="hidden lg:flex items-center gap-3">
-            <button className="relative p-2 text-gray-400 hover:text-[#1a1f36] transition-colors group">
+            <button 
+              onClick={() => setIsDrawerOpen(true)}
+              className="relative p-2 text-gray-400 hover:text-[#1a1f36] transition-colors group"
+            >
               <Bell className="w-5 h-5 group-hover:rotate-[15deg] transition-transform" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
             </button>
@@ -337,6 +344,8 @@ const Header = () => {
           </div>
         </div>
       </div>
+
+      <NotificationDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
 
       {/* Mobile Menu Overlay */}
       <AnimatePresence>

@@ -1,6 +1,4 @@
 import {
-  IsDateString,
-  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -8,21 +6,24 @@ import {
 
 export class ApplyLoanDto {
   @IsString()
-  product: string;
+  memberId: string;
+
+  @IsString()
+  type: string; // Personal, Home, Gold etc
 
   @IsNumber()
-  principal: number;
+  amount: number;
 
   @IsNumber()
-  rate: number;
+  interestRate: number;
 
   @IsNumber()
-  tenureMonths: number;
+  termMonths: number;
 
-  @IsDateString()
-  sanctionDate: string;
+  @IsString()
+  purpose: string;
 
   @IsOptional()
   @IsString()
-  collateral?: string;
+  guarantorDetail?: string;
 }

@@ -2,93 +2,141 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateKycDto } from './dto/update-kyc.dto';
 import { StorageService } from '../storage/storage.service';
+import { MemberQueryDto } from './dto/member-query.dto';
+import { EncryptionService } from '../common/utils/encryption.util';
+import { MemberStatus } from '@prisma/client';
 
 @Injectable()
 export class MembersService {
-  constructor(private prisma: PrismaService, private storage: StorageService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storage: StorageService,
+    private encryptionService: EncryptionService,
+  ) {}
 
-  async getProfile(userId: string) {
-    const member = await this.prisma.member.findFirst({
+  async findAll(query: MemberQueryDto) {
+    const { kycStatus, status, search, page = 1, limit = 10 } = query;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (kycStatus) where.kycStatus = kycStatus;
+    if (status) where.status = status;
+    if (search) {
+      where.OR = [
+        { fullName: { contains: search, mode: 'insensitive' } },
+        { memberId: { contains: search, mode: 'insensitive' } },
+        { contact: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [items, total] = await Promise.all([
+      this.prisma.member.findMany({
+        where,
+        skip: Number(skip),
+        take: Number(limit),
+        orderBy: { joinedAt: 'desc' },
+      }),
+      this.prisma.member.count({ where }),
+    ]);
+
+    return { items, total, page, limit };
+  }
+
+  async getProfile(userId: string, decryptPii = false) {
+    const member = await this.prisma.member.findUnique({
       where: { userId },
       include: {
         user: true,
-        accounts: true,
-        deposits: true,
-        loans: true,
-        kycDocs: true,
-        shares: true,
+        shareAccounts: true,
+        depositAccounts: true,
+        loans: { include: { emiSchedule: true } },
       },
     });
+
     if (!member) throw new NotFoundException('Member not found');
+
+    if (decryptPii) {
+      member.aadhaarNumber = this.encryptionService.decrypt(member.aadhaarNumber);
+      member.panNumber = this.encryptionService.decrypt(member.panNumber);
+    } else {
+      member.aadhaarNumber = '****-****-' + member.aadhaarNumber.slice(-4);
+      member.panNumber = '*******' + member.panNumber.slice(-3);
+    }
+
     return member;
   }
 
   async updateKyc(memberId: string, dto: UpdateKycDto) {
-    await this.prisma.member.update({
+    return this.prisma.member.update({
       where: { id: memberId },
       data: { kycStatus: dto.status },
     });
-    return this.prisma.kycDocument.updateMany({
-      where: { memberId },
-      data: { status: dto.status, verifiedBy: dto.verifiedBy, verifiedAt: new Date() },
-    });
   }
 
-  async updateKycByUser(userId: string, dto: UpdateKycDto) {
-    const member = await this.prisma.member.findFirst({ where: { userId } });
-    if (!member) throw new NotFoundException('Member not found');
-    return this.updateKyc(member.id, dto);
-  }
-
-  async dashboardOverview(userId: string) {
-    const member = await this.prisma.member.findFirst({
-      where: { userId },
-      include: {
-        accounts: true,
-        deposits: true,
-        loans: { include: { schedules: true } },
-        shares: true,
+  async deactivate(id: string, reason: string) {
+    return this.prisma.member.update({
+      where: { id },
+      data: {
+        status: MemberStatus.INACTIVE,
+        deactivatedAt: new Date(),
+        exitReason: reason,
       },
     });
-    if (!member) throw new NotFoundException('Member not found');
-
-    const totalBalance = member.accounts.reduce(
-      (acc, a) => acc + Number(a.balance),
-      0,
-    );
-    const activeLoans = member.loans.filter((l) => l.status !== 'CLOSED');
-    const nextEmi = activeLoans
-      .flatMap((l) => l.schedules)
-      .filter((s) => !s.paid)
-      .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())[0];
-
-    return {
-      member: {
-        name: member.fullName,
-        kycStatus: member.kycStatus,
-      },
-      accounts: member.accounts,
-      deposits: member.deposits,
-      loans: member.loans,
-      shares: member.shares,
-      totalBalance,
-      nextEmi,
-    };
   }
 
-  async uploadKyc(userId: string, file: any) {
+  async getStats() {
+    const [total, active, pendingKyc] = await Promise.all([
+      this.prisma.member.count(),
+      this.prisma.member.count({ where: { status: MemberStatus.ACTIVE } }),
+      this.prisma.member.count({ where: { kycStatus: 'PENDING' } }),
+    ]);
+
+    return { total, active, pendingKyc };
+  }
+
+  async uploadPhoto(userId: string, file: any) {
     if (!file) throw new BadRequestException('File required');
     const member = await this.prisma.member.findFirst({ where: { userId } });
     if (!member) throw new NotFoundException('Member not found');
+    
     const buffer = await file.toBuffer();
     const url = await this.storage.upload(buffer, file.filename, file.mimetype);
-    return this.prisma.kycDocument.create({
-      data: {
-        memberId: member.id,
-        type: file.mimetype,
-        docNumber: file.filename,
-        fileUrl: url,
+    
+    return this.prisma.member.update({
+      where: { id: member.id },
+      data: { photoUrl: url },
+    });
+  }
+
+  async dashboardOverview(userId: string) {
+    const member = await this.prisma.member.findUnique({
+      where: { userId },
+      include: {
+        depositAccounts: true,
+        loans: { include: { emiSchedule: true } },
+        shareAccounts: true,
       },
     });
+
+    if (!member) throw new NotFoundException('Member not found');
+
+    const totalSavings = member.depositAccounts.reduce(
+      (acc, a) => acc + Number(a.balance),
+      0,
+    );
+    const activeLoans = member.loans.filter((l) => l.status === 'ACTIVE');
+    const nextEmi = activeLoans
+      .flatMap((l) => l.emiSchedule)
+      .filter((s) => !s.isPaid)
+      .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())[0];
+
+    return {
+      name: member.fullName,
+      kycStatus: member.kycStatus,
+      totalSavings,
+      activeLoansCount: activeLoans.length,
+      nextEmi,
+      sharesOwned: member.shareAccounts.reduce((acc, s) => acc + s.sharesOwned, 0),
+    };
   }
 }

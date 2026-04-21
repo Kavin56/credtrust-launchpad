@@ -10,15 +10,18 @@ import {
   ShieldCheck, 
   FileText,
   Landmark,
-  ChevronUp
+  ChevronUp,
+  Bell
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
+import NotificationDrawer from "./NotificationDrawer";
 
 const LandingHeader = () => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const navigate = useNavigate();
 
   const topMenuItems = [
@@ -98,6 +101,15 @@ const LandingHeader = () => {
             <button className="p-2 text-gray-400 hover:text-[#6b21a8] transition-colors">
               <Search className="w-5 h-5" />
             </button>
+
+            {/* Notification Bell (Added for the new feature) */}
+            <button 
+              onClick={() => setIsDrawerOpen(true)}
+              className="relative p-2 text-gray-400 hover:text-[#6b21a8] transition-colors group"
+            >
+              <Bell className="w-5 h-5 group-hover:rotate-[12deg] transition-transform" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+            </button>
             
             <div className="relative">
               <Button 
@@ -155,6 +167,7 @@ const LandingHeader = () => {
           </div>
         </div>
       </div>
+      <NotificationDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
     </header>
   );
 };
