@@ -48,6 +48,7 @@ import Footer from "@/components/Footer";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OfferSlider } from "../components/OfferSlider";
 
 const quickActions = [
   { label: "Welcome to Yono", icon: Sparkles, bg: "bg-purple-100", color: "text-purple-600" },
@@ -172,24 +173,34 @@ const MemberDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* MAIN CONTENT (9 COLS) */}
-          <div className="lg:col-span-9 space-y-8 min-w-0">
+          <div className="lg:col-span-9 space-y-10 min-w-0">
             
-            {/* WELCOME BANNER */}
-            <section className="bg-white rounded-[40px] p-10 border border-gray-100 shadow-xl shadow-black/[0.03] relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-bl from-[#c9a84c]/5 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl pointer-events-none" />
-              
-              <div className="relative z-10">
-                <h1 className="font-serif text-[32px] text-gray-700 mb-10 tracking-tight leading-none group-hover:translate-x-1 transition-transform duration-500 font-bold italic">
-                  Hello <span className="text-[#1a1f36] underline decoration-[#c9a84c]/50 decoration-4 underline-offset-8">{userName.split(' ')[0]}</span>, <span className="opacity-80">Let's get started!</span>
-                </h1>
+            {/* TOP OFFERS SLIDER */}
+            <OfferSlider />
+
+            {/* GREETING & QUICK ACTIONS */}
+            <section className="bg-white rounded-[40px] p-8 border border-gray-100 shadow-xl shadow-black/[0.02] relative overflow-hidden">
+              <div className="relative z-10 space-y-10">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-[#c9a84c] uppercase tracking-[0.3em]">Relationship Center</p>
+                    <h1 className="font-serif text-[40px] text-[#1a1f36] leading-none font-bold italic tracking-tight">
+                      Hello, <span className="underline decoration-[#c9a84c]/40 decoration-4 underline-offset-8">{userName.split(' ')[0]}</span>
+                    </h1>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-400 font-bold text-[11px] uppercase tracking-widest pb-1 border-b border-gray-100">
+                    <Activity className="w-3.5 h-3.5 text-emerald-500" />
+                    Last Login: {new Date().toDateString()}
+                  </div>
+                </div>
                 
-                <div className="grid grid-cols-4 lg:grid-cols-8 gap-4 lg:gap-10">
+                <div className="grid grid-cols-4 lg:grid-cols-8 gap-6 lg:gap-8">
                   {quickActions.map((action, idx) => (
                     <button key={idx} className="flex flex-col items-center gap-4 transition-all group/action">
-                      <div className={`w-16 h-16 rounded-full ${action.bg} flex items-center justify-center border-4 border-white shadow-md group-hover/action:scale-110 group-hover/action:-rotate-3 transition-all duration-300`}>
-                        <action.icon className={`w-6 h-6 ${action.color} stroke-[2.5px]`} />
+                      <div className={`w-14 h-14 rounded-2xl ${action.bg} flex items-center justify-center border border-white shadow-sm group-hover/action:shadow-lg group-hover/action:-translate-y-1 transition-all duration-300`}>
+                        <action.icon className={`w-6 h-6 ${action.color} stroke-[2px]`} />
                       </div>
-                      <span className="text-[12px] font-bold text-gray-600 group-hover/action:text-[#1a1f36] text-center leading-tight transition-colors">
+                      <span className="text-[11px] font-bold text-gray-500 group-hover/action:text-[#1a1f36] text-center leading-tight transition-colors">
                         {action.label}
                       </span>
                     </button>
