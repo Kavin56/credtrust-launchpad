@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import NotificationShowcase from "./NotificationShowcase";
 import heroBanking from "@/assets/hero-banking.jpg";
 import familyBanking from "@/assets/family-banking.jpg";
 import professionalBanking from "@/assets/professional-banking.jpg";
@@ -38,24 +37,24 @@ const HeroSection = () => {
 
   return (
     <section className="relative bg-muted overflow-hidden">
-      <div className="container pt-10 pb-6 md:pt-14 md:pb-8 lg:pt-20 lg:pb-12">
+      <div className="container pt-6 pb-0 md:pt-8 md:pb-0 lg:pt-10 lg:pb-0">
         {/* Main Branding Title */}
-        <div className="text-center mb-12 md:mb-20">
+        <div className="text-center mb-8 md:mb-12">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-heading font-black tracking-tight text-[#1a1f36] flex flex-wrap items-center justify-center gap-x-4 md:gap-x-6">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-heading font-black tracking-tight text-[#1a1f36] flex flex-wrap items-center justify-center gap-x-3 md:gap-x-4">
               <span>ಶರಣಂ</span>
               <span className="text-primary font-light opacity-40 hidden md:block">|</span>
               <span className="text-primary font-light opacity-40 md:hidden">-</span>
               <span>Sharanam</span>
             </h1>
-            <p className="text-lg md:text-2xl text-muted-foreground font-light tracking-[0.2em] uppercase mt-4 opacity-80 italic">
+            <p className="text-sm md:text-base text-muted-foreground font-light tracking-[0.2em] uppercase mt-2 opacity-80 italic">
               A Space of Refuge and Peace
             </p>
-            <div className="w-20 h-1 bg-gradient-to-r from-transparent via-primary/30 to-transparent mx-auto mt-8 rounded-full" />
+            <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent mx-auto mt-4 rounded-full" />
           </motion.div>
         </div>
 
@@ -77,7 +76,7 @@ const HeroSection = () => {
                 {slide.subtitle}
               </p>
               <div className="flex flex-wrap gap-4">
-                <a href="#" className="btn-primary-banking text-base px-8">
+                <a href="#" className="btn-primary-banking text-base px-8 py-3">
                   {slide.cta}
                 </a>
                 <a href="#services" className="px-8 py-3 rounded-full border border-primary/20 bg-background/50 backdrop-blur-sm text-foreground hover:bg-primary/5 transition-all text-sm font-semibold">
@@ -102,7 +101,7 @@ const HeroSection = () => {
                 <img
                   src={slide.image}
                   alt="Banking"
-                  className="rounded-2xl w-full max-w-lg shadow-2xl object-cover aspect-[4/3]"
+                  className="rounded-2xl w-full max-w-md lg:max-w-lg shadow-2xl object-cover aspect-[4/3]"
                   width={640}
                   height={480}
                 />
@@ -112,27 +111,24 @@ const HeroSection = () => {
         </div>
 
         {/* Hero Slide Indicators */}
-        <div className="flex justify-center gap-2 mt-8 mb-4">
+        <div className="flex justify-center gap-2 mt-4 mb-2">
           {slides.map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrent(i)}
-              className={`w-2 h-2 rounded-full transition-all duration-300 ${i === current ? "bg-primary w-6" : "bg-foreground/20"}`}
+              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${i === current ? "bg-primary w-4" : "bg-foreground/20"}`}
             />
           ))}
         </div>
       </div>
 
-      {/* NEW: Smart Notification Showcase (Live Feed) */}
-      <div className="relative z-20 -mt-2 bg-gradient-to-b from-transparent via-background/40 to-background/80 backdrop-blur-sm border-t border-white/10">
-        <NotificationShowcase />
-      </div>
+
 
       {/* Marquee remains at the very bottom */}
-      <div className="marquee-strip">
+      <div className="marquee-strip -mt-6 relative z-30">
         <div className="animate-scroll inline-flex gap-12 py-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <span key={i} className="flex items-center gap-3 text-xs md:text-sm font-medium whitespace-nowrap">
+            <span key={i} className="flex items-center gap-3 text-xs md:text-sm font-bold whitespace-nowrap">
               ✦ Celebrating 100+ Years of Legacy ✦ Awarded Best Cooperative Society 2025 ✦ Over 1 Lakh+ Satisfied Members ✦
             </span>
           ))}

@@ -1,0 +1,146 @@
+import React from "react";
+import { Marquee } from "./ui/marquee";
+import { UserCheck } from "lucide-react";
+
+// Image imports
+import sandeshImg from "@/Team_photos/Mr. Sandesh Shanmugam.jpeg";
+import malarImg from "@/Team_photos/Mrs. Malar.jpeg";
+import payaniImg from "@/Team_photos/Mr. Payani.jpeg";
+import vishwaImg from "@/Team_photos/Mr. Vishwa.jpeg";
+import sumaImg from "@/Team_photos/Mrs. Suma.jpeg";
+import manjunathImg from "@/Team_photos/Mr. Manjunath.jpeg";
+import yuvarajImg from "@/Team_photos/Mr. Yuvaraj.jpeg";
+import purshotamImg from "@/Team_photos/Mr. Purshotam.jpeg";
+import sendilImg from "@/Team_photos/Mr. Sendil.jpeg";
+import venkateshImg from "@/Team_photos/Mr. Venkatesh K.jpeg";
+
+const teamMembers = [
+  { name: "Mr. Sandesh Shanmugam", role: "Vice president", image: sandeshImg },
+  { name: "Mrs. Malar", role: "Margadarshi", image: malarImg },
+  { name: "Mr. Payani", role: "Director", image: payaniImg },
+  { name: "Mr. Vishwa", role: "Director", image: vishwaImg },
+  { name: "Mrs. Suma", role: "Director", image: sumaImg },
+  { name: "Mr. Manjunath", role: "Director", image: manjunathImg },
+  { name: "Mr. Yuvaraj", role: "Director", image: yuvarajImg },
+  { name: "Mr. Purshotam", role: "Director", image: purshotamImg },
+  { name: "Mr. Sendil", role: "Director", image: sendilImg },
+  { name: "Mr. Venkatesh K", role: "Director", image: venkateshImg },
+];
+
+export default function TeamSection() {
+  return (
+    <section className="relative w-full overflow-hidden bg-white py-20 md:py-32 dark:bg-background border-y border-gray-100">
+      {/* Decorative SVG Background */}
+      <div className="absolute inset-0 pointer-events-none opacity-50">
+        <svg
+          className="absolute right-0 bottom-0 text-neutral-100 dark:text-neutral-900"
+          fill="none"
+          height="154"
+          viewBox="0 0 460 154"
+          width="460"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g clipPath="url(#clip0_494_1104)">
+            <path
+              d="M-87.463 458.432C-102.118 348.092 -77.3418 238.841 -15.0744 188.274C57.4129 129.408 180.708 150.071 351.748 341.128C278.246 -374.233 633.954 380.602 548.123 42.7707"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="40"
+            />
+          </g>
+          <defs>
+            <clipPath id="clip0_494_1104">
+              <rect fill="white" height="154" width="460" />
+            </clipPath>
+          </defs>
+        </svg>
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-7xl">
+        <div className="mx-auto mb-16 flex max-w-5xl flex-col items-center px-6 text-center lg:px-0">
+          <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-white shadow-xl shadow-primary/20 animate-float">
+           <UserCheck className="w-7 h-7" />
+          </div>
+
+          <p className="text-sm font-bold text-primary uppercase tracking-[0.3em] mb-4">Leadership Excellence</p>
+          <h1 className="relative mb-6 font-heading font-bold text-4xl text-neutral-900 tracking-tight sm:text-5xl lg:text-6xl dark:text-neutral-100">
+            CredTrust Board of Directors
+            <svg
+              className="absolute -top-6 -right-12 -z-10 w-28 text-[#c9a84c]/20 dark:text-neutral-700"
+              fill="currentColor"
+              height="86"
+              viewBox="0 0 108 86"
+              width="108"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M38.8484 16.236L15 43.5793L78.2688 15L18.1218 71L93 34.1172L70.2047 65.2739"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="28"
+              />
+            </svg>
+          </h1>
+          <p className="max-w-2xl text-lg text-neutral-500 font-medium leading-relaxed">
+            Guiding CredTrust with integrity, vision, and a commitment to serving our community with excellence.
+          </p>
+        </div>
+
+        <div className="relative w-full py-10">
+          {/* Fading side masks */}
+          <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-40 bg-gradient-to-r from-white via-white/40 to-transparent dark:from-background" />
+          <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-40 bg-gradient-to-l from-white via-white/40 to-transparent dark:from-background" />
+
+          <Marquee className="[--gap:2rem] [--duration:50s]" pauseOnHover>
+            {teamMembers.map((member) => (
+              <div
+                className="group flex w-72 shrink-0 flex-col px-4"
+                key={member.name}
+              >
+                <div className="relative h-[400px] w-full overflow-hidden rounded-[32px] bg-neutral-50 border border-gray-100 shadow-sm transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-primary/10 group-hover:-translate-y-2">
+                  <img
+                    alt={member.name}
+                    className="h-full w-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
+                    src={member.image}
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  
+                  <div className="absolute bottom-0 w-full p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                    <div className="bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/50">
+                      <h3 className="font-bold text-[#1a1f36] text-lg leading-tight">
+                        {member.name}
+                      </h3>
+                      <p className="text-primary font-bold text-xs uppercase tracking-widest mt-1">
+                        {member.role}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </Marquee>
+        </div>
+
+        <div className="mx-auto mt-24 max-w-4xl px-6 text-center lg:px-0">
+          <p className="text-2xl font-serif italic text-neutral-800 leading-relaxed md:text-3xl dark:text-neutral-100 mb-10">
+            "Our strength lies in our collective vision. We work tirelessly to ensure CredTrust remains the most reliable financial partner for every member."
+          </p>
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-0.5 w-24 bg-[#c9a84c]" />
+            <div className="text-center">
+              <p className="font-bold text-[#1a1f36] uppercase tracking-[0.2em] text-sm">
+                CredTrust Multi State Cooperative Credit Society
+              </p>
+              <p className="text-[#c9a84c] text-xs font-bold mt-1 tracking-widest">
+                BOARD OF DIRECTORS · EST. 2026
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

@@ -107,7 +107,7 @@
     @apply bg-primary text-primary-foreground;
   }
   .marquee-strip {
-    @apply bg-secondary text-secondary-foreground py-2.5 overflow-hidden whitespace-nowrap;
+    @apply bg-secondary text-secondary-foreground py-1.5 overflow-hidden whitespace-nowrap;
   }
 }
 
@@ -125,5 +125,32 @@
   @keyframes float {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-12px); }
+  }
+
+  /* Marquee Animations */
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+
+  @keyframes marquee-vertical {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(calc(-100% - var(--gap)));
+    }
+  }
+
+  .animate-marquee {
+    animation: marquee var(--duration) linear infinite;
+  }
+
+  .animate-marquee-vertical {
+    animation: marquee-vertical var(--duration) linear infinite;
   }
 }
