@@ -1,48 +1,55 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { NotificationStatus } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
+
+export interface Notification {
+  id: string;
+  memberId: string;
+  title: string;
+  message: string;
+  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'DANGER';
+  isRead: boolean;
+  createdAt: Date;
+}
 
 @Injectable()
 export class NotificationsService {
-  private readonly logger = new Logger(NotificationsService.name);
+  private notifications: Notification[] = [
+    {
+      id: 'notif-1',
+      memberId: 'mem1',
+      title: 'Welcome to CredTrust',
+      message: 'Your membership has been successfully activated.',
+      type: 'SUCCESS',
+      isRead: false,
+      createdAt: new Date()
+    }
+  ];
 
-  constructor(private prisma: PrismaService) {}
-
-  async create(memberId: string, title: string, message: string, type: string) {
-    this.logger.log(`Creating notification for ${memberId}: ${title}`);
-    return this.prisma.notification.create({
-      data: {
-        memberId,
-        title,
-        message,
-        type,
-        status: NotificationStatus.SENT,
-      },
-    });
+  async findAll(memberId?: string) {
+    if (memberId) {
+      return this.notifications.filter(n => n.memberId === memberId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    }
+    return this.notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  async list(memberId: string) {
-    return this.prisma.notification.findMany({
-      where: { memberId },
-      orderBy: { createdAt: 'desc' },
-    });
+  async create(dto: { memberId: string; title: string; message: string; type: any }) {
+    const newNotif: Notification = {
+      id: `notif-${Date.now()}`,
+      memberId: dto.memberId,
+      title: dto.title,
+      message: dto.message,
+      type: dto.type || 'INFO',
+      isRead: false,
+      createdAt: new Date()
+    };
+    this.notifications.push(newNotif);
+    return newNotif;
   }
 
-  async markRead(id: string) {
-    return this.prisma.notification.update({
-      where: { id },
-      data: { status: NotificationStatus.READ },
-    });
-  }
-
-  // Mock method for actually sending SMS/Email
-  async sendEmail(to: string, subject: string, body: string) {
-      this.logger.log(`[MOCK EMAIL] To: ${to}, Subject: ${subject}`);
-      return true;
-  }
-
-  async sendSms(phoneNumber: string, message: string) {
-      this.logger.log(`[MOCK SMS] To: ${phoneNumber}, Message: ${message}`);
-      return true;
+  async markAsRead(id: string) {
+    const notif = this.notifications.find(n => n.id === id);
+    if (notif) {
+      notif.isRead = true;
+    }
+    return { success: true };
   }
 }

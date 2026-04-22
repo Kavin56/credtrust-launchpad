@@ -123,9 +123,11 @@ const AdminDashboard = () => {
                     </div>
                   ))}
                 </div>
-                <Button variant="ghost" className="w-full mt-4 text-slate-400 text-xs hover:bg-transparent hover:text-slate-900">
-                  Manage all applications
-                </Button>
+                <Link to="/admin/loans">
+                  <Button variant="ghost" className="w-full mt-4 text-slate-400 text-xs hover:bg-transparent hover:text-slate-900">
+                    Manage all applications
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 

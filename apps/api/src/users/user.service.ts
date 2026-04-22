@@ -1,23 +1,29 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import * as bcrypt from 'bcryptjs';
+import { Injectable, NotFoundException } from '@nestjs/common';
 
 @Injectable()
-export class UsersService {
-  constructor(private prisma: PrismaService) {}
+export class UserService {
+  private users = [
+    { id: 'user1', email: 'admin@credtrust.com', role: 'ADMIN', status: 'ACTIVE' },
+    { id: 'user2', email: 'member@test.com', role: 'MEMBER', status: 'ACTIVE' },
+  ];
 
-  findAll() {
-    return this.prisma.user.findMany({
-      select: { id: true, email: true, role: true, status: true, createdAt: true },
-    });
+  async findByEmail(email: string) {
+    return this.users.find(u => u.email === email);
   }
 
-  async create(dto: CreateUserDto) {
-    const passwordHash = await bcrypt.hash(dto.password, 10);
-    return this.prisma.user.create({
-      data: { email: dto.email, passwordHash, role: dto.role },
-      select: { id: true, email: true, role: true },
-    });
+  async findById(id: string) {
+    const user = this.users.find(u => u.id === id);
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  async create(data: any) {
+    const newUser = { id: `user${Date.now()}`, ...data, status: 'ACTIVE' };
+    this.users.push(newUser);
+    return newUser;
+  }
+
+  async findAll() {
+    return this.users;
   }
 }

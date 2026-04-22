@@ -4,7 +4,7 @@ import configuration from './config/configuration';
 import { validationSchema } from './config/validation';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
+import { UsersModule } from './users/user.module';
 import { MembersModule } from './members/members.module';
 import { DepositsModule } from './deposits/deposits.module';
 import { LoansModule } from './loans/loans.module';
@@ -52,14 +52,18 @@ import { AdminModule } from './admin/admin.module';
     NotificationsModule,
   ],
   providers: [
+/*
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
     },
+*/
+/*
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
+*/
   ],
 })
 export class AppModule {}

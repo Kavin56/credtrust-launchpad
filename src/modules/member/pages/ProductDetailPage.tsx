@@ -82,7 +82,10 @@ const ProductDetailPage = () => {
                        <p className="text-xl text-white/60 font-medium leading-relaxed">{product.desc}</p>
                     </div>
                     <div className="flex gap-4 pt-4">
-                       <Button className="h-14 px-10 bg-[#c9a84c] text-[#1a1f36] rounded-2xl font-black hover:bg-white hover:shadow-2xl transition-all">
+                       <Button 
+                          onClick={() => navigate('/loan-apply', { state: { loanType: product.title } })}
+                          className="h-14 px-10 bg-[#c9a84c] text-[#1a1f36] rounded-2xl font-black hover:bg-white hover:shadow-2xl transition-all"
+                       >
                           {product.cta}
                        </Button>
                        <Button variant="outline" className="h-14 px-10 border-white/20 text-white rounded-2xl font-bold bg-white/5 backdrop-blur-sm">

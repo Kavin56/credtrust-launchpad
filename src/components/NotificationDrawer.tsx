@@ -1,4 +1,7 @@
-import React, { useEffect } from "react";
+import React from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/api";
+import { useAuth } from "@/modules/login/AuthContext";
 import {
   Sheet,
   SheetContent,
@@ -17,12 +20,16 @@ import {
   Activity, 
   Zap, 
   Lock,
-  ArrowRight
+  ArrowRight,
+  CheckCircle2,
+  XCircle,
+  Info
 } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { formatDistanceToNow } from "date-fns";
 
 interface NotificationDrawerProps {
   isOpen: boolean;
@@ -51,62 +58,6 @@ const offers = [
     color: "green",
     icon: ShieldCheck,
   },
-  {
-    category: "Insurance",
-    title: "KYC Update",
-    content: "Update your KYC to continue uninterrupted policy benefits.",
-    color: "green",
-    icon: Lock,
-  },
-  {
-    category: "Gold Loan",
-    title: "Rate Drop",
-    content: "Gold loan interest rates starting from 8.5% per annum.",
-    color: "gold",
-    icon: Gem,
-  },
-  {
-    category: "Exclusive",
-    title: "Festive Offer",
-    content: "Special festive offer: Reduced interest rates on gold loans.",
-    color: "gold",
-    icon: Tag,
-  },
-];
-
-const notifications = [
-  {
-    category: "Reminder",
-    title: "EMI Due",
-    content: "Your Home Loan EMI of ₹24,500 is due on 25th Apr.",
-    color: "purple",
-    icon: Clock,
-    time: "2h ago"
-  },
-  {
-    category: "Update",
-    title: "Credit Score",
-    content: "Your credit score improved by 12 points! Check it now.",
-    color: "blue",
-    icon: Activity,
-    time: "5h ago"
-  },
-  {
-    category: "Interest",
-    title: "FD Highlights",
-    content: "FD rates hiked to 7.8% p.a. for senior citizens.",
-    color: "green",
-    icon: Zap,
-    time: "1d ago"
-  },
-  {
-    category: "Security",
-    title: "Account Login",
-    content: "Recent login detected from a new device in Mumbai.",
-    color: "purple",
-    icon: Lock,
-    time: "2d ago"
-  }
 ];
 
 const colorMap = {
@@ -134,39 +85,93 @@ const colorMap = {
     border: "border-purple-100",
     iconBackground: "bg-purple-100",
   },
+  DANGER: {
+    bg: "bg-rose-50",
+    text: "text-rose-600",
+    border: "border-rose-100",
+    iconBackground: "bg-rose-100",
+  },
+  SUCCESS: {
+    bg: "bg-emerald-50",
+    text: "text-emerald-600",
+    border: "border-emerald-100",
+    iconBackground: "bg-emerald-100",
+  },
+  INFO: {
+    bg: "bg-blue-50",
+    text: "text-blue-600",
+    border: "border-blue-100",
+    iconBackground: "bg-blue-100",
+  },
+  WARNING: {
+    bg: "bg-amber-50",
+    text: "text-amber-600",
+    border: "border-amber-100",
+    iconBackground: "bg-amber-100",
+  },
 };
 
 const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, onClose }) => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [emblaRef] = useEmblaCarousel({ loop: true }, [
-    Autoplay({ delay: 2000, stopOnInteraction: false })
+    Autoplay({ delay: 3000, stopOnInteraction: false })
   ]);
+
+  const { data: notifications, isLoading } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const { data } = await api.get("/notifications");
+      return data;
+    },
+    enabled: !!user,
+    refetchInterval: 5000, // Poll every 5 seconds for new notifications
+  });
+
+  const markAsReadMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await api.patch(`/notifications/${id}/read`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'SUCCESS': return CheckCircle2;
+      case 'DANGER': return XCircle;
+      case 'WARNING': return ShieldCheck;
+      default: return Info;
+    }
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-full sm:max-w-md p-0 overflow-y-auto font-sans">
+      <SheetContent className="w-full sm:max-w-md p-0 overflow-y-auto font-sans border-l-0 shadow-2xl">
         <div className="flex flex-col h-full bg-slate-50/50">
           {/* Header */}
-          <div className="p-6 bg-white border-b sticky top-0 z-10">
+          <div className="p-6 bg-white border-b sticky top-0 z-10 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-xl">
-                <Bell className="w-6 h-6 text-primary" />
+              <div className="p-2.5 bg-[#1a1f36] rounded-2xl shadow-lg shadow-black/10">
+                <Bell className="w-6 h-6 text-[#c9a84c]" />
               </div>
               <div>
-                <SheetTitle className="text-xl font-bold">Notifications Center</SheetTitle>
-                <SheetDescription className="text-xs">Stay updated with latest offers and alerts</SheetDescription>
+                <SheetTitle className="text-xl font-black text-[#1a1f36] tracking-tight">Notification <span className="text-[#6b21a8]">Center</span></SheetTitle>
+                <SheetDescription className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Live transaction & credit alerts</SheetDescription>
               </div>
             </div>
           </div>
 
-          <div className="p-6 space-y-8">
+          <div className="p-6 space-y-10">
             {/* Offers Carousel Section */}
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-black uppercase tracking-widest text-[#1a1f36] flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-primary" />
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 flex items-center gap-2">
+                  <Tag className="w-3.5 h-3.5 text-[#c9a84c]" />
                   Exclusive Offers
                 </h3>
-                <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
+                <span className="text-[9px] font-black text-[#6b21a8] bg-[#fdf4ff] px-2 py-0.5 rounded-full border border-purple-100">FEATURED</span>
               </div>
               
               <div className="overflow-hidden" ref={emblaRef}>
@@ -177,36 +182,31 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, onClose
                     return (
                       <div key={idx} className="flex-[0_0_100%] pr-4 pl-1">
                         <motion.div 
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
                           className={cn(
-                            "rounded-3xl p-6 border-2 transition-all shadow-sm",
-                            colors.bg,
-                            colors.border
+                            "rounded-[32px] p-6 border transition-all shadow-sm relative overflow-hidden group bg-white hover:border-[#6b21a8]/30 hover:shadow-xl hover:shadow-purple-900/5",
                           )}
                         >
-                          <div className="flex items-start justify-between mb-4">
-                            <div className={cn("p-3 rounded-2xl", colors.iconBackground)}>
-                              <Icon className={cn("w-6 h-6", colors.text)} />
-                            </div>
-                            <span className={cn("text-[10px] font-bold uppercase tracking-tighter px-2.5 py-1 rounded-lg", colors.iconBackground, colors.text)}>
-                              {offer.category}
-                            </span>
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-50 rounded-full -translate-y-1/2 translate-x-1/2 opacity-50 group-hover:scale-150 transition-transform duration-700" />
+                          <div className="relative z-10">
+                             <div className="flex items-start justify-between mb-6">
+                               <div className={cn("p-3 rounded-2xl bg-slate-50 border border-slate-100")}>
+                                 <Icon className={cn("w-6 h-6 text-[#1a1f36]")} />
+                               </div>
+                               <span className={cn("text-[10px] font-black uppercase tracking-tighter px-3 py-1 rounded-full bg-slate-100 text-slate-500")}>
+                                 {offer.category}
+                               </span>
+                             </div>
+                             <h4 className="text-lg font-black text-[#1a1f36] mb-2 leading-tight">
+                               {offer.title}
+                             </h4>
+                             <p className="text-xs text-gray-500 font-medium leading-relaxed mb-6">
+                               {offer.content}
+                             </p>
+                             <button className="w-full py-3.5 bg-[#1a1f36] text-[#c9a84c] rounded-2xl flex items-center justify-center gap-2 text-xs font-black transition-all hover:bg-[#2d3356] shadow-lg shadow-black/10">
+                               Claim Reward
+                               <ArrowRight className="w-4 h-4" />
+                             </button>
                           </div>
-                          <h4 className="text-lg font-black text-[#1a1f36] mb-2 leading-tight">
-                            {offer.title}
-                          </h4>
-                          <p className="text-sm text-gray-600 font-medium leading-relaxed mb-6">
-                            {offer.content}
-                          </p>
-                          <button className={cn(
-                            "w-full py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-black transition-all active:scale-95 shadow-md",
-                            "bg-white border-2 border-transparent hover:border-current",
-                            colors.text
-                          )}>
-                            Avail Now
-                            <ArrowRight className="w-4 h-4" />
-                          </button>
                         </motion.div>
                       </div>
                     );
@@ -217,59 +217,65 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, onClose
 
             {/* Notifications Section */}
             <div>
-              <h3 className="text-sm font-black uppercase tracking-widest text-[#1a1f36] mb-4 flex items-center gap-2">
-                <Bell className="w-4 h-4 text-primary" />
-                Recent Updates
+              <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-400 mb-5 px-1 flex items-center gap-2">
+                <Bell className="w-3.5 h-3.5 text-[#6b21a8]" />
+                Recent Activity
               </h3>
-              <div className="space-y-3">
-                {notifications.map((notif, idx) => {
-                  const colors = colorMap[notif.color as keyof typeof colorMap];
-                  const Icon = notif.icon;
-                  return (
-                    <motion.div
-                      key={idx}
-                      whileHover={{ x: 4 }}
-                      className="group bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex items-center gap-4 cursor-pointer"
-                    >
-                      <div className={cn("p-2.5 rounded-xl shrink-0 transition-transform group-hover:rotate-12", colors.iconBackground)}>
-                        <Icon className={cn("w-5 h-5", colors.text)} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start mb-0.5">
-                          <p className="text-sm font-black text-[#1a1f36] truncate">{notif.title}</p>
-                          <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap ml-2 uppercase tracking-tighter">{notif.time}</span>
-                        </div>
-                        <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed italic">
-                          {notif.content}
-                        </p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-primary transition-colors" />
-                    </motion.div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Bottom Insight */}
-            <div className="bg-[#1a1f36] rounded-3xl p-6 text-white overflow-hidden relative group">
-              <div className="relative z-10">
-                <p className="text-[#c9a84c] text-[10px] font-black uppercase tracking-widest mb-2">Smart Assist</p>
-                <h4 className="text-xl font-bold mb-3 leading-tight">Your credit health has improved by 4%!</h4>
-                <button className="text-xs font-bold bg-[#c9a84c] text-[#1a1f36] px-4 py-2 rounded-full hover:bg-white transition-colors flex items-center gap-2">
-                  View Full Report
-                  <Activity className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-primary/20 transition-all" />
-              <div className="absolute top-0 right-0 p-4 opacity-10">
-                <TrendingUp className="w-16 h-16" />
+              <div className="space-y-4">
+                <AnimatePresence mode="popLayout">
+                  {notifications?.length > 0 ? (
+                    notifications.map((notif: any) => {
+                      const colors = colorMap[notif.type as keyof typeof colorMap] || colorMap.INFO;
+                      const Icon = getIcon(notif.type);
+                      return (
+                        <motion.div
+                          key={notif.id}
+                          layout
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          onClick={() => !notif.isRead && markAsReadMutation.mutate(notif.id)}
+                          className={cn(
+                            "group p-5 rounded-[28px] border transition-all flex items-start gap-4 cursor-pointer relative",
+                            notif.isRead ? "bg-white border-slate-100 opacity-60" : "bg-white border-white shadow-xl shadow-black/5 hover:border-purple-100"
+                          )}
+                        >
+                          {!notif.isRead && (
+                             <div className="absolute top-5 right-5 w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
+                          )}
+                          <div className={cn("p-3 rounded-2xl shrink-0 transition-all group-hover:scale-110", colors.bg)}>
+                            <Icon className={cn("w-5 h-5", colors.text)} />
+                          </div>
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <div className="flex justify-between items-start mb-1">
+                              <p className={cn("text-sm font-black text-[#1a1f36] truncate", !notif.isRead && "text-[#6b21a8]")}>{notif.title}</p>
+                            </div>
+                            <p className="text-[11px] text-gray-500 font-medium leading-relaxed mb-3">
+                              {notif.message}
+                            </p>
+                            <span className="text-[9px] font-black text-gray-300 uppercase tracking-tighter">
+                               {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
+                            </span>
+                          </div>
+                        </motion.div>
+                      );
+                    })
+                  ) : (
+                    <div className="py-20 text-center space-y-4">
+                       <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-300">
+                          <Clock className="w-8 h-8" />
+                       </div>
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No recent alerts</p>
+                    </div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>
 
-          <div className="mt-auto p-6 bg-white border-t">
-            <button className="w-full py-4 text-center text-sm font-black text-[#1a1f36] hover:text-primary transition-colors hover:bg-slate-50 rounded-2xl">
-              Mark all as read
+          <div className="mt-auto p-6 bg-white border-t border-slate-50">
+            <button className="w-full py-4 text-center text-[11px] font-black uppercase tracking-widest text-gray-400 hover:text-[#1a1f36] transition-colors hover:bg-slate-50 rounded-2xl">
+              Clear All History
             </button>
           </div>
         </div>
@@ -277,9 +283,5 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, onClose
     </Sheet>
   );
 };
-
-const TrendingUp = (props: any) => (
-  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-);
 
 export default NotificationDrawer;
