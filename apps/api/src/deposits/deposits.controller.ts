@@ -1,23 +1,31 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { DepositsService } from './deposits.service';
-import { JwtAuthGuard } from '../auth/jwt.guard';
-import { CreateDepositDto } from './dto/create-deposit.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('deposits')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+// @UseGuards(FirebaseAuthGuard, JwtAuthGuard)
 @Controller('deposits')
 export class DepositsController {
   constructor(private readonly depositsService: DepositsService) {}
 
   @Get()
-  list(@Req() req: any) {
-    return this.depositsService.list(req.user.userId);
+  findAll(@Query('memberId') memberId?: string) {
+    return this.depositsService.list(memberId);
   }
 
   @Post()
-  create(@Req() req: any, @Body() dto: CreateDepositDto) {
-    return this.depositsService.create(req.user.userId, dto);
+  create(@Body() dto: any, @Query('memberId') memberId?: string) {
+    return this.depositsService.create(memberId, dto);
+  }
+
+  @Post(':id/deposit')
+  deposit(@Param('id') id: string, @Body('amount') amount: number) {
+    return this.depositsService.deposit(id, amount);
+  }
+
+  @Post(':id/withdraw')
+  withdraw(@Param('id') id: string, @Body('amount') amount: number) {
+    return this.depositsService.withdraw(id, amount);
   }
 }

@@ -1,9 +1,8 @@
-import { DepositKind } from '@prisma/client';
-import { IsDateString, IsEnum, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import { IsDateString, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
 export class CreateDepositDto {
-  @IsEnum(DepositKind)
-  kind: DepositKind;
+  @IsString()
+  kind: string;
 
   @IsNumber()
   principal: number;

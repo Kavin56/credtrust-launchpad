@@ -43,6 +43,8 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/modules/login/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 import NotificationDrawer from "./NotificationDrawer";
 import {
   DropdownMenu,
@@ -158,6 +160,18 @@ const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const { data: notifications } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: async () => {
+      const { data } = await api.get("/notifications");
+      return data;
+    },
+    enabled: !!user,
+    refetchInterval: 5000,
+  });
+
+  const unreadCount = notifications?.filter((n: any) => !n.isRead).length || 0;
 
   const userEmail = user?.email || "User";
   const userInitials = userEmail.substring(0, 2).toUpperCase();
@@ -285,7 +299,11 @@ const Header = () => {
               className="relative p-2 text-gray-400 hover:text-[#1a1f36] transition-colors group"
             >
               <Bell className="w-5 h-5 group-hover:rotate-[15deg] transition-transform" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 min-w-[14px] h-[14px] px-1 bg-rose-500 rounded-full border-2 border-white text-[8px] font-black text-white flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
             </button>
 
             <DropdownMenu>

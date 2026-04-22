@@ -57,6 +57,7 @@ model User {
   email         String    @unique
   passwordHash  String
   role          Role      @default(MEMBER)
+  status        String    @default("ACTIVE")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   lastLoginAt   DateTime?
@@ -141,6 +142,13 @@ model Loan {
   interestRate    Decimal      @db.Decimal(5, 2)
   purpose         String
   guarantorDetail String?
+  
+  // New fields for comprehensive loan system
+  employmentStatus String?     // Salaried, Self-Employed, etc.
+  monthlyIncome   Decimal?     @db.Decimal(15, 2)
+  documents       Json?        // { idProof: string, addressProof: string, incomeProof: string }
+  adminRemarks    String?
+  
   status          LoanStatus   @default(PENDING)
   termMonths      Int
   disbursedAt     DateTime?
@@ -148,6 +156,7 @@ model Loan {
   emiSchedule     EmiSchedule[]
   repayments      LoanRepayment[]
   createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt @default(now())
 }
 
 model EmiSchedule {
@@ -178,6 +187,7 @@ model LedgerAccount {
   code          String   @unique // e.g. 1001
   name          String
   category      String   // Asset, Liability, Income, Expense
+  type          String?  // ASSET, LIABILITY, etc.
   balance       Decimal  @db.Decimal(15, 2) @default(0)
   createdAt     DateTime @default(now())
   entries       LedgerEntry[]

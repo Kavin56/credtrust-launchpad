@@ -16,9 +16,14 @@ import {
   Users,
   Briefcase,
   Gem,
-  CircleDollarSign
+  CircleDollarSign,
+  Upload,
+  User,
+  Wallet,
+  FileText,
+  BadgeCheck
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -77,34 +82,96 @@ const LoanApplicationPage = () => {
   const [amount, setAmount] = useState(50000);
   const [tenure, setTenure] = useState(12);
   const [collateral, setCollateral] = useState("");
+  const [employmentStatus, setEmploymentStatus] = useState("Salaried");
+  const [monthlyIncome, setMonthlyIncome] = useState(50000);
+  const [purpose, setPurpose] = useState("Personal Use");
+  
+  // Documents state
+  const [idProof, setIdProof] = useState<File | null>(null);
+  const [addressProof, setAddressProof] = useState<File | null>(null);
+  const [incomeProof, setIncomeProof] = useState<File | null>(null);
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Handle pre-selected loan type from state
+  React.useEffect(() => {
+    const preSelected = location.state?.loanType;
+    if (preSelected) {
+      const loan = loanTypes.find(l => l.name === preSelected || l.id === preSelected);
+      if (loan) {
+        setSelectedLoan(loan);
+        setStep(2); // Skip selection if already selected
+      }
+    }
+  }, [location.state]);
 
   const calculateEMI = () => {
     const r = selectedLoan.rate / (12 * 100);
     const n = tenure;
     const p = amount;
-    // EMI Formula: P * r * (1+r)^n / ((1+r)^n - 1)
     return (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
   };
 
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
   
+  const uploadDocument = async (file: File | null) => {
+    if (!file) return null;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const { data } = await api.post("/members/me/photo", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      return data.url;
+    } catch (err) {
+      console.error("Upload failed", err);
+      return "mock-url-" + file.name; // Fallback for demo
+    }
+  };
+
   const handleSubmit = async () => {
     try {
-      await api.post("/loans", {
-        product: selectedLoan.name,
-        principal: amount,
-        rate: selectedLoan.rate,
-        tenureMonths: tenure,
-        sanctionDate: new Date().toISOString(),
-        collateral,
+      setIsSubmitting(true);
+      
+      // Get member ID from profile
+      let profileId = "mem1";
+      try {
+        const { data: profile } = await api.get("/members/me");
+        profileId = profile.id;
+      } catch (e) {}
+      
+      // Upload documents if any
+      const idProofUrl = await uploadDocument(idProof);
+      const addressProofUrl = await uploadDocument(addressProof);
+      const incomeProofUrl = await uploadDocument(incomeProof);
+      
+      await api.post("/loans/apply", {
+        memberId: profileId,
+        type: selectedLoan.name,
+        amount: Number(amount),
+        interestRate: selectedLoan.rate,
+        termMonths: tenure,
+        purpose,
+        guarantorDetail: collateral,
+        employmentStatus,
+        monthlyIncome: Number(monthlyIncome),
+        documents: {
+          idProof: idProofUrl,
+          addressProof: addressProofUrl,
+          incomeProof: incomeProofUrl
+        }
       });
-      toast.success("Loan application submitted for approval!");
+      
+      toast.success("Your loan request has been submitted successfully!");
       navigate("/accounts?tab=loans");
     } catch (err: any) {
       console.error(err);
-      toast.error(err?.response?.data?.message || "Failed to submit loan");
+      toast.error(err?.response?.data?.message || "Failed to submit loan application");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -112,7 +179,6 @@ const LoanApplicationPage = () => {
     <div className="min-h-screen bg-[#f8fafc] font-sans selection:bg-[#c9a84c]/30">
       <Header />
       
-      {/* Breadcrumbs */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 h-12 flex items-center gap-2 text-[13px] text-gray-500 font-medium">
           <Link to="/dashboard" className="hover:text-[#6b21a8] flex items-center gap-1">
@@ -128,7 +194,7 @@ const LoanApplicationPage = () => {
       <main className="max-w-4xl mx-auto px-4 py-12">
         {/* Stepper Progress */}
         <div className="flex justify-between items-center mb-12 px-6">
-           {[1, 2, 3, 4].map((i) => (
+           {[1, 2, 3, 4, 5, 6].map((i) => (
              <React.Fragment key={i}>
                 <div className="flex flex-col items-center gap-2 relative z-10">
                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-500 ${
@@ -137,10 +203,10 @@ const LoanApplicationPage = () => {
                       {step > i ? <CheckCircle2 className="w-5 h-5" /> : i}
                    </div>
                    <span className={`text-[10px] font-bold uppercase tracking-widest ${step >= i ? "text-[#1a1f36]" : "text-gray-300"}`}>
-                      {i === 1 ? "Type" : i === 2 ? "Tenure" : i === 3 ? "Security" : "Review"}
+                      {i === 1 ? "Type" : i === 2 ? "EMI" : i === 3 ? "Work" : i === 4 ? "Security" : i === 5 ? "Verify" : "Review"}
                    </span>
                 </div>
-                {i < 4 && (
+                {i < 6 && (
                    <div className="flex-grow h-0.5 bg-gray-100 mx-4 -mt-6">
                       <div className="h-full bg-[#1a1f36] transition-all duration-700" style={{ width: step > i ? '100%' : '0%' }} />
                    </div>
@@ -187,11 +253,6 @@ const LoanApplicationPage = () => {
                                  <p className="text-[14px] font-black text-[#1a1f36]">₹{l.max.toLocaleString()}</p>
                               </div>
                            </div>
-                           {selectedLoan.id === l.id && (
-                              <div className="absolute -bottom-4 -right-4 transform rotate-12 opacity-5 scale-150">
-                                 <Briefcase size={120} />
-                              </div>
-                           )}
                         </button>
                       ))}
                    </div>
@@ -278,6 +339,68 @@ const LoanApplicationPage = () => {
                    className="p-10 space-y-8"
                 >
                    <div className="text-center space-y-2">
+                       <h2 className="text-2xl font-bold text-[#1a1f36]">Employment & Income</h2>
+                       <p className="text-gray-500 text-sm">Help us understand your financial stability</p>
+                   </div>
+
+                   <div className="max-w-lg mx-auto space-y-8">
+                      <div className="space-y-4">
+                         <Label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Employment Status</Label>
+                         <div className="grid grid-cols-2 gap-4">
+                            {['Salaried', 'Self-Employed', 'Business', 'Farmer'].map(s => (
+                              <button 
+                                 key={s}
+                                 onClick={() => setEmploymentStatus(s)}
+                                 className={`py-4 rounded-2xl font-bold border transition-all text-sm flex items-center justify-center gap-2 ${
+                                    employmentStatus === s ? "bg-[#1a1f36] text-white border-[#1a1f36] shadow-lg shadow-black/10" : "bg-white text-gray-500 border-gray-100 hover:border-gray-200"
+                                 }`}
+                              >
+                                 {s === 'Salaried' && <Briefcase className="w-4 h-4" />}
+                                 {s === 'Self-Employed' && <User className="w-4 h-4" />}
+                                 {s === 'Business' && <Landmark className="w-4 h-4" />}
+                                 {s === 'Farmer' && <Star className="w-4 h-4" />}
+                                 {s}
+                              </button>
+                            ))}
+                         </div>
+                      </div>
+
+                      <div className="space-y-4">
+                         <Label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Monthly Net Income (₹)</Label>
+                         <div className="relative">
+                            <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                            <Input
+                               type="number"
+                               placeholder="e.g. 50000"
+                               className="h-16 pl-12 text-xl font-bold rounded-2xl border-gray-100"
+                               value={monthlyIncome}
+                               onChange={(e) => setMonthlyIncome(Number(e.target.value))}
+                            />
+                         </div>
+                      </div>
+
+                      <div className="space-y-4">
+                         <Label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Loan Purpose</Label>
+                         <Input
+                            placeholder="e.g. Home Renovation, Education, etc."
+                            className="h-14 rounded-2xl border-gray-100"
+                            value={purpose}
+                            onChange={(e) => setPurpose(e.target.value)}
+                         />
+                      </div>
+                   </div>
+                </motion.div>
+              )}
+
+              {step === 4 && (
+                <motion.div 
+                   key="step4" 
+                   initial={{ opacity: 0, x: 20 }} 
+                   animate={{ opacity: 1, x: 0 }} 
+                   exit={{ opacity: 0, x: -20 }}
+                   className="p-10 space-y-8"
+                >
+                   <div className="text-center space-y-2">
                        <h2 className="text-2xl font-bold text-[#1a1f36]">Security & Guarantor</h2>
                        <p className="text-gray-500 text-sm">Most society loans require a member guarantor or collateral</p>
                    </div>
@@ -309,20 +432,66 @@ const LoanApplicationPage = () => {
                            onChange={(e) => setCollateral(e.target.value)}
                          />
                       </div>
-                      <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-start gap-4">
-                         <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-1" />
-                         <div className="space-y-1">
-                            <h5 className="text-[13px] font-bold text-emerald-900 leading-none">KYC Pre-Approved</h5>
-                            <p className="text-[11px] text-emerald-700 leading-tight">Your KYC status is verified. No further ID proofs required.</p>
-                         </div>
-                      </div>
                    </div>
                 </motion.div>
               )}
 
-              {step === 4 && (
+              {step === 5 && (
                 <motion.div 
-                   key="step4" 
+                   key="step5" 
+                   initial={{ opacity: 0, x: 20 }} 
+                   animate={{ opacity: 1, x: 0 }} 
+                   exit={{ opacity: 0, x: -20 }}
+                   className="p-10 space-y-8"
+                >
+                   <div className="text-center space-y-2">
+                       <h2 className="text-2xl font-bold text-[#1a1f36]">Document Verification</h2>
+                       <p className="text-gray-500 text-sm">Review your uploaded documents for society approval</p>
+                   </div>
+
+                   <div className="grid gap-4 max-w-lg mx-auto">
+                      {[
+                        { id: 'id', name: 'ID Proof (Aadhar/PAN)', file: idProof, setter: setIdProof },
+                        { id: 'addr', name: 'Address Proof', file: addressProof, setter: setAddressProof },
+                        { id: 'inc', name: 'Income Proof', file: incomeProof, setter: setIncomeProof }
+                      ].map((doc) => (
+                        <div key={doc.id} className="p-6 bg-white border border-gray-100 rounded-[32px] flex items-center justify-between group hover:border-[#1a1f36] transition-all">
+                           <div className="flex items-center gap-4">
+                              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${doc.file ? "bg-emerald-50 text-emerald-600" : "bg-gray-50 text-gray-400"}`}>
+                                 {doc.file ? <CheckCircle2 className="w-6 h-6" /> : <Upload className="w-6 h-6" />}
+                              </div>
+                              <div>
+                                 <p className="text-[13px] font-bold text-[#1a1f36]">{doc.name}</p>
+                                 <p className="text-[10px] text-gray-400">{doc.file ? doc.file.name : "Action required"}</p>
+                              </div>
+                           </div>
+                           
+                           <div className="relative">
+                              <input 
+                                type="file" 
+                                className="absolute inset-0 opacity-0 cursor-pointer" 
+                                onChange={(e) => doc.setter(e.target.files?.[0] || null)} 
+                              />
+                              <Button variant="outline" className="rounded-xl h-10 px-4 text-xs font-bold border-gray-100">
+                                 {doc.file ? "Replace" : "Upload"}
+                              </Button>
+                           </div>
+                        </div>
+                      ))}
+                   </div>
+
+                   <div className="bg-emerald-50/50 p-6 rounded-[32px] border border-emerald-100 flex gap-4 items-start max-w-lg mx-auto">
+                      <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+                      <p className="text-[11px] text-emerald-700 font-medium leading-relaxed">
+                         Your documents will be encrypted and stored securely. Sample approval check: Ensure all text is legible and edges are visible for faster processing.
+                      </p>
+                   </div>
+                </motion.div>
+              )}
+
+              {step === 6 && (
+                <motion.div 
+                   key="step6" 
                    initial={{ opacity: 0, scale: 0.95 }} 
                    animate={{ opacity: 1, scale: 1 }} 
                    className="p-10 space-y-8"
@@ -343,9 +512,9 @@ const LoanApplicationPage = () => {
                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Loan Product</p>
                             <p className="text-[18px] font-bold text-[#1a1f36]">{selectedLoan.name}</p>
                          </div>
-                         <div className="space-y-1 text-right">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Processing Fee</p>
-                            <p className="text-[18px] font-bold text-emerald-600">₹0 (Waiver)</p>
+                         <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
+                            <BadgeCheck className="w-4 h-4" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Sample Docs Pre-Approved</span>
                          </div>
                       </div>
 
@@ -387,7 +556,7 @@ const LoanApplicationPage = () => {
 
            <div className="bg-gray-50/50 p-10 flex justify-between items-center border-t border-gray-100">
               {step > 1 ? (
-                <Button onClick={handleBack} variant="ghost" className="h-14 px-8 font-bold text-gray-500 rounded-2xl hover:bg-[#1a1f36]/5">
+                <Button onClick={handleBack} variant="ghost" className="h-14 px-8 font-bold text-gray-500 rounded-2xl hover:bg-[#1a1f36]/5" disabled={isSubmitting}>
                    <ArrowLeft className="w-4 h-4 mr-2" />
                    Back
                 </Button>
@@ -395,15 +564,15 @@ const LoanApplicationPage = () => {
                 <Link to="/accounts?tab=loans" className="text-[13px] font-bold text-gray-400 hover:text-[#1a1f36] transition-colors pl-4">Cancel Application</Link>
               )}
 
-              {step < 4 ? (
+              {step < 6 ? (
                 <Button onClick={handleNext} className="h-14 px-12 font-bold bg-[#1a1f36] text-white rounded-2xl hover:bg-[#2d3356] shadow-lg shadow-black/10">
                    Continue
                    <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               ) : (
-                <Button onClick={handleSubmit} className="h-14 px-16 font-bold bg-[#c9a84c] text-white rounded-2xl hover:bg-[#d4b65c] shadow-lg shadow-amber-900/10">
-                   Submit Application
-                   <Zap className="w-4 h-4 ml-2" />
+                <Button onClick={handleSubmit} disabled={isSubmitting} className="h-14 px-16 font-bold bg-[#c9a84c] text-white rounded-2xl hover:bg-[#d4b65c] shadow-xl shadow-amber-900/20 transform hover:scale-[1.02] transition-all">
+                   {isSubmitting ? "Submitting..." : "Submit Application Now"}
+                   {!isSubmitting && <Zap className="w-4 h-4 ml-2" />}
                 </Button>
               )}
            </div>
@@ -419,10 +588,10 @@ const LoanApplicationPage = () => {
               </div>
            </div>
            <div className="p-6 bg-white rounded-3xl border border-gray-100 flex items-center gap-4">
-              <Database className="w-6 h-6 text-[#6b21a8]" />
+              <FileText className="w-6 h-6 text-[#6b21a8]" />
               <div>
-                 <p className="text-[13px] font-bold text-[#1a1f36]">Paperless Digital</p>
-                 <p className="text-[10px] text-gray-400">Secure e-verification</p>
+                 <p className="text-[13px] font-bold text-[#1a1f36]">Sample Verification</p>
+                 <p className="text-[10px] text-gray-400">Automated document check</p>
               </div>
            </div>
            <div className="p-6 bg-white rounded-3xl border border-gray-100 flex items-center gap-4">

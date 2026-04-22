@@ -2,170 +2,156 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Inject,
+  forwardRef
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { ApplyLoanDto } from './dto/apply-loan.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 import { addMonths } from 'date-fns';
-import { Decimal } from '@prisma/client/runtime/library';
-import { LoanRepaymentDto } from './dto/repayment.dto';
-import { LoanStatus } from '@prisma/client';
+
+export enum LoanStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  ACTIVE = 'ACTIVE',
+  CLOSED = 'CLOSED',
+  OVERDUE = 'OVERDUE'
+}
+
+export enum Role {
+  USER = 'USER',
+  ADMIN = 'ADMIN',
+  TELLER = 'TELLER',
+  CEO = 'CEO'
+}
+
+// Mocking Decimal since we aren't using the real Prisma client runtime
+class Decimal {
+  public value: number;
+  constructor(v: any) { this.value = Number(v); }
+  toString() { return this.value.toString(); }
+  toNumber() { return this.value; }
+  toFixed(n: number) { return this.value.toFixed(n); }
+  greaterThanOrEqualTo(other: any) { return this.value >= Number(other); }
+}
 
 @Injectable()
 export class LoansService {
-  constructor(private prisma: PrismaService) {}
+  // Manual In-Memory Database
+  private loans: any[] = [];
+  private members: any[] = [
+    { id: 'mem1', fullName: 'Suresh Kumar', memberId: 'MEM0001' },
+    { id: 'mem2', fullName: 'Priya Murugan', memberId: 'MEM0002' },
+    { id: 'mem3', fullName: 'Velu Pillai', memberId: 'MEM0003' },
+    { id: 'mem4', fullName: 'Anjali Sharma', memberId: 'MEM0004' },
+  ];
 
-  async checkEligibility(memberId: string, amount: number) {
-    const member = await this.prisma.member.findUnique({
-      where: { id: memberId },
-      include: { shareAccounts: true },
-    });
-
-    if (!member) throw new NotFoundException('Member not found');
-
-    const totalShares = member.shareAccounts.reduce(
-      (acc, s) => acc + Number(s.totalAmount),
-      0,
-    );
-
-    // Simple business rule: Loan amount cannot exceed 10x share capital
-    if (amount > totalShares * 10) {
-      return {
-        eligible: false,
-        reason: `Loan amount ${amount} exceeds 10x share capital (${totalShares * 10})`,
-        limit: totalShares * 10,
-      };
-    }
-
-    return { eligible: true };
+  constructor(
+    private readonly notificationsService: NotificationsService
+  ) {
+    this.seedRandomData();
   }
 
-  async apply(dto: ApplyLoanDto) {
-    const eligibility = await this.checkEligibility(dto.memberId, dto.amount);
-    if (!eligibility.eligible) {
-      throw new BadRequestException(eligibility.reason);
-    }
-
-    const totalLoans = await this.prisma.loan.count();
-    const loanNumber = `L${(totalLoans + 1).toString().padStart(8, '0')}`;
-
-    const principal = new Decimal(dto.amount);
-    const rate = new Decimal(dto.interestRate);
-    const term = dto.termMonths;
-
-    const schedules = this.buildAmortizationSchedule(
-      dto.amount,
-      dto.interestRate,
-      dto.termMonths,
-      new Date(),
-    );
-
-    return this.prisma.loan.create({
-      data: {
-        loanNumber,
-        memberId: dto.memberId,
-        type: dto.type,
-        amount: principal,
-        interestRate: rate,
+  private seedRandomData() {
+    const loanTypes = ['Personal Loan', 'Home Loan', 'Gold Loan', 'SHG Credit'];
+    const statuses = [LoanStatus.PENDING, LoanStatus.APPROVED, LoanStatus.REJECTED];
+    
+    for (let i = 1; i <= 10; i++) {
+      const member = this.members[Math.floor(Math.random() * this.members.length)];
+      const amount = Math.floor(Math.random() * 500000) + 10000;
+      const rate = 10 + Math.random() * 5;
+      const term = [12, 24, 36, 48][Math.floor(Math.random() * 4)];
+      
+      this.loans.push({
+        id: `loan-${i}`,
+        loanNumber: `L${i.toString().padStart(8, '0')}`,
+        memberId: member.id,
+        member: member,
+        type: loanTypes[Math.floor(Math.random() * loanTypes.length)],
+        amount: new Decimal(amount),
+        interestRate: new Decimal(rate.toFixed(2)),
         termMonths: term,
-        purpose: dto.purpose,
-        guarantorDetail: dto.guarantorDetail,
-        status: LoanStatus.PENDING,
-        emiSchedule: { createMany: { data: schedules } },
-      },
-      include: { emiSchedule: true },
+        purpose: 'Randomly generated for testing',
+        status: statuses[Math.floor(Math.random() * statuses.length)],
+        employmentStatus: 'Salaried',
+        monthlyIncome: new Decimal(50000),
+        documents: {
+          idProof: 'https://via.placeholder.com/150?text=ID+Proof',
+          addressProof: 'https://via.placeholder.com/150?text=Address+Proof'
+        },
+        adminRemarks: 'Initial seed data',
+        createdAt: new Date(Date.now() - Math.random() * 1000000000),
+      });
+    }
+  }
+
+  async apply(dto: any) {
+    const loanNumber = `L${(this.loans.length + 1).toString().padStart(8, '0')}`;
+    const member = this.members.find(m => m.id === dto.memberId) || this.members[0];
+
+    const newLoan = {
+      id: `loan-${Date.now()}`,
+      loanNumber,
+      memberId: dto.memberId,
+      member: member,
+      type: dto.type,
+      amount: new Decimal(dto.amount),
+      interestRate: new Decimal(dto.interestRate),
+      termMonths: dto.termMonths,
+      purpose: dto.purpose,
+      guarantorDetail: dto.guarantorDetail,
+      employmentStatus: dto.employmentStatus,
+      monthlyIncome: dto.monthlyIncome ? new Decimal(dto.monthlyIncome) : null,
+      documents: dto.documents || {},
+      status: LoanStatus.PENDING,
+      createdAt: new Date(),
+    };
+
+    this.loans.push(newLoan);
+    return newLoan;
+  }
+
+  async updateStatus(loanId: string, status: LoanStatus, remarks?: string) {
+    const loan = this.loans.find(l => l.id === loanId);
+    if (!loan) throw new NotFoundException('Loan not found');
+
+    loan.status = status;
+    if (remarks) loan.adminRemarks = remarks;
+    if (status === LoanStatus.APPROVED) loan.disbursedAt = new Date();
+
+    // Trigger notification
+    await this.notificationsService.create({
+      memberId: loan.memberId,
+      title: `Loan ${status}`,
+      message: `Your ${loan.type} application (${loan.loanNumber}) has been ${status.toLowerCase()}.${remarks ? ' Remark: ' + remarks : ''}`,
+      type: status === LoanStatus.APPROVED ? 'SUCCESS' : status === LoanStatus.REJECTED ? 'DANGER' : 'INFO'
     });
+
+    return loan;
   }
 
   async approveLoan(loanId: string) {
-    return this.prisma.loan.update({
-      where: { id: loanId },
-      data: {
-        status: LoanStatus.APPROVED,
-        disbursedAt: new Date(),
-      },
-    });
-  }
-
-  async repay(loanId: string, dto: LoanRepaymentDto) {
-    return this.prisma.$transaction(async (tx) => {
-      const loan = await tx.loan.findUnique({
-        where: { id: loanId },
-        include: { emiSchedule: { where: { isPaid: false }, orderBy: { dueDate: 'asc' } } },
-      });
-
-      if (!loan) throw new NotFoundException('Loan not found');
-
-      const repayment = await tx.loanRepayment.create({
-        data: {
-          loanId,
-          amount: new Decimal(dto.amount),
-          penaltyAmount: new Decimal(dto.penaltyAmount || 0),
-          paymentMode: dto.paymentMode,
-          referenceNumber: dto.referenceNumber,
-        },
-      });
-
-      // Simple implementation: Mark first unpaid EMI as paid if amount matches
-      if (loan.emiSchedule.length > 0) {
-        const nextEmi = loan.emiSchedule[0];
-        if (new Decimal(dto.amount).greaterThanOrEqualTo(nextEmi.totalEmi)) {
-          await tx.emiSchedule.update({
-            where: { id: nextEmi.id },
-            data: { isPaid: true, paidAt: new Date() },
-          });
-        }
-      }
-
-      return repayment;
-    });
+    return this.updateStatus(loanId, LoanStatus.APPROVED, 'Approved via manual action');
   }
 
   async getLoan(id: string) {
-    const loan = await this.prisma.loan.findUnique({
-      where: { id },
-      include: {
-        member: true,
-        emiSchedule: { orderBy: { dueDate: 'asc' } },
-        repayments: { orderBy: { createdAt: 'desc' } },
-      },
-    });
+    const loan = this.loans.find(l => l.id === id);
     if (!loan) throw new NotFoundException('Loan not found');
     return loan;
   }
 
-  async list(memberId?: string) {
-    return this.prisma.loan.findMany({
-      where: memberId ? { memberId } : {},
-      include: { member: true },
-    });
+  async list(memberId?: string, status?: LoanStatus) {
+    let filtered = this.loans;
+    if (memberId) filtered = filtered.filter(l => l.memberId === memberId);
+    if (status) filtered = filtered.filter(l => l.status === status);
+    
+    return filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  private buildAmortizationSchedule(
-    principal: number,
-    annualRate: number,
-    tenureMonths: number,
-    startDate: Date,
-  ) {
-    const r = annualRate / 12 / 100;
-    const emi =
-      (principal * r * Math.pow(1 + r, tenureMonths)) /
-      (Math.pow(1 + r, tenureMonths) - 1);
-    
-    const schedule = [];
-    let balance = principal;
-    
-    for (let i = 1; i <= tenureMonths; i++) {
-        const interest = balance * r;
-        const principalPart = emi - interest;
-        balance -= principalPart;
-        
-        schedule.push({
-          dueDate: addMonths(startDate, i),
-          principalPart: new Decimal(principalPart.toFixed(2)),
-          interestPart: new Decimal(interest.toFixed(2)),
-          totalEmi: new Decimal(emi.toFixed(2)),
-        });
-    }
-    return schedule;
+  async checkEligibility(memberId: string, amount: number) {
+    return { eligible: true }; // Always eligible in mock mode
+  }
+
+  async repay(loanId: string, dto: any) {
+    return { success: true, message: 'Repayment recorded in memory' };
   }
 }

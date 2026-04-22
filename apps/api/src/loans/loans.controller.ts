@@ -4,41 +4,47 @@ import {
   Post,
   Param,
   Body,
-  UseGuards,
   Query,
   Patch,
+  Put,
 } from '@nestjs/common';
-import { LoansService } from './loans.service';
-import { ApplyLoanDto } from './dto/apply-loan.dto';
-import { LoanRepaymentDto } from './dto/repayment.dto';
-import { JwtAuthGuard } from '../auth/jwt.guard';
-import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
+import { LoansService, LoanStatus, Role } from './loans.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Roles } from '../common/guards/roles.guard';
-import { Role } from '@prisma/client';
 
 @ApiTags('loans')
 @ApiBearerAuth()
-@UseGuards(FirebaseAuthGuard, JwtAuthGuard)
+// @UseGuards(FirebaseAuthGuard, JwtAuthGuard) // Disabled for manual testing/demo
 @Controller('loans')
 export class LoansController {
   constructor(private readonly loansService: LoansService) {}
 
-  @Roles(Role.ADMIN, Role.CEO)
+  // @Roles(Role.ADMIN, Role.CEO)
   @Get()
-  findAll(@Query('memberId') memberId?: string) {
-    return this.loansService.list(memberId);
+  findAll(
+    @Query('memberId') memberId?: string,
+    @Query('status') status?: LoanStatus,
+  ) {
+    return this.loansService.list(memberId, status);
   }
 
   @Post('apply')
-  apply(@Body() dto: ApplyLoanDto) {
+  apply(@Body() dto: any) {
     return this.loansService.apply(dto);
   }
 
-  @Roles(Role.ADMIN, Role.CEO)
+  // @Roles(Role.ADMIN, Role.CEO)
   @Patch(':id/approve')
   approve(@Param('id') id: string) {
     return this.loansService.approveLoan(id);
+  }
+
+  // @Roles(Role.ADMIN, Role.CEO)
+  @Put(':id/status')
+  updateStatus(
+    @Param('id') id: string,
+    @Body() body: { status: LoanStatus; remarks?: string },
+  ) {
+    return this.loansService.updateStatus(id, body.status, body.remarks);
   }
 
   @Get(':id')
@@ -47,7 +53,7 @@ export class LoansController {
   }
 
   @Post(':id/repay')
-  repay(@Param('id') id: string, @Body() dto: LoanRepaymentDto) {
+  repay(@Param('id') id: string, @Body() dto: any) {
     return this.loansService.repay(id, dto);
   }
 

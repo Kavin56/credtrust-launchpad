@@ -24,6 +24,7 @@ import InsurancePage from "./modules/member/pages/InsurancePage";
 import CardsPage from "./modules/member/pages/CardsPage";
 import ServicesPage from "./modules/member/pages/ServicesPage";
 import ProductDetailPage from "./modules/member/pages/ProductDetailPage";
+import LoanRequestsPage from "./modules/admin/pages/LoanRequestsPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,6 +59,7 @@ const App = () => (
           <Route path="/admin" element={<AdminIndex />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin/dashboard" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/loans" element={<ProtectedRoute requireAdmin><LoanRequestsPage /></ProtectedRoute>} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/loan-apply" element={<ProtectedRoute><LoanApply /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><MemberDashboard /></ProtectedRoute>} />
