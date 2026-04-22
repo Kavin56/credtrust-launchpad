@@ -7,13 +7,16 @@ import {
   Body,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { MembersService } from './members.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('members')
 @ApiBearerAuth()
-// @UseGuards(FirebaseAuthGuard, JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('members')
 export class MembersController {
   constructor(private readonly membersService: MembersService) {}
@@ -30,12 +33,17 @@ export class MembersController {
 
   @Get('me')
   getMe(@Req() req: any) {
-    return this.membersService.getProfile(req.user?.userId || 'mem1');
+    return this.membersService.getProfile(req.user.userId);
+  }
+
+  @Patch('me')
+  updateMe(@Req() req: any, @Body() dto: UpdateProfileDto) {
+    return this.membersService.updateProfile(req.user.userId, dto);
   }
 
   @Get('me/overview')
   overview(@Req() req: any) {
-    return this.membersService.dashboardOverview(req.user?.userId || 'mem1');
+    return this.membersService.dashboardOverview(req.user.userId);
   }
 
   @Patch(':memberId/kyc')
@@ -46,7 +54,7 @@ export class MembersController {
   @Post('me/photo')
   async uploadPhoto(@Req() req: any) {
     const file = await req.file();
-    return this.membersService.uploadPhoto(req.user?.userId || 'mem1', file);
+    return this.membersService.uploadPhoto(req.user.userId, file);
   }
 
   @Get(':userId')

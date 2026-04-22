@@ -1,55 +1,32 @@
 import { Injectable } from '@nestjs/common';
-
-export interface Notification {
-  id: string;
-  memberId: string;
-  title: string;
-  message: string;
-  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'DANGER';
-  isRead: boolean;
-  createdAt: Date;
-}
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class NotificationsService {
-  private notifications: Notification[] = [
-    {
-      id: 'notif-1',
-      memberId: 'mem1',
-      title: 'Welcome to CredTrust',
-      message: 'Your membership has been successfully activated.',
-      type: 'SUCCESS',
-      isRead: false,
-      createdAt: new Date()
-    }
-  ];
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll(memberId?: string) {
-    if (memberId) {
-      return this.notifications.filter(n => n.memberId === memberId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    }
-    return this.notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return this.prisma.notification.findMany({
+      where: memberId ? { memberId } : undefined,
+      orderBy: { sentAt: 'desc' },
+    });
   }
 
   async create(dto: { memberId: string; title: string; message: string; type: any }) {
-    const newNotif: Notification = {
-      id: `notif-${Date.now()}`,
-      memberId: dto.memberId,
-      title: dto.title,
-      message: dto.message,
-      type: dto.type || 'INFO',
-      isRead: false,
-      createdAt: new Date()
-    };
-    this.notifications.push(newNotif);
-    return newNotif;
+    return this.prisma.notification.create({
+      data: {
+        memberId: dto.memberId,
+        title: dto.title,
+        message: dto.message,
+        type: dto.type || 'INFO',
+        isRead: false,
+        sentAt: new Date(),
+      },
+    });
   }
 
   async markAsRead(id: string) {
-    const notif = this.notifications.find(n => n.id === id);
-    if (notif) {
-      notif.isRead = true;
-    }
+    await this.prisma.notification.update({ where: { id }, data: { isRead: true } });
     return { success: true };
   }
 }

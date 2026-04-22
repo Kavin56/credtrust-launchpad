@@ -3,60 +3,15 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
-}
-
-enum Role {
-  ADMIN
-  CEO
-  TELLER
-  COLLECTOR
-  MEMBER
-  DIRECTOR
-}
-
-enum KycStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-enum MemberStatus {
-  ACTIVE
-  INACTIVE
-  EXITED
-}
-
-enum DepositType {
-  RD
-  FD
-  SAVINGS
-}
-
-enum TransactionType {
-  DEPOSIT
-  WITHDRAWAL
-  INTEREST
-  DIVIDEND
-  PENALTY
-  SHARE_PURCHASE
-}
-
-enum LoanStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  ACTIVE
-  CLOSED
-  OVERDUE
 }
 
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
   passwordHash  String
-  role          Role      @default(MEMBER)
+  role          String    @default("MEMBER")
   status        String    @default("ACTIVE")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -80,8 +35,8 @@ model Member {
   nomineeName       String?
   nomineeRelation   String?
   nomineeAge        Int?
-  kycStatus         KycStatus    @default(PENDING)
-  status            MemberStatus @default(ACTIVE)
+  kycStatus         String       @default("PENDING")
+  status            String       @default("ACTIVE")
   joinedAt          DateTime     @default(now())
   deactivatedAt     DateTime?
   exitDate          DateTime?
@@ -98,9 +53,9 @@ model ShareAccount {
   memberId        String
   member          Member   @relation(fields: [memberId], references: [id])
   sharesOwned     Int      @default(0)
-  shareValue      Decimal  @db.Decimal(15, 2)
-  processingFee   Decimal  @db.Decimal(15, 2)
-  totalAmount     Decimal  @db.Decimal(15, 2)
+  shareValue      Float
+  processingFee   Float
+  totalAmount     Float
   createdAt       DateTime @default(now())
 }
 
@@ -109,10 +64,10 @@ model DepositAccount {
   accountNumber   String           @unique
   memberId        String
   member          Member           @relation(fields: [memberId], references: [id])
-  type            DepositType
-  balance         Decimal          @db.Decimal(15, 2) @default(0)
-  interestRate    Decimal          @db.Decimal(5, 2)
-  maturityAmount  Decimal?         @db.Decimal(15, 2)
+  type            String
+  balance         Float            @default(0)
+  interestRate    Float
+  maturityAmount  Float?
   maturityDate    DateTime?
   isMatured       Boolean          @default(false)
   createdAt       DateTime         @default(now())
@@ -124,11 +79,11 @@ model DepositTransaction {
   id                String          @id @default(cuid())
   accountId         String
   account           DepositAccount  @relation(fields: [accountId], references: [id])
-  amount            Decimal         @db.Decimal(15, 2)
-  type              TransactionType
+  amount            Float
+  type              String
   paymentMode       String          // CASH, CHEQUE, ONLINE
   referenceNumber   String?
-  balanceAfter      Decimal         @db.Decimal(15, 2)
+  balanceAfter      Float
   createdAt         DateTime        @default(now())
 }
 
@@ -138,18 +93,18 @@ model Loan {
   memberId        String
   member          Member       @relation(fields: [memberId], references: [id])
   type            String       // Personal, Home, Gold etc
-  amount          Decimal      @db.Decimal(15, 2)
-  interestRate    Decimal      @db.Decimal(5, 2)
+  amount          Float
+  interestRate    Float
   purpose         String
   guarantorDetail String?
   
   // New fields for comprehensive loan system
   employmentStatus String?     // Salaried, Self-Employed, etc.
-  monthlyIncome   Decimal?     @db.Decimal(15, 2)
-  documents       Json?        // { idProof: string, addressProof: string, incomeProof: string }
+  monthlyIncome   Float?
+  documents       String?      // Stored as JSON string for SQLite
   adminRemarks    String?
   
-  status          LoanStatus   @default(PENDING)
+  status          String       @default("PENDING")
   termMonths      Int
   disbursedAt     DateTime?
   closedAt        DateTime?
@@ -164,9 +119,9 @@ model EmiSchedule {
   loanId          String
   loan            Loan     @relation(fields: [loanId], references: [id])
   dueDate         DateTime
-  principalPart   Decimal  @db.Decimal(15, 2)
-  interestPart    Decimal  @db.Decimal(15, 2)
-  totalEmi        Decimal  @db.Decimal(15, 2)
+  principalPart   Float
+  interestPart    Float
+  totalEmi        Float
   isPaid          Boolean  @default(false)
   paidAt          DateTime?
 }
@@ -175,8 +130,8 @@ model LoanRepayment {
   id              String   @id @default(cuid())
   loanId          String
   loan            Loan     @relation(fields: [loanId], references: [id])
-  amount          Decimal  @db.Decimal(15, 2)
-  penaltyAmount   Decimal  @db.Decimal(15, 2) @default(0)
+  amount          Float
+  penaltyAmount   Float    @default(0)
   paymentMode     String
   referenceNumber String?
   createdAt       DateTime @default(now())
@@ -188,7 +143,7 @@ model LedgerAccount {
   name          String
   category      String   // Asset, Liability, Income, Expense
   type          String?  // ASSET, LIABILITY, etc.
-  balance       Decimal  @db.Decimal(15, 2) @default(0)
+  balance       Float    @default(0)
   createdAt     DateTime @default(now())
   entries       LedgerEntry[]
 }
@@ -197,8 +152,8 @@ model LedgerEntry {
   id              String         @id @default(cuid())
   accountId       String
   account         LedgerAccount  @relation(fields: [accountId], references: [id])
-  debit           Decimal        @db.Decimal(15, 2) @default(0)
-  credit          Decimal        @db.Decimal(15, 2) @default(0)
+  debit           Float          @default(0)
+  credit          Float          @default(0)
   description     String
   referenceType   String?        // LOAN, DEPOSIT, EXPENSE
   referenceId     String?
@@ -211,7 +166,7 @@ model AuditLog {
   user        User?    @relation(fields: [userId], references: [id])
   action      String
   module      String
-  details     String?  @db.Text
+  details     String?
   ipAddress   String?
   createdAt   DateTime @default(now())
 }

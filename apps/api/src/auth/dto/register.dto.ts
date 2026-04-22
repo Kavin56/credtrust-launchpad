@@ -1,11 +1,11 @@
 import {
   IsDateString,
   IsEmail,
-  IsEnum,
+  IsIn,
   IsNotEmpty,
   MinLength,
 } from 'class-validator';
-import { Role } from '@prisma/client';
+import type { Role } from '../../common/guards/roles.guard';
 
 export class RegisterDto {
   @IsEmail()
@@ -44,6 +44,6 @@ export class RegisterDto {
   @IsNotEmpty()
   nomineeAge: number;
 
-  @IsEnum(Role)
+  @IsIn(['ADMIN', 'CEO', 'TELLER', 'COLLECTOR', 'MEMBER', 'DIRECTOR'])
   role: Role;
 }

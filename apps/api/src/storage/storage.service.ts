@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Client } from 'minio';
 import { randomBytes } from 'crypto';
-import { extname, join } from 'path';
+import { extname, join, resolve } from 'path';
 import { mkdir, writeFile } from 'fs/promises';
 
 @Injectable()
@@ -13,7 +13,10 @@ export class StorageService {
 
   constructor() {
     this.useLocal = process.env.LOCAL_STORAGE === 'true';
-    this.uploadDir = process.env.LOCAL_UPLOAD_DIR || 'uploads';
+    this.uploadDir = resolve(
+      process.cwd(),
+      process.env.LOCAL_UPLOAD_DIR || '../../uploads',
+    );
     this.client = new Client({
       endPoint: process.env.MINIO_ENDPOINT || 'localhost',
       port: Number(process.env.MINIO_PORT || 9000),

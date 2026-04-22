@@ -41,6 +41,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Prevent "mixed-mode" sessions when switching providers.
+    // If we previously ran with mock tokens, wipe them so API auth can work.
+    const token = localStorage.getItem("accessToken");
+    const isMockToken = !!token && token.startsWith("mock-token-");
+    const looksLikeJwt = !!token && token.split(".").length === 3;
+    if (provider !== "mock" && (isMockToken || (token && !looksLikeJwt))) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("email");
+      localStorage.removeItem("role");
+      localStorage.removeItem("userId");
+    }
+
     if (provider === "firebase") {
       // fast path: restore cached user/token to avoid refetch on refresh
       const cachedUser = localStorage.getItem("fb_user");
@@ -104,14 +117,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       } else {
         return () => unsub();
       }
-    } else if (provider === "mock") {
-      const email = localStorage.getItem("email");
-      const role = localStorage.getItem("role");
-      const userId = localStorage.getItem("userId") || "mock-user-123";
-      if (email && role) {
-        setUser({ id: userId, email, role });
-      }
-      setLoading(false);
     } else {
       const token = localStorage.getItem("accessToken");
       const email = localStorage.getItem("email");
@@ -125,16 +130,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const login = async (email: string, password: string, devRole?: string) => {
-    if (provider === "mock") {
-      const role = devRole || (email.toLowerCase().includes("admin") ? "ADMIN" : "MEMBER");
-      const mockUser = { id: "mock-user-" + Date.now(), email, role };
-      localStorage.setItem("email", email);
-      localStorage.setItem("role", role);
-      localStorage.setItem("userId", mockUser.id);
-      localStorage.setItem("accessToken", "mock-token-" + Date.now());
-      setUser(mockUser);
-      return;
-    }
     if (provider === "firebase") {
       setLoading(true); // Ensure route guards wait while we sync
       const cred = await signInWithEmailAndPassword(auth, email, password);

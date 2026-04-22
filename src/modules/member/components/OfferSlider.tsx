@@ -34,7 +34,10 @@ const offers = [
   }
 ];
 
+import { useNavigate } from 'react-router-dom';
+
 export const OfferSlider = () => {
+  const navigate = useNavigate();
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 5000 })]);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -104,7 +107,10 @@ export const OfferSlider = () => {
                   whileInView={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.8, delay: 0.3 }}
                 >
-                  <button className="mt-4 px-8 py-3.5 bg-white text-[#1a1f36] font-bold rounded-2xl hover:bg-[#c9a84c] hover:text-white transition-all shadow-xl active:scale-95">
+                  <button 
+                    onClick={() => navigate('/loan-apply')}
+                    className="mt-4 px-8 py-3.5 bg-white text-[#1a1f36] font-bold rounded-2xl hover:bg-[#c9a84c] hover:text-white transition-all shadow-xl active:scale-95"
+                  >
                     Check Eligibility
                   </button>
                 </motion.div>

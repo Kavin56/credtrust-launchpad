@@ -1,63 +1,119 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @Injectable()
 export class MembersService {
-  private mockMembers = [
-    { 
-      id: 'mem1', 
-      fullName: 'Suresh Kumar', 
-      memberId: 'MEM0001', 
-      userId: 'user1',
-      status: 'ACTIVE',
-      kycStatus: 'VERIFIED',
-      joinedAt: new Date(),
-      depositAccounts: [],
-      loans: [],
-      shareAccounts: []
-    },
-    { 
-      id: 'mem2', 
-      fullName: 'Priya Murugan', 
-      memberId: 'MEM0002', 
-      userId: 'user2',
-      status: 'ACTIVE',
-      kycStatus: 'PENDING'
-    }
-  ];
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll(query: any) {
-    return { items: this.mockMembers, total: this.mockMembers.length, page: 1, limit: 10 };
+    const page = Number(query.page || 1);
+    const limit = Math.min(Number(query.limit || 10), 50);
+    const skip = (page - 1) * limit;
+    const search = (query.search || '').toString().trim();
+    const where: any = {};
+    if (query.kycStatus) where.kycStatus = query.kycStatus;
+    if (query.status) where.status = query.status;
+    if (search) {
+      where.OR = [
+        { fullName: { contains: search, mode: 'insensitive' } },
+        { memberId: { contains: search, mode: 'insensitive' } },
+        { contact: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    const [items, total] = await Promise.all([
+      this.prisma.member.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { joinedAt: 'desc' },
+        include: { user: true },
+      }),
+      this.prisma.member.count({ where }),
+    ]);
+    return { items, total, page, limit };
   }
 
   async getProfile(userId: string) {
-    const member = this.mockMembers.find(m => m.userId === userId || m.id === userId) || this.mockMembers[0];
+    const member = await this.prisma.member.findFirst({
+      where: { OR: [{ userId }, { id: userId }, { memberId: userId }] },
+      include: { user: true, depositAccounts: true, loans: true, shareAccounts: true },
+    });
+    if (!member) throw new NotFoundException('Member not found');
     return member;
   }
 
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const member = await this.prisma.member.findFirst({
+      where: { OR: [{ userId }, { id: userId }, { memberId: userId }] },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+
+    return this.prisma.member.update({
+      where: { id: member.id },
+      data: {
+        fullName: dto.fullName ?? member.fullName,
+        contact: dto.contact ?? member.contact,
+        address: dto.address ?? member.address,
+      },
+      include: { user: true, depositAccounts: true, loans: true, shareAccounts: true },
+    });
+  }
+
   async dashboardOverview(userId: string) {
-    const member = await this.getProfile(userId);
+    const member = await this.prisma.member.findFirst({
+      where: { OR: [{ userId }, { id: userId }, { memberId: userId }] },
+      include: { depositAccounts: true, loans: true, shareAccounts: true },
+    });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const totalSavings = (member.depositAccounts || []).reduce(
+      (sum, a: any) => sum + Number(a.balance || 0),
+      0,
+    );
+    const activeLoansCount = (member.loans || []).filter((l: any) =>
+      ['PENDING', 'APPROVED', 'ACTIVE', 'OVERDUE'].includes(String(l.status)),
+    ).length;
+    const sharesOwned = (member.shareAccounts || []).reduce(
+      (sum, s: any) => sum + Number(s.sharesOwned || 0),
+      0,
+    );
     return {
       name: member.fullName,
       kycStatus: member.kycStatus,
-      totalSavings: 25000,
-      activeLoansCount: 1,
-      sharesOwned: 100,
+      totalSavings,
+      activeLoansCount,
+      sharesOwned,
     };
   }
 
   async getStats() {
-    return { total: 8200, active: 8150, pendingKyc: 12 };
+    const [total, active, pendingKyc] = await Promise.all([
+      this.prisma.member.count(),
+      this.prisma.member.count({ where: { status: 'ACTIVE' } }),
+      this.prisma.member.count({ where: { kycStatus: 'PENDING' } }),
+    ]);
+    return { total, active, pendingKyc };
   }
   
   async updateKyc(memberId: string, dto: any) {
+    await this.prisma.member.update({
+      where: { id: memberId },
+      data: { kycStatus: dto.status },
+    });
     return { success: true };
   }
 
   async uploadPhoto(userId: string, file: any) {
-    return { photoUrl: 'https://via.placeholder.com/150' };
+    // Photo storage not wired yet; return a stable placeholder until storage is connected.
+    return { photoUrl: null };
   }
   
   async deactivate(id: string, reason: string) {
+    await this.prisma.member.update({
+      where: { id },
+      data: { status: 'INACTIVE', exitReason: reason, deactivatedAt: new Date() },
+    });
     return { success: true };
   }
 }

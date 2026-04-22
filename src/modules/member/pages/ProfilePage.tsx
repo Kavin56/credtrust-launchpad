@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   User, 
   MapPin, 
@@ -6,14 +6,10 @@ import {
   Mail, 
   Calendar, 
   ShieldCheck, 
-  CreditCard, 
-  ArrowRight, 
   ChevronRight, 
   Home, 
-  Settings, 
   Eye, 
   Camera, 
-  CheckCircle2, 
   AlertCircle, 
   FileText, 
   Users, 
@@ -23,8 +19,10 @@ import {
   Fingerprint
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import api, { getApiErrorMessage } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,11 +32,98 @@ import { motion, AnimatePresence } from "framer-motion";
 const ProfilePage = () => {
   const [activeView, setActiveView] = useState('personal'); // personal, kyc, nominee, security
   const [isEditing, setIsEditing] = useState(false);
+  const [formState, setFormState] = useState({
+    fullName: "",
+    contact: "",
+    address: "",
+  });
+  const queryClient = useQueryClient();
+
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["member-profile"],
+    queryFn: async () => {
+      const { data } = await api.get("/members/me");
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (!profile) return;
+    setFormState({
+      fullName: profile.fullName || "",
+      contact: profile.contact || "",
+      address: profile.address || "",
+    });
+  }, [profile]);
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await api.patch("/members/me", {
+        fullName: formState.fullName.trim(),
+        contact: formState.contact.trim(),
+        address: formState.address.trim(),
+      });
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Profile updated successfully!");
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["member-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["member-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-loans"] });
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, "Failed to update profile."));
+    },
+  });
+
+  const profileView = useMemo(() => {
+    const joinedAt = profile?.joinedAt ? new Date(profile.joinedAt) : null;
+    const dob = profile?.dob ? new Date(profile.dob) : null;
+
+    return {
+      initials: (profile?.fullName || profile?.user?.email || "M")
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part: string) => part[0]?.toUpperCase() || "")
+        .join(""),
+      fullName: profile?.fullName || "Member",
+      memberId: profile?.memberId || "--",
+      email: profile?.user?.email || "",
+      contact: profile?.contact || "",
+      address: profile?.address || "",
+      dob: dob ? dob.toLocaleDateString("en-IN") : "",
+      joined: joinedAt
+        ? joinedAt.toLocaleDateString("en-IN", { month: "short", year: "numeric" })
+        : "--",
+      status: profile?.kycStatus || profile?.status || "PENDING",
+    };
+  }, [profile]);
+
+  const kycCards = useMemo(
+    () => [
+      {
+        name: "Aadhaar Number",
+        value: profile?.aadhaarNumber
+          ? `XXXX XXXX ${String(profile.aadhaarNumber).slice(-4)}`
+          : "Not available",
+      },
+      {
+        name: "PAN Number",
+        value: profile?.panNumber
+          ? `${String(profile.panNumber).slice(0, 2)}XXXX${String(profile.panNumber).slice(-2)}`
+          : "Not available",
+      },
+      { name: "KYC Status", value: profileView.status },
+      { name: "Member Since", value: profileView.joined },
+    ],
+    [profile, profileView.joined, profileView.status],
+  );
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Profile updated successfully!");
-    setIsEditing(false);
+    updateProfileMutation.mutate();
   };
 
   return (
@@ -65,24 +150,24 @@ const ProfilePage = () => {
                 <div className="absolute top-0 right-0 w-full h-24 bg-gradient-to-br from-[#1a1f36] to-[#6b21a8] rounded-t-[40px]" />
                 <div className="relative pt-6">
                    <div className="w-28 h-28 relative rounded-[32px] border-4 border-white shadow-xl bg-[#c9a84c] mx-auto flex items-center justify-center text-white text-[40px] font-black group-hover:rotate-6 transition-transform duration-500">
-                      KV
+                      {isLoading ? "..." : profileView.initials}
                       <div className="absolute -bottom-1 -right-1 w-9 h-9 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#1a1f36] shadow-lg cursor-pointer z-10">
                          <Camera className="w-4 h-4" />
                       </div>
                    </div>
                 </div>
                 <div>
-                   <h2 className="text-xl font-bold text-[#1a1f36]">Kavinkumar V S</h2>
-                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">MEMBER ID: CT88219</p>
+                   <h2 className="text-xl font-bold text-[#1a1f36]">{isLoading ? "Loading profile..." : profileView.fullName}</h2>
+                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">MEMBER ID: {profileView.memberId}</p>
                 </div>
                 <div className="pt-6 border-t border-gray-50 flex justify-center gap-6">
                    <div className="text-center">
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Status</p>
-                      <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-bold border border-emerald-100">VERIFIED</span>
+                      <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-bold border border-emerald-100">{profileView.status}</span>
                    </div>
                    <div className="text-center">
                       <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Joined</p>
-                      <p className="text-[12px] font-bold text-[#1a1f36]">Feb 2024</p>
+                      <p className="text-[12px] font-bold text-[#1a1f36]">{profileView.joined}</p>
                    </div>
                 </div>
              </div>
@@ -122,7 +207,17 @@ const ProfilePage = () => {
                            <p className="text-sm text-gray-400 font-medium">Keep your contact details updated for banking alerts</p>
                         </div>
                         <Button 
-                           onClick={() => setIsEditing(!isEditing)} 
+                           onClick={() => {
+                              if (isEditing && profile) {
+                                setFormState({
+                                  fullName: profile.fullName || "",
+                                  contact: profile.contact || "",
+                                  address: profile.address || "",
+                                });
+                              }
+                              setIsEditing(!isEditing);
+                           }} 
+                           disabled={updateProfileMutation.isPending}
                            className={`rounded-2xl px-8 h-12 font-bold transition-all ${
                               isEditing ? "bg-rose-50 text-rose-600 hover:bg-rose-100" : "bg-[#1a1f36] text-white hover:bg-black"
                            }`}
@@ -134,29 +229,48 @@ const ProfilePage = () => {
                      <form onSubmit={handleUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
                         <div className="space-y-4">
                            <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Full Legal Name</Label>
-                           <Input defaultValue="Kavinkumar V S" disabled className="h-14 rounded-2xl border-gray-100 bg-gray-50/50" />
+                           <Input
+                             value={isEditing ? formState.fullName : profileView.fullName}
+                             onChange={(e) => setFormState((current) => ({ ...current, fullName: e.target.value }))}
+                             disabled={!isEditing || updateProfileMutation.isPending}
+                             className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`}
+                           />
                         </div>
                         <div className="space-y-4">
                            <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Date of Birth</Label>
-                           <Input value="14/08/1992" disabled className="h-14 rounded-2xl border-gray-100 bg-gray-50/50" />
+                           <Input value={profileView.dob} disabled className="h-14 rounded-2xl border-gray-100 bg-gray-50/50" />
                         </div>
                         <div className="space-y-4">
                            <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Email Address</Label>
-                           <Input defaultValue="kavin@credtrust.co" disabled={!isEditing} className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`} />
+                           <Input value={profileView.email} readOnly disabled className="h-14 rounded-2xl border-gray-100 bg-gray-50/50" />
                         </div>
                         <div className="space-y-4">
                            <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Mobile Number</Label>
-                           <Input defaultValue="+91 91234 56789" disabled={!isEditing} className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`} />
+                           <Input
+                             value={isEditing ? formState.contact : profileView.contact}
+                             onChange={(e) => setFormState((current) => ({ ...current, contact: e.target.value }))}
+                             disabled={!isEditing || updateProfileMutation.isPending}
+                             className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`}
+                           />
                         </div>
                         <div className="md:col-span-2 space-y-4">
                            <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Residential Address</Label>
-                           <Input defaultValue="42, Elite Residency, West Mambalam, Chennai - 600033" disabled={!isEditing} className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`} />
+                           <Input
+                             value={isEditing ? formState.address : profileView.address}
+                             onChange={(e) => setFormState((current) => ({ ...current, address: e.target.value }))}
+                             disabled={!isEditing || updateProfileMutation.isPending}
+                             className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`}
+                           />
                         </div>
 
                         {isEditing && (
                            <div className="md:col-span-2 pt-6">
-                              <Button type="submit" className="h-14 w-full bg-[#c9a84c] text-white rounded-2xl hover:bg-[#d4b65c] font-black shadow-xl shadow-amber-900/10">
-                                 Save Profile Changes
+                              <Button
+                                type="submit"
+                                disabled={updateProfileMutation.isPending}
+                                className="h-14 w-full bg-[#c9a84c] text-white rounded-2xl hover:bg-[#d4b65c] font-black shadow-xl shadow-amber-900/10"
+                              >
+                                 {updateProfileMutation.isPending ? "Saving Profile..." : "Save Profile Changes"}
                               </Button>
                            </div>
                         )}
@@ -176,25 +290,20 @@ const ProfilePage = () => {
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-8">
-                           {[
-                             { name: "Aadhar Card", id: "XXXX XXXX 7615", status: "Verified", date: "Feb 2024", color: "bg-emerald-50 text-emerald-600" },
-                             { name: "PAN Card", id: "BRJPXXXX2F", status: "Verified", date: "Feb 2024", color: "bg-emerald-50 text-emerald-600" },
-                             { name: "Voter ID", id: "TNUXXXX882", status: "Pending", date: "Under Review", color: "bg-amber-50 text-amber-600" },
-                             { name: "Member Certificate", id: "CT-C-88219", status: "Digitally Signed", date: "Feb 2024", color: "bg-purple-50 text-purple-600" }
-                           ].map((doc, i) => (
+                           {kycCards.map((doc, i) => (
                              <div key={i} className="p-8 bg-gray-50 rounded-[40px] border border-gray-200/50 flex flex-col justify-between group hover:border-[#6b21a8] transition-all cursor-pointer h-60 relative overflow-hidden">
                                 <FileText className="absolute -right-4 -bottom-4 w-32 h-32 text-[#1a1f36]/[0.03] group-hover:rotate-12 transition-transform duration-500" />
                                 <div className="space-y-4 relative z-10">
-                                   <div className={`px-4 py-1.5 rounded-full inline-block text-[10px] font-bold uppercase tracking-widest border border-current ${doc.color}`}>
-                                      {doc.status}
+                                   <div className="px-4 py-1.5 rounded-full inline-block text-[10px] font-bold uppercase tracking-widest border border-current bg-slate-100 text-slate-600">
+                                      Live Data
                                    </div>
                                    <div>
                                       <h4 className="text-[18px] font-black text-[#1a1f36] leading-tight">{doc.name}</h4>
-                                      <p className="text-[12px] font-bold text-gray-400 mt-1">{doc.id}</p>
+                                      <p className="text-[12px] font-bold text-gray-400 mt-1">{doc.value}</p>
                                    </div>
                                 </div>
                                 <div className="flex justify-between items-center relative z-10 pt-4 border-t border-gray-200/50">
-                                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{doc.date}</p>
+                                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Profile Record</p>
                                    <button className="p-3 bg-white rounded-2xl shadow-sm text-[#1a1f36] hover:bg-[#1a1f36] hover:text-white transition-all">
                                       <Eye className="w-5 h-5" />
                                    </button>
@@ -214,7 +323,6 @@ const ProfilePage = () => {
                      </div>
 
                      <div className="grid md:grid-cols-[400px,1fr] gap-12">
-                        {/* Interactive Nominee Card */}
                         <div className="bg-gradient-to-br from-[#1a1f36] via-[#2d3356] to-[#1a1f36] p-10 rounded-[48px] text-white relative overflow-hidden shadow-2xl shadow-indigo-900/40">
                            <div className="absolute top-0 right-0 w-40 h-40 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
                            <div className="relative z-10 flex flex-col h-full justify-between gap-12">
@@ -223,24 +331,15 @@ const ProfilePage = () => {
                                     <Users className="w-8 h-8 text-[#c9a84c]" />
                                  </div>
                                  <div>
-                                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest leading-tight">Secondary Beneficiary</p>
-                                    <h4 className="text-xl font-black text-white">Ananthi K</h4>
+                                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest leading-tight">Nominee Data</p>
+                                    <h4 className="text-xl font-black text-white">Not configured yet</h4>
                                  </div>
                               </div>
-                              
-                              <div className="grid grid-cols-2 gap-8 py-8 border-t border-white/10 border-dashed">
-                                 <div>
-                                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Relationship</p>
-                                    <p className="text-[15px] font-bold">Spouse</p>
-                                 </div>
-                                 <div>
-                                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Allocation</p>
-                                    <p className="text-[15px] font-bold text-[#c9a84c]">100.00%</p>
-                                 </div>
-                              </div>
-
-                              <button className="w-full h-14 rounded-2xl bg-white text-[#1a1f36] font-black text-[13px] hover:bg-[#c9a84c] transition-all shadow-xl shadow-black/20">
-                                 Edit Nominee Roles
+                              <p className="text-[13px] text-white/70 leading-relaxed">
+                                 No nominee has been saved for this member profile yet. When nominee management is connected, the saved beneficiary data will appear here.
+                              </p>
+                              <button className="w-full h-14 rounded-2xl bg-white/10 text-white font-black text-[13px] border border-white/10 cursor-default">
+                                 Awaiting Nominee Setup
                               </button>
                            </div>
                         </div>
@@ -299,7 +398,7 @@ const ProfilePage = () => {
                               </div>
                            </div>
                            <div className="flex items-center justify-between pt-4 border-t border-gray-200/50">
-                              <span className="text-[11px] font-bold uppercase text-emerald-600 tracking-widest">Active</span>
+                              <span className="text-[11px] font-bold uppercase text-gray-400 tracking-widest">Not Configured</span>
                               <div className="w-12 h-6 bg-[#1a1f36] rounded-full relative cursor-pointer">
                                  <div className="absolute top-1 right-1 w-4 h-4 bg-white rounded-full shadow-sm" />
                               </div>
@@ -330,7 +429,7 @@ const ProfilePage = () => {
                            </div>
                            <div>
                               <h5 className="text-[15px] font-bold text-[#1a1f36]">Last Password Change</h5>
-                              <p className="text-[12px] text-gray-400">12 Feb 2024 (45 days ago)</p>
+                              <p className="text-[12px] text-gray-400">Not available for this account yet</p>
                            </div>
                         </div>
                         <Button variant="ghost" className="h-14 px-10 border-2 border-gray-100 rounded-2xl font-bold text-[#1a1f36] hover:bg-gray-50">

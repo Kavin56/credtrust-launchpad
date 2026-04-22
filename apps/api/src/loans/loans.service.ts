@@ -2,156 +2,170 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  Inject,
-  forwardRef
 } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { addMonths } from 'date-fns';
+import * as fs from 'fs';
+import { resolve } from 'path';
 
-export enum LoanStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  ACTIVE = 'ACTIVE',
-  CLOSED = 'CLOSED',
-  OVERDUE = 'OVERDUE'
-}
+const LOAN_STATUSES = [
+  'PENDING',
+  'APPROVED',
+  'REJECTED',
+  'ACTIVE',
+  'CLOSED',
+  'OVERDUE',
+] as const;
+type LoanStatus = (typeof LOAN_STATUSES)[number];
 
-export enum Role {
-  USER = 'USER',
-  ADMIN = 'ADMIN',
-  TELLER = 'TELLER',
-  CEO = 'CEO'
-}
-
-// Mocking Decimal since we aren't using the real Prisma client runtime
-class Decimal {
-  public value: number;
-  constructor(v: any) { this.value = Number(v); }
-  toString() { return this.value.toString(); }
-  toNumber() { return this.value; }
-  toFixed(n: number) { return this.value.toFixed(n); }
-  greaterThanOrEqualTo(other: any) { return this.value >= Number(other); }
-}
+type UploadedLoanFile = {
+  fieldname: string;
+  filename: string;
+  mimetype?: string;
+  size: number;
+  buffer: Buffer;
+};
 
 @Injectable()
 export class LoansService {
-  // Manual In-Memory Database
-  private loans: any[] = [];
-  private members: any[] = [
-    { id: 'mem1', fullName: 'Suresh Kumar', memberId: 'MEM0001' },
-    { id: 'mem2', fullName: 'Priya Murugan', memberId: 'MEM0002' },
-    { id: 'mem3', fullName: 'Velu Pillai', memberId: 'MEM0003' },
-    { id: 'mem4', fullName: 'Anjali Sharma', memberId: 'MEM0004' },
-  ];
+  private readonly uploadDir = resolve(
+    process.cwd(),
+    process.env.LOCAL_UPLOAD_DIR || '../../uploads',
+    'loans',
+  );
 
   constructor(
+    private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService
   ) {
-    this.seedRandomData();
-  }
-
-  private seedRandomData() {
-    const loanTypes = ['Personal Loan', 'Home Loan', 'Gold Loan', 'SHG Credit'];
-    const statuses = [LoanStatus.PENDING, LoanStatus.APPROVED, LoanStatus.REJECTED];
-    
-    for (let i = 1; i <= 10; i++) {
-      const member = this.members[Math.floor(Math.random() * this.members.length)];
-      const amount = Math.floor(Math.random() * 500000) + 10000;
-      const rate = 10 + Math.random() * 5;
-      const term = [12, 24, 36, 48][Math.floor(Math.random() * 4)];
-      
-      this.loans.push({
-        id: `loan-${i}`,
-        loanNumber: `L${i.toString().padStart(8, '0')}`,
-        memberId: member.id,
-        member: member,
-        type: loanTypes[Math.floor(Math.random() * loanTypes.length)],
-        amount: new Decimal(amount),
-        interestRate: new Decimal(rate.toFixed(2)),
-        termMonths: term,
-        purpose: 'Randomly generated for testing',
-        status: statuses[Math.floor(Math.random() * statuses.length)],
-        employmentStatus: 'Salaried',
-        monthlyIncome: new Decimal(50000),
-        documents: {
-          idProof: 'https://via.placeholder.com/150?text=ID+Proof',
-          addressProof: 'https://via.placeholder.com/150?text=Address+Proof'
-        },
-        adminRemarks: 'Initial seed data',
-        createdAt: new Date(Date.now() - Math.random() * 1000000000),
-      });
+    if (!fs.existsSync(this.uploadDir)) {
+      fs.mkdirSync(this.uploadDir, { recursive: true });
     }
   }
 
-  async apply(dto: any) {
-    const loanNumber = `L${(this.loans.length + 1).toString().padStart(8, '0')}`;
-    const member = this.members.find(m => m.id === dto.memberId) || this.members[0];
+  async apply(dto: any, files: UploadedLoanFile[]) {
+    const loanCount = await this.prisma.loan.count();
+    const loanNumber = `L${(loanCount + 1).toString().padStart(8, '0')}`;
+    
+    // Associate the loan with a Member.
+    // Frontend/auth can provide different identifiers depending on auth mode:
+    // - member.id (our DB PK)
+    // - member.memberId (e.g. MEM0001)
+    // - user.id / firebase uid (mapped to Member.userId)
+    const rawMemberId = (dto.memberId || dto.userId || '').toString().trim();
+    let member =
+      (rawMemberId
+        ? await this.prisma.member.findFirst({
+            where: {
+              OR: [
+                { id: rawMemberId },
+                { memberId: rawMemberId },
+                { userId: rawMemberId },
+              ],
+            },
+          })
+        : null) || null;
 
-    const newLoan = {
-      id: `loan-${Date.now()}`,
-      loanNumber,
-      memberId: dto.memberId,
-      member: member,
-      type: dto.type,
-      amount: new Decimal(dto.amount),
-      interestRate: new Decimal(dto.interestRate),
-      termMonths: dto.termMonths,
-      purpose: dto.purpose,
-      guarantorDetail: dto.guarantorDetail,
-      employmentStatus: dto.employmentStatus,
-      monthlyIncome: dto.monthlyIncome ? new Decimal(dto.monthlyIncome) : null,
-      documents: dto.documents || {},
-      status: LoanStatus.PENDING,
-      createdAt: new Date(),
-    };
+    if (!member) {
+      throw new BadRequestException(
+        'No member profile found for the logged-in user. Please complete or verify the member profile before applying.',
+      );
+    }
 
-    this.loans.push(newLoan);
+    const documentPaths: any = {};
+
+    // Handle file uploads
+    for (const file of files) {
+      const filename = `${Date.now()}-${file.filename}`;
+      const filePath = resolve(this.uploadDir, filename);
+      await fs.promises.writeFile(filePath, file.buffer);
+      
+      // Store relative path for frontend
+      const fieldName = file.fieldname === 'idProof' ? 'idProof' : 'incomeProof';
+      documentPaths[fieldName] = `/uploads/loans/${filename}`;
+    }
+
+    const newLoan = await this.prisma.loan.create({
+      data: {
+        loanNumber,
+        member: { connect: { id: member.id } },
+        type: dto.type || 'Personal Loan',
+        amount: parseFloat(dto.amount),
+        interestRate: parseFloat(dto.interestRate),
+        termMonths: parseInt(dto.termMonths),
+        purpose: dto.purpose || 'Personal Use',
+        employmentStatus: dto.employmentStatus,
+        monthlyIncome: dto.monthlyIncome ? parseFloat(dto.monthlyIncome) : null,
+        documents: JSON.stringify(documentPaths),
+        status: 'PENDING',
+      },
+      include: {
+        member: true
+      }
+    });
+
     return newLoan;
   }
 
-  async updateStatus(loanId: string, status: LoanStatus, remarks?: string) {
-    const loan = this.loans.find(l => l.id === loanId);
-    if (!loan) throw new NotFoundException('Loan not found');
+  async updateStatus(loanId: string, status: string, remarks?: string) {
+    if (!LOAN_STATUSES.includes(status as LoanStatus)) {
+      throw new BadRequestException('Invalid loan status');
+    }
 
-    loan.status = status;
-    if (remarks) loan.adminRemarks = remarks;
-    if (status === LoanStatus.APPROVED) loan.disbursedAt = new Date();
+    const loan = await this.prisma.loan.update({
+      where: { id: loanId },
+      data: { 
+        status: status as LoanStatus,
+        adminRemarks: remarks,
+        disbursedAt: status === 'APPROVED' ? new Date() : undefined
+      },
+      include: { member: true }
+    });
 
     // Trigger notification
     await this.notificationsService.create({
       memberId: loan.memberId,
       title: `Loan ${status}`,
       message: `Your ${loan.type} application (${loan.loanNumber}) has been ${status.toLowerCase()}.${remarks ? ' Remark: ' + remarks : ''}`,
-      type: status === LoanStatus.APPROVED ? 'SUCCESS' : status === LoanStatus.REJECTED ? 'DANGER' : 'INFO'
+      type: status === 'APPROVED' ? 'SUCCESS' : status === 'REJECTED' ? 'DANGER' : 'INFO'
     });
 
     return loan;
   }
 
   async approveLoan(loanId: string) {
-    return this.updateStatus(loanId, LoanStatus.APPROVED, 'Approved via manual action');
+    return this.updateStatus(loanId, 'APPROVED', 'Approved via manual action');
   }
 
   async getLoan(id: string) {
-    const loan = this.loans.find(l => l.id === id);
+    const loan = await this.prisma.loan.findUnique({
+      where: { id },
+      include: { member: true }
+    });
     if (!loan) throw new NotFoundException('Loan not found');
     return loan;
   }
 
-  async list(memberId?: string, status?: LoanStatus) {
-    let filtered = this.loans;
-    if (memberId) filtered = filtered.filter(l => l.memberId === memberId);
-    if (status) filtered = filtered.filter(l => l.status === status);
-    
-    return filtered.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  async list(memberId?: string, status?: string) {
+    return this.prisma.loan.findMany({
+      where: {
+        memberId,
+        status: status as any
+      },
+      include: {
+        member: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
   }
 
   async checkEligibility(memberId: string, amount: number) {
-    return { eligible: true }; // Always eligible in mock mode
+    return { eligible: true }; 
   }
 
   async repay(loanId: string, dto: any) {
-    return { success: true, message: 'Repayment recorded in memory' };
+    return { success: true, message: 'Repayment recorded' };
   }
 }

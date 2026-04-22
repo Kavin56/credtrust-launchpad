@@ -1,9 +1,9 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Role } from '@prisma/client';
 import { SetMetadata } from '@nestjs/common';
 
 export const ROLES_KEY = 'roles';
+export type Role = 'ADMIN' | 'CEO' | 'TELLER' | 'COLLECTOR' | 'MEMBER' | 'DIRECTOR';
 export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
 
 @Injectable()

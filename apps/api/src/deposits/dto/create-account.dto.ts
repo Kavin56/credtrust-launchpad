@@ -1,12 +1,11 @@
-import { IsEnum, IsNumber, IsString, IsOptional, IsDateString } from 'class-validator';
-import { DepositType } from '@prisma/client';
+import { IsIn, IsNumber, IsString, IsOptional, IsDateString } from 'class-validator';
 
 export class CreateDepositAccountDto {
   @IsString()
   memberId: string;
 
-  @IsEnum(DepositType)
-  type: DepositType;
+  @IsIn(['RD', 'FD', 'SAVINGS'])
+  type: string;
 
   @IsNumber()
   interestRate: number;

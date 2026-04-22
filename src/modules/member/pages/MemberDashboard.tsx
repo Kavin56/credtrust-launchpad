@@ -403,9 +403,12 @@ const MemberDashboard = () => {
                    From renting to <br /> <span className="text-[#c9a84c]">owning your home.</span>
                  </h4>
                  <p className="text-sm font-medium text-gray-400 mb-10">Instant eligibility check | Quick digital approvals</p>
-                 <button className="rounded-2xl px-12 py-4 bg-[#1a1f36] hover:bg-black text-[#c9a84c] font-bold transition-all shadow-xl shadow-indigo-900/20 active:scale-95">
-                   Apply for Home Loan
-                 </button>
+                  <button 
+                    onClick={() => navigate('/loan-apply')}
+                    className="rounded-2xl px-12 py-4 bg-[#1a1f36] hover:bg-black text-[#c9a84c] font-bold transition-all shadow-xl shadow-indigo-900/20 active:scale-95"
+                  >
+                    Apply for Home Loan
+                  </button>
                </div>
                <div className="w-full md:w-1/3 flex justify-center mt-12 md:mt-0 md:translate-x-12">
                  <div className="relative">

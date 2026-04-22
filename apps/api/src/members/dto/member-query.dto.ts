@@ -1,14 +1,13 @@
-import { IsOptional, IsEnum, IsString } from 'class-validator';
-import { KycStatus, MemberStatus } from '@prisma/client';
+import { IsOptional, IsIn, IsString } from 'class-validator';
 
 export class MemberQueryDto {
   @IsOptional()
-  @IsEnum(KycStatus)
-  kycStatus?: KycStatus;
+  @IsIn(['PENDING', 'APPROVED', 'REJECTED'])
+  kycStatus?: string;
 
   @IsOptional()
-  @IsEnum(MemberStatus)
-  status?: MemberStatus;
+  @IsIn(['ACTIVE', 'INACTIVE', 'EXITED'])
+  status?: string;
 
   @IsOptional()
   @IsString()

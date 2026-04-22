@@ -1,9 +1,8 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { KycStatus } from '@prisma/client';
+import { IsIn, IsOptional, IsString } from 'class-validator';
 
 export class UpdateKycDto {
-  @IsEnum(KycStatus)
-  status: KycStatus;
+  @IsIn(['PENDING', 'APPROVED', 'REJECTED'])
+  status: string;
 
   @IsOptional()
   @IsString()

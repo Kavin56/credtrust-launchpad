@@ -17,7 +17,7 @@ const AdminLoginPage = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(email, password, "ADMIN");
+      await login(email, password);
       toast.success("Welcome back, Administrator.");
       navigate("/admin/dashboard");
     } catch (error: any) {

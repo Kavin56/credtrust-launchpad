@@ -1,12 +1,11 @@
-import { IsEnum, IsNumber, IsString, IsOptional } from 'class-validator';
-import { TransactionType } from '@prisma/client';
+import { IsIn, IsNumber, IsString, IsOptional } from 'class-validator';
 
 export class DepositTransactionDto {
   @IsNumber()
   amount: number;
 
-  @IsEnum(TransactionType)
-  type: TransactionType;
+  @IsIn(['DEPOSIT', 'WITHDRAWAL', 'INTEREST', 'DIVIDEND', 'PENALTY', 'SHARE_PURCHASE'])
+  type: string;
 
   @IsString()
   paymentMode: string; // CASH, CHEQUE, ONLINE
