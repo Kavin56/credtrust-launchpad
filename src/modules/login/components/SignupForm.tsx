@@ -5,10 +5,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import api from "@/lib/api";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-const provider = import.meta.env.VITE_AUTH_PROVIDER || "api";
+import { useAuth } from "../AuthContext";
 
 interface SignupFormProps {
   onToggleForm: () => void;
@@ -23,26 +20,22 @@ export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
   const [dob, setDob] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (provider === "firebase") {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        await api.post("/auth/register", {
-          email,
-          password,
-          fullName,
-          contact,
-          address,
-          dob,
-          role: "MEMBER",
-        });
-      }
-      toast.success("Account created. Please log in.");
+      await register({
+        email,
+        password,
+        fullName,
+        contact,
+        address,
+        dob,
+      });
+      toast.success("Account created successfully.");
       navigate("/dashboard");
     } catch (error: any) {
       console.error(error);

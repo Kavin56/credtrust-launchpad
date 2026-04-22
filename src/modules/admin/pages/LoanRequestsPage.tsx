@@ -22,7 +22,8 @@ import {
   Info,
   Eye,
   AlertCircle,
-  Activity
+  Activity,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -249,6 +250,18 @@ const LoanRequestsPage = () => {
         {/* Detailed Review Modal */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
            <DialogContent className="max-w-4xl p-0 overflow-hidden border-none rounded-[40px]">
+              <DialogHeader className="sr-only">
+                <DialogTitle>
+                  {selectedLoan
+                    ? `Review loan ${selectedLoan.loanNumber}`
+                    : "Review loan application"}
+                </DialogTitle>
+                <DialogDescription>
+                  {selectedLoan
+                    ? `Review documents and decide whether to approve or reject the application for ${selectedLoan.member?.fullName || "the selected member"}.`
+                    : "Loan application review dialog."}
+                </DialogDescription>
+              </DialogHeader>
               {selectedLoan && (
                 <div className="flex flex-col">
                   {/* Header */}
