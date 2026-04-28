@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import professionalBanking from "@/assets/professional-banking.jpg";
+const professionalBanking = "https://images.unsplash.com/photo-1491336477066-31156b5e4f35?q=80&w=2070&auto=format&fit=crop";
 
 const tabs = ["EMI Calculator", "Home Loan", "Car Loan", "FD Calculator"];
 

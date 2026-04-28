@@ -70,7 +70,7 @@ const PaymentsPage = () => {
 
   const totalAmount = (emiDue || [])
     .filter(d => selectedDues.includes(d.id))
-    .reduce((sum, d) => sum + d.amount, 0);
+    .reduce((sum, d) => sum + Number(d.totalDue || 0), 0);
 
   const toggleSelection = (id: string) => {
     setSelectedDues(prev => 

@@ -130,4 +130,10 @@ export class LoansController {
   repay(@Param('id') id: string, @Body() dto: any) {
     return this.loansService.repay(id, dto);
   }
+
+  @Post('pay')
+  pay(@Body() dto: { loanId: string; amount: number; paymentMethod: string; transactionId?: string }) {
+    const { loanId, ...repaymentData } = dto;
+    return this.loansService.repay(loanId, repaymentData);
+  }
 }

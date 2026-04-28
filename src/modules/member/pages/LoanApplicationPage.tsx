@@ -117,20 +117,7 @@ const LoanApplicationPage = () => {
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
   
-  const uploadDocument = async (file: File | null) => {
-    if (!file) return null;
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      const { data } = await api.post("/members/me/photo", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-      return data.url;
-    } catch (err) {
-      console.error("Upload failed", err);
-      return "mock-url-" + file.name; // Fallback for demo
-    }
-  };
+
 
   const handleSubmit = async () => {
     try {
@@ -143,26 +130,23 @@ const LoanApplicationPage = () => {
         profileId = profile.id;
       } catch (e) {}
       
-      // Upload documents if any
-      const idProofUrl = await uploadDocument(idProof);
-      const addressProofUrl = await uploadDocument(addressProof);
-      const incomeProofUrl = await uploadDocument(incomeProof);
+      const formData = new FormData();
+      formData.append('memberId', profileId);
+      formData.append('type', selectedLoan.name);
+      formData.append('amount', amount.toString());
+      formData.append('interestRate', selectedLoan.rate.toString());
+      formData.append('termMonths', tenure.toString());
+      formData.append('purpose', purpose);
+      formData.append('guarantorDetail', collateral);
+      formData.append('employmentStatus', employmentStatus);
+      formData.append('monthlyIncome', monthlyIncome.toString());
       
-      await api.post("/loans/apply", {
-        memberId: profileId,
-        type: selectedLoan.name,
-        amount: Number(amount),
-        interestRate: selectedLoan.rate,
-        termMonths: tenure,
-        purpose,
-        guarantorDetail: collateral,
-        employmentStatus,
-        monthlyIncome: Number(monthlyIncome),
-        documents: {
-          idProof: idProofUrl,
-          addressProof: addressProofUrl,
-          incomeProof: incomeProofUrl
-        }
+      if (idProof) formData.append('idProof', idProof);
+      if (addressProof) formData.append('addressProof', addressProof);
+      if (incomeProof) formData.append('incomeProof', incomeProof);
+
+      await api.post("/loans/apply", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
       
       toast.success("Your loan request has been submitted successfully!");

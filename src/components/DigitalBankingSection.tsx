@@ -1,6 +1,6 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import cardsStack from "@/assets/cards-stack.jpg";
+const cardsStack = "https://images.unsplash.com/photo-1556740734-793864bb3dca?q=80&w=2070&auto=format&fit=crop";
 import { Globe, Smartphone, MapPin } from "lucide-react";
 
 const channels = [

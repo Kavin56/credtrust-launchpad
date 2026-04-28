@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import { DepositsService } from './deposits.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('deposits')
 @ApiBearerAuth()
-// @UseGuards(FirebaseAuthGuard, JwtAuthGuard)
+@UseGuards(FirebaseAuthGuard, JwtAuthGuard)
 @Controller('deposits')
 export class DepositsController {
   constructor(private readonly depositsService: DepositsService) {}

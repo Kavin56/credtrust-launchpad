@@ -93,9 +93,9 @@ export class AuthService {
 
   async refresh(refreshToken: string) {
     try {
-      const decoded: any = this.jwtService.verify(refreshToken, {
-        secret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
-      });
+      const secret = process.env.JWT_REFRESH_SECRET;
+      if (!secret) throw new UnauthorizedException('JWT_REFRESH_SECRET is not configured.');
+      const decoded: any = this.jwtService.verify(refreshToken, { secret });
       return this.buildTokens(decoded.sub, decoded.email, decoded.role);
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
@@ -104,9 +104,9 @@ export class AuthService {
 
   async authenticateBearerToken(token: string) {
     try {
-      const decoded: any = this.jwtService.verify(token, {
-        secret: process.env.JWT_SECRET || 'dev-secret',
-      });
+      const secret = process.env.JWT_SECRET;
+      if (!secret) throw new UnauthorizedException('JWT_SECRET is not configured.');
+      const decoded: any = this.jwtService.verify(token, { secret });
       return { userId: decoded.sub, role: decoded.role, email: decoded.email };
     } catch {
       const firebaseIdentity = await this.verifyFirebaseToken(token);
@@ -168,8 +168,8 @@ export class AuthService {
     firebaseIdentity: FirebaseIdentity,
     secretKey: string,
   ) {
-    const expectedSecret =
-      process.env.ADMIN_SIGNUP_SECRET || 'CREDTRUST_ADMIN_2026';
+    const expectedSecret = process.env.ADMIN_SIGNUP_SECRET;
+    if (!expectedSecret) throw new UnauthorizedException('ADMIN_SIGNUP_SECRET is not configured.');
     if (secretKey !== expectedSecret) {
       throw new UnauthorizedException('Invalid admin access key.');
     }
@@ -287,12 +287,16 @@ export class AuthService {
 
   private buildTokens(sub: string, email: string, role: string) {
     const payload = { sub, email, role };
+    const secret = process.env.JWT_SECRET;
+    const refreshSecret = process.env.JWT_REFRESH_SECRET;
+    if (!secret || !refreshSecret) throw new Error('JWT secrets are not configured.');
+
     const accessToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_SECRET || 'dev-secret',
+      secret,
       expiresIn: '24h',
     });
     const refreshToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret',
+      secret: refreshSecret,
       expiresIn: '7d',
     });
     return { accessToken, refreshToken, role };

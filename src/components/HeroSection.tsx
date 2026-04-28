@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import heroBanking from "@/assets/hero-banking.jpg";
-import familyBanking from "@/assets/family-banking.jpg";
-import professionalBanking from "@/assets/professional-banking.jpg";
+const heroBanking = "https://images.unsplash.com/photo-1556742044-3c52d6e88c62?q=80&w=2070&auto=format&fit=crop";
+const familyBanking = "https://images.unsplash.com/photo-1623156346149-d5bc8b739e86?q=80&w=2070&auto=format&fit=crop";
+const professionalBanking = "https://images.unsplash.com/photo-1491336477066-31156b5e4f35?q=80&w=2070&auto=format&fit=crop";
 
 const slides = [
   {

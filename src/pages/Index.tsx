@@ -9,6 +9,7 @@ import CalculatorSection from "@/components/CalculatorSection";
 import CTABanner from "@/components/CTABanner";
 import DigitalBankingSection from "@/components/DigitalBankingSection";
 import TeamSection from "@/components/TeamSection";
+import HighlightsSection from "@/components/HighlightsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import Footer from "@/components/Footer";
 import ChatWidget from "@/components/ChatWidget";
@@ -54,6 +55,7 @@ const Index = () => {
       <CTABanner />
       <DigitalBankingSection />
       <TeamSection />
+      <HighlightsSection />
       <TestimonialsSection />
       <Ticker />
       <Footer />

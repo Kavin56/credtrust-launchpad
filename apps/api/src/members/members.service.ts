@@ -63,27 +63,48 @@ export class MembersService {
   async dashboardOverview(userId: string) {
     const member = await this.prisma.member.findFirst({
       where: { OR: [{ userId }, { id: userId }, { memberId: userId }] },
-      include: { depositAccounts: true, loans: true, shareAccounts: true },
+      include: { 
+        depositAccounts: true, 
+        loans: {
+          include: { emiSchedule: true }
+        }, 
+        shareAccounts: true 
+      },
     });
     if (!member) throw new NotFoundException('Member not found');
 
-    const totalSavings = (member.depositAccounts || []).reduce(
+    const totalBalance = (member.depositAccounts || []).reduce(
       (sum, a: any) => sum + Number(a.balance || 0),
       0,
     );
-    const activeLoansCount = (member.loans || []).filter((l: any) =>
-      ['PENDING', 'APPROVED', 'ACTIVE', 'OVERDUE'].includes(String(l.status)),
-    ).length;
     const sharesOwned = (member.shareAccounts || []).reduce(
       (sum, s: any) => sum + Number(s.sharesOwned || 0),
       0,
     );
+    
+    // Find the next upcoming EMI across all active loans
+    let nextEmi = null;
+    const allPendingEmis = (member.loans || [])
+      .filter((l: any) => ['ACTIVE', 'OVERDUE'].includes(String(l.status)))
+      .flatMap((l: any) => (l.emiSchedule || []).filter((e: any) => !e.isPaid))
+      .sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+    if (allPendingEmis.length > 0) {
+      const earliest = allPendingEmis[0];
+      nextEmi = {
+        totalDue: earliest.totalEmi,
+        dueDate: earliest.dueDate,
+      };
+    }
+
     return {
       name: member.fullName,
       kycStatus: member.kycStatus,
-      totalSavings,
-      activeLoansCount,
+      totalBalance,
       sharesOwned,
+      loans: member.loans || [],
+      deposits: member.depositAccounts || [],
+      nextEmi,
     };
   }
 

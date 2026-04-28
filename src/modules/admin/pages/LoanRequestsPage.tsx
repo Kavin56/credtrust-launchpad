@@ -342,7 +342,8 @@ const LoanRequestsPage = () => {
                                  }
                                  return docs && Object.entries(docs).map(([key, path]: [string, any]) => {
                                     // Ensure path is absolute for the browser
-                                    const fullUrl = `http://localhost:3000${path}`;
+                                    const baseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1").split('/api')[0];
+                                    const fullUrl = `${baseUrl}${path}`;
                                     return (
                                        <a 
                                           key={key} 

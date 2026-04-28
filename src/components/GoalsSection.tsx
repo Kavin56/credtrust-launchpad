@@ -1,6 +1,6 @@
 import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
-import familyBanking from "@/assets/family-banking.jpg";
+const familyBanking = "https://images.unsplash.com/photo-1623156346149-d5bc8b739e86?q=80&w=2070&auto=format&fit=crop";
 import {
   Select,
   SelectContent,

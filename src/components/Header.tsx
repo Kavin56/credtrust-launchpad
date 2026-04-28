@@ -379,7 +379,15 @@ const Header = () => {
                   {navItems.map((item) => (
                     <Link 
                       key={item.name} 
-                      to={item.hasMegaMenu ? `/${item.name.toLowerCase()}` : item.path}
+                      to={
+                        item.hasMegaMenu 
+                          ? item.name === "Loans" 
+                            ? "/loan-apply" 
+                            : item.name === "Deposits" 
+                              ? "/deposit-apply" 
+                              : `/${item.name.toLowerCase()}`
+                          : item.path
+                      }
                       className="px-4 py-4 rounded-2xl bg-gray-50 text-[15px] font-bold text-[#1a1f36] flex items-center justify-between active:bg-gray-100 transition-colors"
                     >
                       {item.name}

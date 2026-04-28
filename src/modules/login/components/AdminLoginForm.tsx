@@ -23,14 +23,8 @@ export const AdminLoginForm = ({ onBack }: AdminLoginFormProps) => {
     e.preventDefault();
     setLoading(true);
 
-    if (secretKey !== "CREDTRUST_ADMIN_2026") {
-      toast.error("Invalid Secret Key.");
-      setLoading(false);
-      return;
-    }
-
     try {
-      await login(email, password);
+      await login(email, password, secretKey);
       const role = localStorage.getItem("role");
       if (role !== "ADMIN" && role !== "CEO") {
         toast.error("Insufficient privileges");
