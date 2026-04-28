@@ -36,6 +36,18 @@ interface NotificationDrawerProps {
   onClose: () => void;
 }
 
+function getRelativeTimeLabel(notification: any) {
+  const rawDate = notification?.createdAt ?? notification?.sentAt ?? notification?.updatedAt;
+  if (!rawDate) return "Recently";
+
+  const parsedDate = new Date(rawDate);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return "Recently";
+  }
+
+  return formatDistanceToNow(parsedDate, { addSuffix: true });
+}
+
 const offers = [
   {
     category: "Bank Offers",
@@ -254,7 +266,7 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, onClose
                               {notif.message}
                             </p>
                             <span className="text-[9px] font-black text-gray-300 uppercase tracking-tighter">
-                               {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })}
+                               {getRelativeTimeLabel(notif)}
                             </span>
                           </div>
                         </motion.div>

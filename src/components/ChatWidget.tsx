@@ -132,7 +132,7 @@ const ChatWidget = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] h-[560px] max-h-[calc(100vh-96px)] bg-white rounded-2xl flex flex-col overflow-hidden"
+            className="fixed bottom-6 right-6 z-50 w-[420px] max-w-[calc(100vw-32px)] h-[560px] max-h-[calc(100vh-96px)] bg-white rounded-2xl flex flex-col overflow-hidden"
             style={{ boxShadow: "0 25px 60px -12px rgba(0,0,0,0.25)" }}
           >
             {/* Header */}
@@ -169,7 +169,7 @@ const ChatWidget = () => {
               {messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+                  className={`flex items-start gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                 >
                   <div
                     className={`w-7 h-7 rounded-lg shrink-0 flex items-center justify-center ${
@@ -185,7 +185,7 @@ const ChatWidget = () => {
                     )}
                   </div>
                   <div
-                    className={`max-w-[75%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                    className={`min-w-0 max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
                       msg.role === "user"
                         ? "bg-[#1a1f36] text-white rounded-br-md"
                         : "bg-white text-gray-700 rounded-bl-md border border-gray-100"
@@ -196,7 +196,7 @@ const ChatWidget = () => {
                         : undefined
                     }
                   >
-                    {msg.content}
+                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                   </div>
                 </div>
               ))}

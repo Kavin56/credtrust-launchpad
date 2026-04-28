@@ -17,6 +17,79 @@ Guidelines:
 - If unsure, recommend contacting customer support`;
 
 const chatHistories = new Map<string, Array<{ role: string; content: string }>>();
+const SUPPORT_LINE = "For exact assistance, call 1800 425 1444 or 1800 572 8031.";
+
+const FAQ_FALLBACKS: Array<{ pattern: RegExp; response: string }> = [
+  {
+    pattern: /\b(open|create|start).*(savings account)|\bsavings account\b/i,
+    response:
+      "To open a savings account with CredTrust Cooperative Society, you need to complete member onboarding, submit your KYC details, and provide basic documents such as ID proof, address proof, PAN, photo, and contact details. Once verification is completed, your savings account can be activated. For branch-specific requirements, call 1800 425 1444 or 1800 572 8031.",
+  },
+  {
+    pattern: /\bloan\b.*\binterest\b|\binterest\b.*\bloan\b/i,
+    response:
+      "Loan interest rates at CredTrust depend on the loan product, requested amount, tenure, and your eligibility profile. The exact rate is usually confirmed during the application and approval process. For the latest applicable rate on your loan type, please check with the loan desk or call 1800 425 1444 or 1800 572 8031.",
+  },
+  {
+    pattern: /\bdeposit\b.*\bmaturity\b|\bmaturity\b.*\bdeposit\b/i,
+    response:
+      "You can check your deposit maturity details from your member account dashboard after signing in. Look for the deposit section to view maturity amount, maturity date, and scheme details. If you need help locating it or confirming a maturity value, call 1800 425 1444 or 1800 572 8031.",
+  },
+  {
+    pattern: /\bdocuments?\b.*\bmembership\b|\bmembership\b.*\bdocuments?\b/i,
+    response:
+      "Membership usually requires identity proof, address proof, PAN, a passport-size photo, and basic contact details. Additional documents may be requested depending on the membership category or compliance checks. For the exact list applicable to your case, call 1800 425 1444 or 1800 572 8031.",
+  },
+];
+
+function getFaqFallback(message: string): string | null {
+  const match = FAQ_FALLBACKS.find((item) => item.pattern.test(message));
+  return match?.response ?? null;
+}
+
+function isLikelyIncompleteResponse(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return true;
+  if (/[.!?]["')\]]?$/.test(trimmed)) return false;
+
+  const lastWord = trimmed.split(/\s+/).pop()?.toLowerCase() ?? "";
+  const danglingWords = new Set([
+    "a",
+    "an",
+    "and",
+    "at",
+    "because",
+    "by",
+    "for",
+    "from",
+    "if",
+    "in",
+    "of",
+    "on",
+    "or",
+    "the",
+    "to",
+    "with",
+    "you",
+    "your",
+  ]);
+
+  return trimmed.length < 80 || danglingWords.has(lastWord);
+}
+
+function finalizeAssistantResponse(userMessage: string, responseText: string): string {
+  const fallback = getFaqFallback(userMessage);
+
+  if (isLikelyIncompleteResponse(responseText) && fallback) {
+    return fallback;
+  }
+
+  if (!responseText.trim()) {
+    return fallback ?? `I'm sorry, I couldn't process that request. ${SUPPORT_LINE}`;
+  }
+
+  return responseText.trim();
+}
 
 function getApiKey(): string | undefined {
   return import.meta.env.VITE_GEMINI_API_KEY;
@@ -39,10 +112,11 @@ export async function sendMessage(
   sessionId: string = "default"
 ): Promise<string> {
   const apiKey = getApiKey();
+  const faqFallback = getFaqFallback(message);
 
   if (!apiKey) {
     console.error("VITE_GEMINI_API_KEY is missing. Check your .env file and restart the dev server.");
-    return "Chat is currently unavailable. Please call our toll-free numbers: 1800 425 1444 or 1800 572 8031 for assistance.";
+    return faqFallback ?? `Chat is currently unavailable. ${SUPPORT_LINE}`;
   }
 
   if (!chatHistories.has(sessionId)) {
@@ -75,7 +149,10 @@ export async function sendMessage(
         },
       });
 
-      const text = response.text || "I'm sorry, I couldn't process that. Please try again.";
+      const text = finalizeAssistantResponse(
+        message,
+        response.text || "I'm sorry, I couldn't process that. Please try again.",
+      );
       history.push({ role: "model", content: text });
 
       if (history.length > 20) {
@@ -102,20 +179,26 @@ export async function sendMessage(
       if (error?.message?.includes("API_KEY_INVALID") || error?.message?.includes("invalid API key")) {
         return "Invalid API key. Please check your VITE_GEMINI_API_KEY in the .env file.";
       }
-      
-      if (error?.message?.includes("CAPACITY_EXHAUSTED") || error?.status === 503) {
-        return "Our Smart Assistant is experiencing high demand right now. Please try again in a moment, or call 1800 425 1444 for immediate help.";
+
+      if (
+        error?.message?.includes("CAPACITY_EXHAUSTED") ||
+        error?.message?.includes("RESOURCE_EXHAUSTED") ||
+        error?.message?.includes("quota") ||
+        error?.status === 429 ||
+        error?.status === 503
+      ) {
+        return faqFallback ?? `Our Smart Assistant is experiencing high demand right now. ${SUPPORT_LINE}`;
       }
 
       if (error?.message?.includes("not found") || error?.message?.includes("404")) {
-        return "Model not available. The AI service may be temporarily unavailable.";
+        return faqFallback ?? "Model not available. The AI service may be temporarily unavailable.";
       }
 
-      return `Sorry, I encountered an error: ${error?.message || "Unknown error"}. Please call 1800 425 1444 for help.`;
+      return faqFallback ?? `Sorry, I encountered an error: ${error?.message || "Unknown error"}. ${SUPPORT_LINE}`;
     }
   }
   
-  return "I'm having trouble connecting to my brain right now. Please call us at 1800 425 1444 for assistance!";
+  return faqFallback ?? `I'm having trouble connecting to my brain right now. ${SUPPORT_LINE}`;
 }
 
 export function clearChatHistory(sessionId: string = "default"): void {
