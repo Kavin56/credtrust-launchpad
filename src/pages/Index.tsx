@@ -13,35 +13,18 @@ import HighlightsSection from "@/components/HighlightsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import Footer from "@/components/Footer";
 import ChatWidget from "@/components/ChatWidget";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/modules/login/AuthContext";
 
 const Index = () => {
   const { user, loading } = useAuth();
 
   useEffect(() => {
-    const testConnection = async () => {
-      console.log("Checking initialization...");
-      
-      // Firebase Check
-      if (!loading) {
-        console.log("Firebase Auth Initialized:", user ? `Logged in as ${user.email}` : "Not logged in");
-      }
-
-      // Supabase Check
-      try {
-        const { data, error } = await supabase.from('test_connection').select('count', { count: 'exact', head: true });
-        if (error && error.code !== 'PGRST116') { // Ignore missing table error
-           console.log("Supabase Initialized (Handshake successful)");
-        } else {
-           console.log("Supabase Initialized");
-        }
-      } catch (e) {
-        console.error("Supabase handshake failed:", e);
-      }
-    };
-
-    testConnection();
+    console.log("Checking initialization...");
+    if (!loading) {
+      console.log("Firebase Auth Initialized:", user ? `Logged in as ${user.email}` : "Not logged in");
+    }
+    // Avoid probing a non-existent table during boot; Supabase is configured via client init.
+    console.log("Supabase Initialized");
   }, [user, loading]);
 
   return (

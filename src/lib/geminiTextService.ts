@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-const SYSTEM_PROMPT = `You are Sharanam Assistant, a helpful and friendly customer support chatbot for Sharanam Multi State Cooperative Credit Society Ltd.
+export const SYSTEM_PROMPT = `You are Sharanam Assistant, a helpful and friendly customer support chatbot for Sharanam Multi State Cooperative Credit Society Ltd.
 
 About Sharanam:
 - A Credit Cooperative Society offering savings accounts, fixed deposits, recurring deposits, loans, and financial services
@@ -145,7 +145,7 @@ export async function sendMessage(
         config: {
           systemInstruction: SYSTEM_PROMPT,
           temperature: 0.7,
-          maxOutputTokens: 300,
+          maxOutputTokens: 1000,
         },
       });
 

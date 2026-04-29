@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageCircle, X, Send, RotateCcw, Bot, User } from "lucide-react";
+import { MessageCircle, X, Send, RotateCcw, Bot, User, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import { sendMessage, clearChatHistory } from "@/lib/geminiTextService";
+import { GeminiLiveClient } from "@/lib/geminiLiveService";
 import { Button } from "@/components/ui/button";
 
 interface Message {
@@ -31,8 +32,26 @@ const ChatWidget = () => {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isVoiceModeActive, setIsVoiceModeActive] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [liveUserTranscript, setLiveUserTranscript] = useState("");
+  const [liveTranscript, setLiveTranscript] = useState("");
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Live API refs
+  const liveClientRef = useRef<GeminiLiveClient | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
+  const audioQueue = useRef<ArrayBuffer[]>([]);
+  const isPlayingRef = useRef(false);
+  const liveTranscriptRef = useRef("");
+  const liveUserTranscriptRef = useRef("");
+  const isVoiceModeActiveRef = useRef(false);
+  const isSpeakingRef = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,13 +59,174 @@ const ChatWidget = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, liveTranscript]);
 
   useEffect(() => {
     if (isOpen) {
       inputRef.current?.focus();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    isVoiceModeActiveRef.current = isVoiceModeActive;
+  }, [isVoiceModeActive]);
+
+  useEffect(() => {
+    isSpeakingRef.current = isSpeaking;
+  }, [isSpeaking]);
+
+  const startLiveSession = async () => {
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) throw new Error("API Key missing");
+
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
+      
+      liveClientRef.current = new GeminiLiveClient({
+        apiKey,
+        onAudioData: (buffer) => {
+          audioQueue.current.push(buffer);
+          processAudioQueue();
+        },
+        onInputTextData: (text) => {
+          liveUserTranscriptRef.current += text;
+          setLiveUserTranscript(liveUserTranscriptRef.current);
+        },
+        onTextData: (text) => {
+          liveTranscriptRef.current += text;
+          setLiveTranscript(liveTranscriptRef.current);
+        },
+        onInterrupted: () => {
+          audioQueue.current = [];
+          isPlayingRef.current = false;
+        },
+        onTurnComplete: () => {
+          const assistantText = liveTranscriptRef.current.trim();
+          const userText = liveUserTranscriptRef.current.trim();
+          setMessages(prev => {
+            const next = [...prev];
+            if (userText) {
+              next.push({ id: `live-user-${Date.now()}`, role: "user", content: userText });
+            }
+            if (assistantText) {
+              next.push({ id: `live-assistant-${Date.now()}`, role: "assistant", content: assistantText });
+            }
+            return next;
+          });
+          liveUserTranscriptRef.current = "";
+          liveTranscriptRef.current = "";
+          setLiveUserTranscript("");
+          setLiveTranscript("");
+        },
+        onError: (err) => console.error("Live Error:", err)
+      });
+
+      await liveClientRef.current.connect();
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
+      processorRef.current = processor;
+
+      processor.onaudioprocess = (e) => {
+        if (!isVoiceModeActiveRef.current || isSpeakingRef.current) return;
+        const inputData = e.inputBuffer.getChannelData(0);
+        
+        // Simple noise gate
+        const hasAudio = inputData.some(v => Math.abs(v) > 0.01);
+        if (!hasAudio) return;
+
+        const pcmData = new Int16Array(inputData.length);
+        for (let i = 0; i < inputData.length; i++) {
+          pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+        }
+        
+        if (liveClientRef.current) {
+          liveClientRef.current.sendAudio(pcmData);
+        }
+      };
+
+      source.connect(processor);
+      processor.connect(audioContextRef.current.destination);
+      
+      isVoiceModeActiveRef.current = true;
+      setIsVoiceModeActive(true);
+      setIsListening(true);
+    } catch (err) {
+      console.error("Failed to start Live session:", err);
+    }
+  };
+
+  const processAudioQueue = async () => {
+    if (isPlayingRef.current || audioQueue.current.length === 0 || !audioContextRef.current) return;
+    
+    isPlayingRef.current = true;
+    const buffer = audioQueue.current.shift()!;
+    
+    try {
+      const int16View = new Int16Array(buffer);
+      const float32Data = new Float32Array(int16View.length);
+      for (let i = 0; i < int16View.length; i++) {
+        float32Data[i] = int16View[i] / 32768.0;
+      }
+
+      const audioBuffer = audioContextRef.current.createBuffer(1, float32Data.length, 24000);
+      audioBuffer.getChannelData(0).set(float32Data);
+      
+      const source = audioContextRef.current.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContextRef.current.destination);
+      
+      isSpeakingRef.current = true;
+      setIsSpeaking(true);
+      source.onended = () => {
+        isSpeakingRef.current = false;
+        setIsSpeaking(false);
+        isPlayingRef.current = false;
+        processAudioQueue();
+      };
+      source.start();
+    } catch (e) {
+      console.error("Playback error:", e);
+      isPlayingRef.current = false;
+      processAudioQueue();
+    }
+  };
+
+  const stopLiveSession = () => {
+    setIsVoiceModeActive(false);
+    isVoiceModeActiveRef.current = false;
+    setIsListening(false);
+    setIsSpeaking(false);
+    isSpeakingRef.current = false;
+    setLiveUserTranscript("");
+    liveUserTranscriptRef.current = "";
+    liveTranscriptRef.current = "";
+    
+    liveClientRef.current?.disconnect();
+    liveClientRef.current = null;
+    
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    
+    processorRef.current?.disconnect();
+    processorRef.current = null;
+    
+    audioContextRef.current?.close();
+    audioContextRef.current = null;
+    
+    audioQueue.current = [];
+  };
+
+  const toggleVoiceMode = () => {
+    if (isVoiceModeActive) {
+      stopLiveSession();
+    } else {
+      startLiveSession();
+    }
+  };
 
   const handleSend = async (text?: string) => {
     const messageText = text || input.trim();
@@ -70,6 +250,10 @@ const ChatWidget = () => {
         content: response,
       };
       setMessages((prev) => [...prev, assistantMessage]);
+      
+      if (isVoiceModeActive) {
+        // Voice mode (Live API) handles its own audio stream natively.
+      }
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -142,8 +326,10 @@ const ChatWidget = () => {
                   <img src="/logo.jpeg" alt="Logo" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <h3 className="text-white font-semibold text-sm leading-none tracking-tight">sharanam assistant</h3>
-                  <p className="text-white/40 text-[10px] mt-1 font-medium">Online • AI Powered</p>
+                  <h3 className="text-white font-bold text-base leading-none tracking-tight">sharanam assistant</h3>
+                  <p className="text-[#c9a84c] text-[10px] mt-1 font-bold uppercase tracking-wider animate-pulse">
+                    {isSpeaking ? "Speaking..." : isListening ? "Listening..." : "Online • Live"}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -172,7 +358,7 @@ const ChatWidget = () => {
                   className={`flex items-start gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                 >
                   <div
-                    className={`w-7 h-7 rounded-lg shrink-0 flex items-center justify-center ${
+                    className={`w-7 h-7 rounded-lg shrink-0 flex items-center justify-center overflow-hidden ${
                       msg.role === "user"
                         ? "bg-[#1a1f36]"
                         : "bg-[#c9a84c]/15"
@@ -184,7 +370,7 @@ const ChatWidget = () => {
                       <img 
                         src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiGKOPlllt8Wur_GBsuN1_NRPMrdlrIeDpGw&s" 
                         alt="AI" 
-                        className="w-full h-full object-cover rounded-lg" 
+                        className="w-full h-full object-cover" 
                       />
                     )}
                   </div>
@@ -204,6 +390,33 @@ const ChatWidget = () => {
                   </div>
                 </div>
               ))}
+
+              {/* Live Transcript Streaming */}
+              {liveUserTranscript && (
+                <div className="flex items-start gap-2.5 flex-row-reverse">
+                  <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center bg-[#1a1f36]">
+                    <User className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <div className="min-w-0 max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed bg-[#1a1f36] text-white rounded-br-md animate-in fade-in">
+                    <p className="whitespace-pre-wrap break-words">{liveUserTranscript}</p>
+                  </div>
+                </div>
+              )}
+
+              {liveTranscript && (
+                <div className="flex items-start gap-2.5">
+                  <div className="w-7 h-7 rounded-lg shrink-0 overflow-hidden bg-[#c9a84c]/15">
+                     <img 
+                        src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiGKOPlllt8Wur_GBsuN1_NRPMrdlrIeDpGw&s" 
+                        alt="AI" 
+                        className="w-full h-full object-cover" 
+                      />
+                  </div>
+                  <div className="min-w-0 max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed bg-white text-gray-700 rounded-bl-md border border-gray-100 shadow-sm animate-in fade-in">
+                    <p className="whitespace-pre-wrap break-words">{liveTranscript}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Typing indicator */}
               {isLoading && (
@@ -244,13 +457,23 @@ const ChatWidget = () => {
             {/* Input */}
             <div className="p-3 border-t border-gray-100 bg-white shrink-0">
               <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleVoiceMode}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                    isVoiceModeActive 
+                      ? "bg-rose-100 text-rose-600 animate-pulse border-rose-200" 
+                      : "bg-gray-50 text-gray-400 hover:text-[#1a1f36] border-gray-100"
+                  } border`}
+                >
+                  {isVoiceModeActive ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                </button>
                 <input
                   ref={inputRef}
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Type your message..."
+                  placeholder={isVoiceModeActive ? "Listening..." : "Type your message..."}
                   className="flex-1 px-4 py-2.5 text-sm bg-gray-50 border border-gray-100 rounded-xl outline-none focus:border-[#c9a84c] focus:bg-white transition-colors"
                   disabled={isLoading}
                 />
