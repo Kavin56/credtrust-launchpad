@@ -26,7 +26,7 @@ const ChatWidget = () => {
       id: "welcome",
       role: "assistant",
       content:
-        "Welcome to CredTrust! I'm here to help you with questions about our savings accounts, deposits, loans, and membership. How can I assist you today?",
+        "Welcome to Sharanam! I'm here to help you with questions about our savings accounts, deposits, loans, and membership. How can I assist you today?",
     },
   ]);
   const [input, setInput] = useState("");
@@ -138,12 +138,12 @@ const ChatWidget = () => {
             {/* Header */}
             <div className="bg-[#1a1f36] px-5 py-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-[#c9a84c]" />
+                <div className="w-9 h-9 rounded-xl bg-white overflow-hidden flex items-center justify-center border border-white/20">
+                  <img src="/logo.jpeg" alt="Logo" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <h3 className="text-white font-semibold text-sm leading-none">CredTrust Assistant</h3>
-                  <p className="text-white/50 text-xs mt-0.5"></p>
+                  <h3 className="text-white font-semibold text-sm leading-none tracking-tight">sharanam assistant</h3>
+                  <p className="text-white/40 text-[10px] mt-1 font-medium">Online • AI Powered</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -181,7 +181,11 @@ const ChatWidget = () => {
                     {msg.role === "user" ? (
                       <User className="w-3.5 h-3.5 text-white" />
                     ) : (
-                      <Bot className="w-3.5 h-3.5 text-[#a08530]" />
+                      <img 
+                        src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiGKOPlllt8Wur_GBsuN1_NRPMrdlrIeDpGw&s" 
+                        alt="AI" 
+                        className="w-full h-full object-cover rounded-lg" 
+                      />
                     )}
                   </div>
                   <div
@@ -204,8 +208,12 @@ const ChatWidget = () => {
               {/* Typing indicator */}
               {isLoading && (
                 <div className="flex gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-[#c9a84c]/15 flex items-center justify-center shrink-0">
-                    <Bot className="w-3.5 h-3.5 text-[#a08530]" />
+                  <div className="w-7 h-7 rounded-lg overflow-hidden shrink-0">
+                    <img 
+                      src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQiGKOPlllt8Wur_GBsuN1_NRPMrdlrIeDpGw&s" 
+                      alt="AI" 
+                      className="w-full h-full object-cover" 
+                    />
                   </div>
                   <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-md px-4 py-3 flex gap-1">
                     <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />

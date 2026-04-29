@@ -1,8 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 
-const SYSTEM_PROMPT = `You are CredTrust Assistant, a helpful and friendly customer support chatbot for CredTrust Cooperative Society Ltd.
+const SYSTEM_PROMPT = `You are Sharanam Assistant, a helpful and friendly customer support chatbot for Sharanam Multi State Cooperative Credit Society Ltd.
 
-About CredTrust:
+About Sharanam:
 - A Credit Cooperative Society offering savings accounts, fixed deposits, recurring deposits, loans, and financial services
 - Services include: Member Management, Deposit Management (RD, FD, Savings), Loan Management, Accounting & Finance, Dividend Distribution
 - Toll-free numbers: 1800 425 1444, 1800 572 8031
@@ -23,12 +23,12 @@ const FAQ_FALLBACKS: Array<{ pattern: RegExp; response: string }> = [
   {
     pattern: /\b(open|create|start).*(savings account)|\bsavings account\b/i,
     response:
-      "To open a savings account with CredTrust Cooperative Society, you need to complete member onboarding, submit your KYC details, and provide basic documents such as ID proof, address proof, PAN, photo, and contact details. Once verification is completed, your savings account can be activated. For branch-specific requirements, call 1800 425 1444 or 1800 572 8031.",
+      "To open a savings account with Sharanam Multi State Cooperative Credit Society, you need to complete member onboarding, submit your KYC details, and provide basic documents such as ID proof, address proof, PAN, photo, and contact details. Once verification is completed, your savings account can be activated. For branch-specific requirements, call 1800 425 1444 or 1800 572 8031.",
   },
   {
     pattern: /\bloan\b.*\binterest\b|\binterest\b.*\bloan\b/i,
     response:
-      "Loan interest rates at CredTrust depend on the loan product, requested amount, tenure, and your eligibility profile. The exact rate is usually confirmed during the application and approval process. For the latest applicable rate on your loan type, please check with the loan desk or call 1800 425 1444 or 1800 572 8031.",
+      "Loan interest rates at Sharanam depend on the loan product, requested amount, tenure, and your eligibility profile. The exact rate is usually confirmed during the application and approval process. For the latest applicable rate on your loan type, please check with the loan desk or call 1800 425 1444 or 1800 572 8031.",
   },
   {
     pattern: /\bdeposit\b.*\bmaturity\b|\bmaturity\b.*\bdeposit\b/i,
