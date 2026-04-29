@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import LandingHeader from "@/components/LandingHeader";
+import GoogleTranslate from "@/components/GoogleTranslate";
 import Ticker from "@/components/Ticker";
 import HeroSection from "@/components/HeroSection";
 import GoalsSection from "@/components/GoalsSection";
@@ -29,6 +30,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <GoogleTranslate />
       <LandingHeader />
       <HeroSection />
       <GoalsSection />

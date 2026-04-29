@@ -15,6 +15,12 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
 import NotificationDrawer from "./NotificationDrawer";
 
@@ -23,6 +29,23 @@ const LandingHeader = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const navigate = useNavigate();
+
+  const getActiveLang = () => {
+    const match = document.cookie.match(/googtrans=\/en\/([a-z]{2})/);
+    const code = match ? match[1] : 'en';
+    if (code === 'kn') return 'Kannada (kn)';
+    if (code === 'ta') return 'Tamil (ta)';
+    return 'English (en)';
+  };
+
+  const handleLanguageChange = (langCode: string) => {
+    // Set google translate cookie
+    document.cookie = `googtrans=/en/${langCode}; path=/`;
+    document.cookie = `googtrans=/en/${langCode}; domain=${window.location.hostname}; path=/`;
+    
+    // Always reload to ensure Google Translate processes the whole page from scratch
+    window.location.reload();
+  };
 
   const topMenuItems = [
     { name: "PERSONAL", active: true },
@@ -36,9 +59,7 @@ const LandingHeader = () => {
     { name: "About Us", icon: ChevronDown },
     { name: "Support", icon: ChevronDown },
     { name: "Blog", icon: null },
-    { name: "Investors", icon: null },
-    { name: "1800 425 1444", icon: Phone },
-    { name: "En", icon: ChevronDown },
+    { name: "1800 425 1444", icon: Phone }
   ];
 
   const mainNavItems = [
@@ -68,6 +89,24 @@ const LandingHeader = () => {
                 {item.icon === ChevronDown && <item.icon className="w-3 h-3" />}
               </button>
             ))}
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 opacity-80 hover:opacity-100 transition-opacity focus:outline-none">
+                {getActiveLang()}
+                <ChevronDown className="w-3 h-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="z-[200]">
+                <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
+                  English (en)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleLanguageChange('kn')}>
+                  Kannada (kn)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleLanguageChange('ta')}>
+                  Tamil (ta)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
