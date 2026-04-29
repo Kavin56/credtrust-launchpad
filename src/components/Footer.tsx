@@ -21,7 +21,7 @@ const Footer = () => {
              <img
                src="/logo.jpeg"
                alt="Sharanam Logo"
-               className="h-8 w-auto object-contain brightness-0 invert"
+               className="h-8 w-auto object-contain invert mix-blend-screen"
              />
              <span className="font-heading text-lg font-bold text-navy-foreground">Sharanam</span>
            </div>
