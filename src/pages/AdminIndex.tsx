@@ -68,7 +68,7 @@ const AdminIndex = () => {
               Administrative <br /> <span className="text-[#c9a84c]">Control Center.</span>
             </h1>
             <p className="max-w-2xl mx-auto text-lg text-gray-400 font-medium mb-12">
-              Empowering CredTrust management with high-fidelity tools for audit, member governance, and financial stewardship.
+              Empowering Sharanam management with high-fidelity tools for audit, member governance, and financial stewardship.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <Button 
@@ -91,7 +91,7 @@ const AdminIndex = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 bg-white p-10 rounded-[40px] shadow-2xl border border-gray-100 items-center">
           <div className="text-center md:border-r border-gray-100 last:border-0 p-4">
              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Total Managed Members</p>
-             <h4 className="text-4xl font-bold text-[#1a1f36]">CT +8,200</h4>
+             <h4 className="text-4xl font-bold text-[#1a1f36]">SH +8,200</h4>
           </div>
           <div className="text-center md:border-r border-gray-100 last:border-0 p-4">
              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Portfolio Value</p>
@@ -147,7 +147,7 @@ const AdminIndex = () => {
                 </div>
                 <h2 className="text-4xl md:text-5xl font-bold text-white mb-8 tracking-tighter">Authorized Access Personnel Only.</h2>
                 <p className="text-white/40 max-w-lg mx-auto font-medium mb-12 italic">
-                  By accessing the staff portal, you agree to the CredTrust Confidentiality and Data Stewardship Agreement.
+                  By accessing the staff portal, you agree to the Sharanam Confidentiality and Data Stewardship Agreement.
                 </p>
                 <Button 
                   onClick={() => navigate('/admin/login')}

@@ -49,6 +49,16 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OfferSlider } from "../components/OfferSlider";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 
 const quickActions = [
   { label: "Welcome to Yono", icon: Sparkles, bg: "bg-purple-100", color: "text-purple-600" },
@@ -102,6 +112,8 @@ const SidebarGroup = ({ title, items }: { title: string, items: any[] }) => {
 const MemberDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [selectedLoan, setSelectedLoan] = useState<any>(null);
+  const [isLoanModalOpen, setIsLoanModalOpen] = useState(false);
   const userName = user?.email?.split('@')[0] || "Member";
   const token =
     typeof window !== "undefined"
@@ -244,7 +256,15 @@ const MemberDashboard = () => {
                   </div>
                 </div>
 
-                <div className="bg-[#eef2ff] rounded-[40px] p-8 text-[#1a1f36] relative overflow-hidden group shadow-sm min-h-[250px] border border-white flex flex-col">
+                <div 
+                  onClick={() => {
+                    if (data?.loans?.length > 0) {
+                      setSelectedLoan(data.loans[0]);
+                      setIsLoanModalOpen(true);
+                    }
+                  }}
+                  className="bg-[#eef2ff] rounded-[40px] p-8 text-[#1a1f36] relative overflow-hidden group shadow-sm min-h-[250px] border border-white flex flex-col cursor-pointer hover:shadow-xl hover:shadow-indigo-900/5 transition-all"
+                >
                   <div className="relative z-10 flex flex-col h-full flex-grow">
                     <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#1a1f36]/40 mb-8">LOANS</h3>
                     <div className="space-y-2 mb-auto">
@@ -252,6 +272,9 @@ const MemberDashboard = () => {
                       <p className="text-sm text-gray-500 font-semibold">
                         {data?.loans?.length ?? 0} records
                       </p>
+                    </div>
+                    <div className="mt-auto flex items-center gap-2 text-[11px] font-bold text-[#6b21a8] opacity-0 group-hover:opacity-100 transition-opacity">
+                      View Details <ChevronRight className="w-3.5 h-3.5" />
                     </div>
                   </div>
                 </div>
@@ -495,7 +518,7 @@ const MemberDashboard = () => {
       {/* QUICK LINK FOOTER */}
       <footer className="mt-20 border-t border-gray-100 bg-[#1a1f36] text-white/50 text-[10px] py-10">
         <div className="max-w-7xl mx-auto px-4 flex flex-wrap justify-center gap-x-8 gap-y-4 font-bold uppercase tracking-widest">
-          <a href="#" className="hover:text-white transition-colors">About CredTrust</a>
+          <a href="#" className="hover:text-white transition-colors">About Sharanam</a>
           <a href="#" className="hover:text-white transition-colors">Digital Banking</a>
           <a href="#" className="hover:text-white transition-colors">Sitemap</a>
           <a href="#" className="hover:text-white transition-colors">Terms & Conditions</a>
@@ -503,6 +526,94 @@ const MemberDashboard = () => {
           <a href="#" className="hover:text-white transition-colors">Security</a>
         </div>
       </footer>
+
+      {/* Loan Details Modal */}
+      <Dialog open={isLoanModalOpen} onOpenChange={setIsLoanModalOpen}>
+        <DialogContent className="sm:max-w-[500px] rounded-[32px] p-8 border-none shadow-2xl">
+          <DialogHeader>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-[#6b21a8]">
+                <HandCoins className="w-6 h-6" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-bold text-[#1a1f36]">Loan Details</DialogTitle>
+                <DialogDescription className="text-xs font-medium text-gray-400">
+                  Account Number: {selectedLoan?.loanNumber}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {selectedLoan && (
+            <div className="space-y-8 py-4">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Loan Type</p>
+                  <p className="text-sm font-bold text-[#1a1f36]">{selectedLoan.type}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Status</p>
+                  <Badge variant="secondary" className="bg-emerald-50 text-emerald-600 border-none font-bold text-[10px]">
+                    {selectedLoan.status}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="bg-gray-50/50 rounded-2xl p-6 border border-gray-100 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-500">Sanctioned Amount</span>
+                  <span className="text-lg font-bold text-[#1a1f36]">₹{selectedLoan.amount.toLocaleString()}</span>
+                </div>
+                <div className="h-px bg-gray-100" />
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-500">Interest Rate</span>
+                  <span className="text-sm font-bold text-[#1a1f36]">{selectedLoan.interestRate}% p.a.</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-500">Tenure</span>
+                  <span className="text-sm font-bold text-[#1a1f36]">{selectedLoan.termMonths} Months</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-emerald-50/30 rounded-2xl p-5 border border-emerald-100/50">
+                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Total Paid</p>
+                  <p className="text-xl font-bold text-emerald-700">
+                    ₹{(selectedLoan.emiSchedule || [])
+                      .filter((e: any) => e.isPaid)
+                      .reduce((sum: number, e: any) => sum + e.totalEmi, 0)
+                      .toLocaleString()}
+                  </p>
+                  <p className="text-[10px] font-medium text-emerald-600/60 mt-1">
+                    {(selectedLoan.emiSchedule || []).filter((e: any) => e.isPaid).length} EMIs completed
+                  </p>
+                </div>
+                <div className="bg-rose-50/30 rounded-2xl p-5 border border-rose-100/50">
+                  <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest mb-1">Pending Dues</p>
+                  <p className="text-xl font-bold text-rose-700">
+                    ₹{(selectedLoan.emiSchedule || [])
+                      .filter((e: any) => !e.isPaid)
+                      .reduce((sum: number, e: any) => sum + e.totalEmi, 0)
+                      .toLocaleString()}
+                  </p>
+                  <p className="text-[10px] font-medium text-rose-600/60 mt-1">
+                    {(selectedLoan.emiSchedule || []).filter((e: any) => !e.isPaid).length} EMIs remaining
+                  </p>
+                </div>
+              </div>
+
+              <DialogFooter className="pt-4">
+                <Button 
+                  onClick={() => navigate('/payments')}
+                  className="w-full h-14 rounded-2xl bg-[#1a1f36] hover:bg-black text-[#c9a84c] font-bold text-base shadow-xl shadow-indigo-900/20 active:scale-95"
+                >
+                  Pay Current Installment
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

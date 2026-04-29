@@ -199,15 +199,13 @@ const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex justify-between items-center h-16">
           {/* Logo Section */}
-          <div className="flex-shrink-0 flex items-center gap-2 cursor-pointer group" onClick={() => navigate('/dashboard')}>
-            <div className="bg-[#1a1f36] p-1.5 rounded-lg group-hover:rotate-6 transition-transform">
-              <Landmark className="w-6 h-6 text-[#c9a84c]" />
-            </div>
-            <div>
-               <h1 className="text-lg font-black text-[#1a1f36] tracking-tighter leading-none">
-                 CredTrust <span className="text-[#6b21a8] text-[10px] block tracking-widest font-bold opacity-60">NET-BANKING</span>
-               </h1>
-            </div>
+          <div className="flex-shrink-0 flex items-center gap-3 cursor-pointer group" onClick={() => navigate('/dashboard')}>
+             <img src="/logo.jpeg" alt="Sharanam Logo" className="h-10 w-auto" />
+             <div className="hidden sm:block">
+                <h1 className="text-lg font-black text-[#1a1f36] tracking-tighter leading-none">
+                  Sharanam <span className="text-[#6b21a8] text-[10px] block tracking-widest font-bold opacity-60">NET-BANKING</span>
+                </h1>
+             </div>
           </div>
 
           {/* Desktop Navigation */}
@@ -402,7 +400,7 @@ const Header = () => {
                      </div>
                      <div>
                         <p className="text-sm font-black text-[#1a1f36] uppercase">{userName}</p>
-                        <p className="text-[11px] font-bold text-[#6b21a8]">CT882{user?.id?.substring(0, 2) || "19"}</p>
+                        <p className="text-[11px] font-bold text-[#6b21a8]">SH882{user?.id?.substring(0, 2) || "19"}</p>
                      </div>
                   </div>
                   <button 

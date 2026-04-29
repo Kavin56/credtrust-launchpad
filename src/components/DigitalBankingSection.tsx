@@ -1,10 +1,10 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-const cardsStack = "https://images.unsplash.com/photo-1556740734-793864bb3dca?q=80&w=2070&auto=format&fit=crop";
+const cardsStack = "https://www.visa.co.in/dam/VCOM/regional/ap/images/debit-cards-800x450.jpg";
 import { Globe, Smartphone, MapPin } from "lucide-react";
 
 const channels = [
-  { icon: Globe, label: "Internet Banking", name: "CredTrust MoneyClick" },
+  { icon: Globe, label: "Internet Banking", name: "Sharanam MoneyClick" },
   { icon: Smartphone, label: "Digital Banking", name: "WhatsApp Banking" },
   { icon: MapPin, label: "Service Branches", name: "Locate Us" },
 ];
@@ -29,7 +29,7 @@ const DigitalBankingSection = () => {
               Live in the now with simplified payments
             </h2>
             <p className="text-muted-foreground mb-6">
-              Pay your bills, metro rail, utility expenses and more using CredTrust cards with ease
+              Pay your bills, metro rail, utility expenses and more using Sharanam cards with ease
             </p>
             <a href="#" className="btn-primary-banking text-sm">Discover cards</a>
           </div>

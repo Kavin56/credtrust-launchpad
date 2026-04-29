@@ -118,7 +118,7 @@ async function bootstrap() {
     );
 
   const config = new DocumentBuilder()
-    .setTitle('CredTrust API')
+    .setTitle('Sharanam API')
     .setDescription('Credit Cooperative Society Management API')
     .setVersion('1.0')
     .addBearerAuth()

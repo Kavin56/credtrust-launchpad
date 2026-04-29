@@ -1,6 +1,6 @@
 import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
-const familyBanking = "https://images.unsplash.com/photo-1623156346149-d5bc8b739e86?q=80&w=2070&auto=format&fit=crop";
+const familyBanking = "https://www.euroschoolindia.com/blogs/wp-content/uploads/2023/07/importance-of-family-time.jpg";
 import {
   Select,
   SelectContent,
@@ -36,7 +36,7 @@ const GoalsSection = () => {
           <h2 className="section-title mb-10">Your goals, our priority</h2>
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-8 items-center">
+        <div className="grid lg:grid-cols-2 gap-8 items-stretch">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={inView ? { opacity: 1, x: 0 } : {}}
@@ -83,10 +83,8 @@ const GoalsSection = () => {
             <img
               src={familyBanking}
               alt="Family banking"
-              className="rounded-2xl w-full object-cover aspect-[4/3]"
+              className="rounded-2xl w-full h-full object-cover"
               loading="lazy"
-              width={640}
-              height={480}
             />
           </motion.div>
         </div>

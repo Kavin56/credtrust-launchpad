@@ -4,7 +4,7 @@ import * as bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminEmail = 'admin@credtrust.local';
+  const adminEmail = 'admin@sharanam.local';
   const existing = await prisma.user.findUnique({ where: { email: adminEmail } });
   let adminUser = existing;
   if (!existing) {
@@ -35,7 +35,7 @@ async function main() {
   });
 
   // Create a normal MEMBER login for demo/testing
-  const memberEmail = 'member@credtrust.local';
+  const memberEmail = 'member@sharanam.local';
   const existingMemberUser = await prisma.user.findUnique({ where: { email: memberEmail } });
   const memberUser =
     existingMemberUser ||

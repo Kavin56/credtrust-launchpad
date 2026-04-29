@@ -53,7 +53,7 @@ export default function HighlightsSection() {
 
           <p className="text-sm font-bold text-[#6b21a8] uppercase tracking-[0.3em] mb-4">Platform Growth</p>
           <h1 className="relative mb-6 font-heading font-bold text-4xl text-neutral-900 tracking-tight sm:text-5xl lg:text-6xl">
-            CredTrust <span className="text-[#c9a84c]">Highlights</span>
+            Sharanam <span className="text-[#c9a84c]">Highlights</span>
           </h1>
           <p className="max-w-2xl text-lg text-neutral-500 font-medium leading-relaxed">
             Celebrating our journey, achievements, and the milestones that define our commitment to financial empowerment.

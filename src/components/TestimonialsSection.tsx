@@ -7,14 +7,14 @@ const testimonial2 = "https://images.unsplash.com/photo-1438761681033-6461ffad8d
 const testimonials = [
   {
     image: testimonial1,
-    quote: "I just wanted to open a new personal account. My business partner recommended CredTrust and I am quite happy with my decision. The staff is very kind, very supportive and they attend to you very well.",
+    quote: "I just wanted to open a new personal account. My business partner recommended Sharanam and I am quite happy with my decision. The staff is very kind, very supportive and they attend to you very well.",
     name: "Karan Deodatta Pradeshi",
     product: "Savings Account",
     date: "02 Nov, 2023",
   },
   {
     image: testimonial2,
-    quote: "CredTrust's digital banking has completely changed how I manage my finances. The app is intuitive, fast, and I can do everything from my phone. Truly impressed by the experience.",
+    quote: "Sharanam's digital banking has completely changed how I manage my finances. The app is intuitive, fast, and I can do everything from my phone. Truly impressed by the experience.",
     name: "Priya Mehra",
     product: "Digital Banking",
     date: "15 Jan, 2024",
@@ -33,7 +33,7 @@ const TestimonialsSection = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5 }}>
           <p className="section-label mb-2">BANKING WITH ✦ RELIABILITY</p>
           <h2 className="section-title mb-3">Banking with trust, expertise and care</h2>
-          <p className="section-subtitle mx-auto">Expanding the CredTrust family everyday</p>
+          <p className="section-subtitle mx-auto">Expanding the Sharanam family everyday</p>
         </motion.div>
       </div>
 

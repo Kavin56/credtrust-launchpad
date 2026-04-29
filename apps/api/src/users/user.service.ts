@@ -3,7 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 @Injectable()
 export class UserService {
   private users = [
-    { id: 'user1', email: 'admin@credtrust.com', role: 'ADMIN', status: 'ACTIVE' },
+    { id: 'user1', email: 'admin@sharanam.com', role: 'ADMIN', status: 'ACTIVE' },
     { id: 'user2', email: 'member@test.com', role: 'MEMBER', status: 'ACTIVE' },
   ];
 

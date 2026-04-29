@@ -65,7 +65,7 @@ export default function TeamSection() {
 
           <p className="text-sm font-bold text-primary uppercase tracking-[0.3em] mb-4">Leadership Excellence</p>
           <h1 className="relative mb-6 font-heading font-bold text-4xl text-neutral-900 tracking-tight sm:text-5xl lg:text-6xl dark:text-neutral-100">
-            CredTrust Board of Directors
+            Sharanam Board of Directors
             <svg
               className="absolute -top-6 -right-12 -z-10 w-28 text-[#c9a84c]/20 dark:text-neutral-700"
               fill="currentColor"
@@ -84,7 +84,7 @@ export default function TeamSection() {
             </svg>
           </h1>
           <p className="max-w-2xl text-lg text-neutral-500 font-medium leading-relaxed">
-            Guiding CredTrust with integrity, vision, and a commitment to serving our community with excellence.
+            Guiding Sharanam with integrity, vision, and a commitment to serving our community with excellence.
           </p>
         </div>
 
@@ -126,13 +126,13 @@ export default function TeamSection() {
 
         <div className="mx-auto mt-24 max-w-4xl px-6 text-center lg:px-0">
           <p className="text-2xl font-serif italic text-neutral-800 leading-relaxed md:text-3xl dark:text-neutral-100 mb-10">
-            "Our strength lies in our collective vision. We work tirelessly to ensure CredTrust remains the most reliable financial partner for every member."
+            "Our strength lies in our collective vision. We work tirelessly to ensure Sharanam remains the most reliable financial partner for every member."
           </p>
           <div className="flex flex-col items-center gap-4">
             <div className="h-0.5 w-24 bg-[#c9a84c]" />
             <div className="text-center">
               <p className="font-bold text-[#1a1f36] uppercase tracking-[0.2em] text-sm">
-                CredTrust Multi State Cooperative Credit Society
+                Sharanam Multi State Cooperative Credit Society
               </p>
               <p className="text-[#c9a84c] text-xs font-bold mt-1 tracking-widest">
                 BOARD OF DIRECTORS · EST. 2026

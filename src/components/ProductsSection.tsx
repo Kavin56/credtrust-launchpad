@@ -4,12 +4,12 @@ import { CheckCircle2 } from "lucide-react";
 
 const products = [
   {
-    title: "CredTrust Xpress Cash Loan",
+    title: "Sharanam Xpress Cash Loan",
     prefix: "Apply for a",
     features: ["Quick disbursal", "Attractive rates", "No collateral"],
   },
   {
-    title: "CredTrust Gold Loan",
+    title: "Sharanam Gold Loan",
     prefix: "Apply for a",
     features: ["Safe gold custody", "High loan-to-value ratio", "No income proof"],
   },

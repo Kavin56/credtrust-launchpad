@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-const heroBanking = "https://images.unsplash.com/photo-1556742044-3c52d6e88c62?q=80&w=2070&auto=format&fit=crop";
-const familyBanking = "https://images.unsplash.com/photo-1623156346149-d5bc8b739e86?q=80&w=2070&auto=format&fit=crop";
-const professionalBanking = "https://images.unsplash.com/photo-1491336477066-31156b5e4f35?q=80&w=2070&auto=format&fit=crop";
+const heroBanking = "https://media.istockphoto.com/id/1426365010/photo/smiling-customer-at-reception-desk.jpg?s=612x612&w=0&k=20&c=knCVzsPczNBBsmr5IJbq3mnhcxBOWzx6YOF5mZGaLjs=";
+const familyBanking = "https://www.euroschoolindia.com/blogs/wp-content/uploads/2023/07/importance-of-family-time.jpg";
+const professionalBanking = "https://cdn.shopify.com/s/files/1/0291/6266/8110/files/conservative-business-suits-foundation-formal-dress.jpg?v=1756694799";
 
 const slides = [
   {
     image: heroBanking,
-    title: "Drive Your Dreams with CredTrust Loans",
+    title: "Drive Your Dreams with Sharanam Loans",
     subtitle: "Competitive rates starting at just 8.50%* p.a.",
     cta: "Know More",
   },

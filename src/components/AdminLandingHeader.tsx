@@ -46,7 +46,7 @@ const AdminLandingHeader = () => {
             ))}
           </div>
           <div className="flex items-center gap-5 opacity-60">
-            <span>Admin Support: 1800-ADMIN-CT</span>
+            <span>Admin Support: 1800-ADMIN-SH</span>
           </div>
         </div>
       </div>
@@ -56,12 +56,10 @@ const AdminLandingHeader = () => {
         <div className="max-w-[1400px] mx-auto w-full px-4 flex justify-between items-center">
           {/* Official Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/admin')}>
-             <div className="bg-[#1a1f36] p-1.5 rounded-lg">
-                <Landmark className="w-6 h-6 text-[#c9a84c]" />
-             </div>
+             <img src="/logo.jpeg" alt="Sharanam Logo" className="h-10 w-auto" />
              <div className="hidden sm:block">
                 <h1 className="text-xl font-bold text-[#1a1f36] tracking-tighter leading-none">
-                  CredTrust
+                  Sharanam
                 </h1>
                 <p className="text-[#6b21a8] text-[9px] block tracking-widest font-bold opacity-60 uppercase">Management Portal</p>
              </div>
