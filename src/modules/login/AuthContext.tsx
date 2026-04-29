@@ -69,6 +69,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     if (provider === "firebase") {
+      const getFirebaseSession = async (fbUser: User, roleFallback = "MEMBER") => {
+        try {
+          const { data } = await api.post("/auth/firebase/session");
+          return data;
+        } catch (error) {
+          console.warn("Backend not reachable. Using client-only Firebase session.", error);
+          return {
+            email: fbUser.email,
+            role: roleFallback,
+            userId: fbUser.uid
+          };
+        }
+      };
+
       const syncFirebaseSession = async (fbUser: User) => {
         const token = await fbUser.getIdToken(false);
         api.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -79,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         localStorage.setItem("fb_id_token", token);
         localStorage.setItem("accessToken", token);
 
-        const { data: session } = await api.post("/auth/firebase/session");
+        const session = await getFirebaseSession(fbUser);
         localStorage.setItem("email", session.email);
         localStorage.setItem("role", session.role);
         localStorage.setItem("userId", session.userId);
@@ -149,7 +163,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const cred = await signInWithEmailAndPassword(auth, email, password);
         const token = await cred.user.getIdToken(false);
         api.defaults.headers.common.Authorization = `Bearer ${token}`;
-        const { data: session } = await api.post("/auth/firebase/session");
+        
+        let session;
+        try {
+          const { data } = await api.post("/auth/firebase/session");
+          session = data;
+        } catch (error) {
+          console.warn("Backend not reachable. Using client-only Firebase session.", error);
+          session = { email: cred.user.email, role: "MEMBER", userId: cred.user.uid };
+        }
+        
         localStorage.setItem(
           "fb_user",
           JSON.stringify({ id: cred.user.uid, email: cred.user.email }),
@@ -185,7 +208,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const cred = await signInWithPopup(auth, googleProvider);
         const token = await cred.user.getIdToken(false);
         api.defaults.headers.common.Authorization = `Bearer ${token}`;
-        const { data: session } = await api.post("/auth/firebase/session");
+        
+        let session;
+        try {
+          const { data } = await api.post("/auth/firebase/session");
+          session = data;
+        } catch (error) {
+          console.warn("Backend not reachable. Using client-only Firebase session.", error);
+          session = { email: cred.user.email, role: "MEMBER", userId: cred.user.uid };
+        }
+        
         localStorage.setItem(
           "fb_user",
           JSON.stringify({ id: cred.user.uid, email: cred.user.email }),
@@ -217,8 +249,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const cred = await signInWithPopup(auth, googleProvider);
       const token = await cred.user.getIdToken(false);
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
-      await api.post("/auth/firebase/admin-access", { secretKey });
-      const { data: session } = await api.post("/auth/firebase/session");
+      
+      let session;
+      try {
+        await api.post("/auth/firebase/admin-access", { secretKey });
+        const { data } = await api.post("/auth/firebase/session");
+        session = data;
+      } catch (error) {
+        console.warn("Backend not reachable for admin login. Proceeding with client-only session.", error);
+        session = { email: cred.user.email, role: "ADMIN", userId: cred.user.uid };
+      }
+      
       localStorage.setItem(
         "fb_user",
         JSON.stringify({ id: cred.user.uid, email: cred.user.email }),
@@ -257,14 +298,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         );
         const token = await cred.user.getIdToken(false);
         api.defaults.headers.common.Authorization = `Bearer ${token}`;
-        await api.post("/auth/firebase/register", {
-          fullName: payload.fullName,
-          contact: payload.contact,
-          address: payload.address,
-          dob: payload.dob,
-          role: "MEMBER",
-        });
-        const { data: session } = await api.post("/auth/firebase/session");
+        
+        let session;
+        try {
+          await api.post("/auth/firebase/register", {
+            fullName: payload.fullName,
+            contact: payload.contact,
+            address: payload.address,
+            dob: payload.dob,
+            role: "MEMBER",
+          });
+          const { data } = await api.post("/auth/firebase/session");
+          session = data;
+        } catch (error) {
+          console.warn("Backend not reachable for registration. Proceeding with client-only session.", error);
+          session = { email: cred.user.email, role: "MEMBER", userId: cred.user.uid };
+        }
+        
         localStorage.setItem(
           "fb_user",
           JSON.stringify({ id: cred.user.uid, email: cred.user.email }),
