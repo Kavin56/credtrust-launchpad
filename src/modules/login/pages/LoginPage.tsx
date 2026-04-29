@@ -1,18 +1,42 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { LoginForm } from "../components/LoginForm";
 import { SignupForm } from "../components/SignupForm";
 import { AdminLoginForm } from "../components/AdminLoginForm";
+import { ForgotPasswordForm } from "../components/ForgotPasswordForm";
 import { motion, AnimatePresence } from "framer-motion";
 
 const AuthPage = () => {
   const [searchParams] = useSearchParams();
-  const [authMode, setAuthMode] = useState<"login" | "signup" | "admin">("login");
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  const initialMode = location.pathname === "/signup" ? "signup" : location.pathname === "/forgot-password" ? "forgot_password" : "login";
+  const [authMode, setAuthMode] = useState<"login" | "signup" | "admin" | "forgot_password">(initialMode);
 
   useEffect(() => {
-    const mode = searchParams.get("mode");
-    if (mode === "signup") setAuthMode("signup");
-  }, [searchParams]);
+    if (location.pathname === "/signup") {
+      setAuthMode("signup");
+    } else if (location.pathname === "/forgot-password") {
+      setAuthMode("forgot_password");
+    } else {
+      const mode = searchParams.get("mode");
+      if (mode === "signup") setAuthMode("signup");
+      else if (authMode === "signup" || authMode === "forgot_password") setAuthMode("login");
+    }
+  }, [location.pathname, searchParams]);
+
+  const handleToggleForm = (mode: "login" | "signup" | "admin" | "forgot_password") => {
+    if (mode === "signup") {
+      navigate("/signup");
+    } else if (mode === "forgot_password") {
+      navigate("/forgot-password");
+    } else if (mode === "login") {
+      navigate("/login");
+    } else {
+      setAuthMode(mode);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white font-sans overflow-hidden flex flex-col lg:flex-row">
@@ -25,25 +49,32 @@ const AuthPage = () => {
         </Link>
 
         {/* Dynamic Form Area */}
-        <div className="flex-grow flex items-start mb-8 lg:mb-10 min-h-0">
+        <div className="flex-grow flex items-start mb-8 lg:mb-10">
           <AnimatePresence mode="wait">
             {authMode === "login" && (
               <LoginForm 
                 key="login" 
-                onToggleForm={() => setAuthMode("signup")} 
-                onAdminMode={() => setAuthMode("admin")}
+                onToggleForm={() => handleToggleForm("signup")} 
+                onAdminMode={() => handleToggleForm("admin")}
+                onForgotPassword={() => handleToggleForm("forgot_password")}
               />
             )}
             {authMode === "signup" && (
               <SignupForm 
                 key="signup" 
-                onToggleForm={() => setAuthMode("login")} 
+                onToggleForm={() => handleToggleForm("login")} 
               />
             )}
             {authMode === "admin" && (
               <AdminLoginForm 
                 key="admin" 
-                onBack={() => setAuthMode("login")} 
+                onBack={() => handleToggleForm("login")} 
+              />
+            )}
+            {authMode === "forgot_password" && (
+              <ForgotPasswordForm 
+                key="forgot_password" 
+                onBack={() => handleToggleForm("login")} 
               />
             )}
           </AnimatePresence>

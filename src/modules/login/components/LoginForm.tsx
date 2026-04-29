@@ -10,14 +10,17 @@ import { useAuth } from "../AuthContext";
 interface LoginFormProps {
   onToggleForm: () => void;
   onAdminMode: () => void;
+  onForgotPassword: () => void;
 }
 
-export const LoginForm = ({ onToggleForm, onAdminMode }: LoginFormProps) => {
+export const LoginForm = ({ onToggleForm, onAdminMode, onForgotPassword }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login, loginWithGoogle } = useAuth();
+
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,6 +138,7 @@ export const LoginForm = ({ onToggleForm, onAdminMode }: LoginFormProps) => {
           </button>
           <button 
             type="button" 
+            onClick={onForgotPassword}
             className="text-gray-500 hover:text-[#2563eb] transition-colors"
           >
             Forgot your password?
