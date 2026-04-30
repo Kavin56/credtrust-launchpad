@@ -93,7 +93,7 @@ export default function TeamSection() {
           <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-40 bg-gradient-to-r from-white via-white/40 to-transparent dark:from-background" />
           <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-40 bg-gradient-to-l from-white via-white/40 to-transparent dark:from-background" />
 
-          <Marquee className="[--gap:2rem] [--duration:50s]" pauseOnHover>
+          <Marquee className="[--gap:3rem] [--duration:60s]" pauseOnHover repeat={4}>
             {teamMembers.map((member) => (
               <div
                 className="group flex w-72 shrink-0 flex-col px-4"
