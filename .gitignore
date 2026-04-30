@@ -17,6 +17,7 @@ dist-ssr
 !**/*.env.example
 apps/api/.env
 **/*firebase-adminsdk-*.json
+uploads/
 
 # Editor directories and files
 .vscode/*

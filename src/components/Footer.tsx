@@ -20,10 +20,10 @@ const Footer = () => {
           <div className="flex items-center gap-3">
              <img
                src="/logo.jpeg"
-               alt="Sharanam Logo"
+               alt="Sri Roja Shabarish Guruji Logo"
                className="h-8 w-auto object-contain invert mix-blend-screen"
              />
-             <span className="font-heading text-lg font-bold text-navy-foreground">Sharanam</span>
+             <span className="font-heading text-lg font-bold text-navy-foreground">Sri Roja Shabarish Guruji</span>
            </div>
           <div className="flex items-center gap-6 text-navy-foreground text-sm">
             <span className="text-navy-foreground/70">Toll free numbers</span>
@@ -31,7 +31,7 @@ const Footer = () => {
             <span className="font-semibold">| 1800 572 8031</span>
           </div>
           <div className="flex items-center gap-3 text-navy-foreground text-xs">
-            <span className="text-navy-foreground/70">Download the Sharanam app</span>
+            <span className="text-navy-foreground/70">Download the Sri Roja Shabarish Guruji app</span>
             <span className="border border-navy-foreground/30 rounded px-3 py-1">Google Play</span>
             <span className="border border-navy-foreground/30 rounded px-3 py-1">App Store</span>
           </div>
@@ -56,7 +56,7 @@ const Footer = () => {
         </div>
 
         <div className="container pb-8 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-background/10 pt-6">
-          <p className="text-xs text-background/50">© 2024 Sharanam Ltd. All rights reserved.</p>
+          <p className="text-xs text-background/50">© 2024 Sri Roja Shabarish Guruji Ltd. All rights reserved.</p>
           <div className="flex items-center gap-4">
             {[Facebook, Linkedin, Twitter, Youtube, Instagram].map((Icon, i) => (
               <a key={i} href="#" className="text-background/50 hover:text-secondary transition-colors">

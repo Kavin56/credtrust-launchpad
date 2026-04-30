@@ -45,7 +45,7 @@ const AuthPage = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 mb-8 lg:mb-12 scale-90 origin-left shrink-0">
           <div className="w-10 h-10 bg-[#2563eb] rounded-lg flex items-center justify-center text-white font-bold text-xl">E</div>
-          <span className="text-2xl font-bold text-[#1a1f36]">Sharanam</span>
+          <span className="text-2xl font-bold text-[#1a1f36]">Sri Roja Shabarish Guruji</span>
         </Link>
 
         {/* Dynamic Form Area */}

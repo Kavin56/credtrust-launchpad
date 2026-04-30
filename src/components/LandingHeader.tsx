@@ -116,12 +116,12 @@ const LandingHeader = () => {
         <div className="max-w-[1400px] mx-auto w-full px-4 flex justify-between items-center">
           {/* Official Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-             <img src="/logo.jpeg" alt="Sharanam Logo" className="h-10 w-auto" />
+             <img src="/logo.jpeg" alt="Sri Roja Shabarish Guruji Logo" className="h-10 w-auto" />
              <div className="hidden sm:block">
                 <h1 className="text-xl font-bold text-[#1a1f36] tracking-tighter leading-none">
-                  Sharanam
+                  Sri Roja Shabarish Guruji
                 </h1>
-                <p className="text-[#6b21a8] text-[9px] block tracking-widest font-medium opacity-60">COOPERATIVE SOCIETY</p>
+                <p className="text-[#6b21a8] text-[9px] block tracking-widest font-medium opacity-60 uppercase">souharada sahakata niyamitha</p>
              </div>
           </div>
 
