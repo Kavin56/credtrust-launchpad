@@ -20,6 +20,52 @@ const QUICK_QUESTIONS = [
   "What documents are needed for membership?",
 ];
 
+const MarkdownRenderer = ({ text }: { text: string }) => {
+  const lines = text.split("\n");
+  
+  const renderBold = (content: string) => {
+    const parts = content.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong key={i} className="font-bold text-[#1a1f36]">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      return part;
+    });
+  };
+
+  return (
+    <div className="space-y-2">
+      {lines.map((line, i) => {
+        const trimmedLine = line.trim();
+        
+        // Bullet points
+        if (trimmedLine.startsWith("* ")) {
+          return (
+            <div key={i} className="flex gap-2.5 ml-1 mt-1">
+              <span className="text-[#c9a84c] font-bold mt-1">•</span>
+              <span className="flex-1 text-sm leading-relaxed text-gray-700">
+                {renderBold(trimmedLine.substring(2))}
+              </span>
+            </div>
+          );
+        }
+
+        if (!trimmedLine) return <div key={i} className="h-1" />;
+
+        return (
+          <p key={i} className="text-sm leading-relaxed text-gray-700">
+            {renderBold(line)}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
+
 const ChatWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -386,7 +432,7 @@ const ChatWidget = () => {
                         : undefined
                     }
                   >
-                    <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                    <MarkdownRenderer text={msg.content} />
                   </div>
                 </div>
               ))}
@@ -398,7 +444,7 @@ const ChatWidget = () => {
                     <User className="w-3.5 h-3.5 text-white" />
                   </div>
                   <div className="min-w-0 max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed bg-[#1a1f36] text-white rounded-br-md animate-in fade-in">
-                    <p className="whitespace-pre-wrap break-words">{liveUserTranscript}</p>
+                    <MarkdownRenderer text={liveUserTranscript} />
                   </div>
                 </div>
               )}
@@ -413,7 +459,7 @@ const ChatWidget = () => {
                       />
                   </div>
                   <div className="min-w-0 max-w-[85%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed bg-white text-gray-700 rounded-bl-md border border-gray-100 shadow-sm animate-in fade-in">
-                    <p className="whitespace-pre-wrap break-words">{liveTranscript}</p>
+                    <MarkdownRenderer text={liveTranscript} />
                   </div>
                 </div>
               )}
