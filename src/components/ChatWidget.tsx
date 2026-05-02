@@ -437,7 +437,7 @@ const ChatWidget = () => {
                 </div>
               ))}
 
-              {/* Live Transcript Streaming */}
+               {/* Live Transcript Streaming */}
               {liveUserTranscript && (
                 <div className="flex items-start gap-2.5 flex-row-reverse">
                   <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center bg-[#1a1f36]">
