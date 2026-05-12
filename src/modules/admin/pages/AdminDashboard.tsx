@@ -60,6 +60,11 @@ const AdminDashboard = () => {
             <Button className="bg-[#c9a84c] hover:bg-[#d4b65c] text-[#1a1f36]" onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1"}/reports/trial-balance/excel`, "_blank")}>
                Download Trial Balance (Excel)
             </Button>
+            <Link to="/admin/pigmy">
+              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                Pigmy Management
+              </Button>
+            </Link>
             <Button variant="outline" className="border-slate-200">
               Settings
             </Button>

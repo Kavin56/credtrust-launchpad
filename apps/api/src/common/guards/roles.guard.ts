@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { SetMetadata } from '@nestjs/common';
 
 export const ROLES_KEY = 'roles';
-export type Role = 'ADMIN' | 'CEO' | 'TELLER' | 'COLLECTOR' | 'MEMBER' | 'DIRECTOR';
+export type Role = 'ADMIN' | 'CEO' | 'TELLER' | 'COLLECTOR' | 'MEMBER' | 'DIRECTOR' | 'AGENT';
 export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
 
 @Injectable()

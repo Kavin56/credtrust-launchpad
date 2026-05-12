@@ -20,6 +20,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { StorageModule } from './storage/storage.module';
 import { AccountsModule } from './accounts/accounts.module';
 import { AdminModule } from './admin/admin.module';
+import { PigmyModule } from './pigmy/pigmy.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { AdminModule } from './admin/admin.module';
     DividendsModule,
     ReportsModule,
     NotificationsModule,
+    PigmyModule,
   ],
   providers: [
 /*

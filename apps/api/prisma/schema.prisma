@@ -18,6 +18,10 @@ model User {
   lastLoginAt   DateTime?
   member        Member?
   auditLogs     AuditLog[]
+  
+  // Pigmy Relations
+  assignedPigmyAccounts PigmyAccount[] @relation("AgentAccounts")
+  collectedPigmyDeposits PigmyCollection[] @relation("AgentCollections")
 }
 
 model Member {
@@ -45,6 +49,7 @@ model Member {
   // Financial relations
   shareAccounts    ShareAccount[]
   depositAccounts  DepositAccount[]
+  pigmyAccounts    PigmyAccount[]
   loans            Loan[]
 }
 
@@ -179,4 +184,55 @@ model Notification {
   type        String   // EMAIL, SMS, APP
   isRead      Boolean  @default(false)
   sentAt      DateTime @default(now())
+}
+
+model PigmyScheme {
+  id              String   @id @default(cuid())
+  name            String
+  type            String   // DAILY, WEEKLY, MONTHLY
+  minAmount       Float
+  maxAmount       Float
+  interestRate    Float    @default(3.0) // 3%
+  interestPeriod  Int      @default(6)   // Months
+  maturityPeriod  Int      // Months
+  isActive        Boolean  @default(true)
+  accounts        PigmyAccount[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt @default(now())
+}
+
+model PigmyAccount {
+  id              String   @id @default(cuid())
+  accountNumber   String   @unique // PIGMY0001
+  memberId        String
+  member          Member   @relation(fields: [memberId], references: [id])
+  schemeId        String
+  scheme          PigmyScheme @relation(fields: [schemeId], references: [id])
+  agentId         String?  // Assigned collection agent
+  agent           User?    @relation("AgentAccounts", fields: [agentId], references: [id])
+  startDate       DateTime @default(now())
+  maturityDate    DateTime
+  status          String   @default("ACTIVE") // ACTIVE, MATURED, CLOSED
+  balance         Float    @default(0)
+  totalPaidDays   Int      @default(0)
+  interestEarned  Float    @default(0)
+  lastInterestCalc DateTime?
+  collections     PigmyCollection[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt @default(now())
+}
+
+model PigmyCollection {
+  id              String   @id @default(cuid())
+  accountId       String
+  account         PigmyAccount @relation(fields: [accountId], references: [id])
+  amount          Float
+  date            DateTime @default(now())
+  method          String   // CASH, QR_CODE
+  referenceId     String?  // UTR or transaction ID
+  agentId         String?  // Collector if manual (User ID)
+  agent           User?    @relation("AgentCollections", fields: [agentId], references: [id])
+  receiptNumber   String?  @unique
+  remarks         String?
+  createdAt       DateTime @default(now())
 }

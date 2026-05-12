@@ -25,6 +25,12 @@ import CardsPage from "./modules/member/pages/CardsPage";
 import ServicesPage from "./modules/member/pages/ServicesPage";
 import ProductDetailPage from "./modules/member/pages/ProductDetailPage";
 import LoanRequestsPage from "./modules/admin/pages/LoanRequestsPage";
+import PigmyDashboard from "./modules/pigmy/pages/PigmyDashboard";
+import AgentPigmyDashboard from "./modules/pigmy/pages/AgentPigmyDashboard";
+import CustomerPigmyDashboard from "./modules/pigmy/pages/CustomerPigmyDashboard";
+import PigmyHome from "./modules/pigmy/pages/PigmyHome";
+import AddCustomer from "./modules/pigmy/pages/AddCustomer";
+import MaturityProcess from "./modules/pigmy/pages/MaturityProcess";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,7 +48,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children: React.Re
   if (!user) {
     return <Navigate to={requireAdmin ? "/admin/login" : "/login"} />;
   }
-  if (requireAdmin && !["ADMIN", "CEO"].includes(user.role)) {
+  if (requireAdmin && !["ADMIN", "CEO", "AGENT"].includes(user.role)) {
     return <Navigate to="/dashboard" />;
   }
   return <>{children}</>;
@@ -60,6 +66,12 @@ const App = () => (
           <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin/dashboard" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/loans" element={<ProtectedRoute requireAdmin><LoanRequestsPage /></ProtectedRoute>} />
+          <Route path="/admin/pigmy" element={<ProtectedRoute requireAdmin><PigmyDashboard /></ProtectedRoute>} />
+          <Route path="/admin/pigmy/add-customer" element={<ProtectedRoute requireAdmin><AddCustomer /></ProtectedRoute>} />
+          <Route path="/admin/pigmy/maturity" element={<ProtectedRoute requireAdmin><MaturityProcess /></ProtectedRoute>} />
+          <Route path="/agent/pigmy" element={<ProtectedRoute><AgentPigmyDashboard /></ProtectedRoute>} />
+          <Route path="/dashboard/pigmy" element={<ProtectedRoute><CustomerPigmyDashboard /></ProtectedRoute>} />
+          <Route path="/pigmy" element={<PigmyHome />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<LoginPage />} />
           <Route path="/forgot-password" element={<LoginPage />} />

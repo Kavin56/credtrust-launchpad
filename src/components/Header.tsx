@@ -71,6 +71,7 @@ const megaMenuData = {
   // ... (keeping existing data)
   Deposits: {
     products: [
+      { name: "Pigmy Deposit (Daily)", icon: HandCoins, path: "/dashboard/pigmy" },
       { name: "Fixed Deposit", icon: ShieldCheck, path: "/product/deposits/fixed-deposit" },
       { name: "Recurring Deposit", icon: Calendar, path: "/product/deposits/recurring-deposit" },
       { name: "Annuity Deposit", icon: FileText, path: "/product/deposits/annuity" },
