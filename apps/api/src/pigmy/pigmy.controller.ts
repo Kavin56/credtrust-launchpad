@@ -35,7 +35,7 @@ export class PigmyController {
   @Post('collection')
   @Roles('ADMIN', 'AGENT', 'COLLECTOR')
   @ApiOperation({ summary: 'Add a collection entry (Agent/Admin)' })
-  async addCollection(@Body() dto: AddCollectionDto, @Request() req) {
+  async addCollection(@Body() dto: AddCollectionDto, @Request() req: any) {
     return this.pigmyService.addCollection(dto, req.user.id);
   }
 
