@@ -1,10 +1,98 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class MembersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async completeProfile(userId: string, data: any, files: any[]) {
+    // 1. Check if member already exists
+    let member = await this.prisma.member.findUnique({ where: { userId } });
+    
+    // 2. Generate Member ID if it doesn't exist
+    if (!member) {
+      const memberId = await this.generateMemberId(data.district);
+      member = await this.prisma.member.create({
+        data: {
+          userId,
+          memberId,
+          fullName: data.fullName,
+          dob: new Date(data.dob),
+          gender: data.gender || 'Other',
+          contact: data.contact,
+          address: data.address,
+          state: data.state,
+          district: data.district,
+          pincode: data.pincode,
+          aadhaarNumber: data.aadhaarNumber,
+          panNumber: data.panNumber,
+        }
+      });
+    }
+
+    // 3. Handle File Uploads
+    const uploadDir = path.join(process.cwd(), 'uploads', 'signup');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const filePaths: any = {};
+    for (const file of files) {
+      const fileName = `${member.memberId}-${file.fieldname}-${Date.now()}${path.extname(file.filename)}`;
+      const filePath = path.join(uploadDir, fileName);
+      
+      fs.writeFileSync(filePath, file.buffer);
+      
+      filePaths[file.fieldname] = `/uploads/signup/${fileName}`;
+    }
+
+    console.log(`Profile completed successfully for user ${userId}. Member ID: ${member.memberId}`);
+    // 4. Update member with file paths
+    return this.prisma.member.update({
+      where: { id: member.id },
+      data: {
+        aadhaarDocUrl: filePaths['aadhaarDoc'] || member.aadhaarDocUrl,
+        panDocUrl: filePaths['panDoc'] || member.panDocUrl,
+        kycStatus: 'PENDING',
+      }
+    });
+  }
+
+  private async generateMemberId(district: string) {
+    const districtCode = this.getDistrictCode(district);
+    const prefix = `SRN-${districtCode}`;
+    
+    const lastMember = await this.prisma.member.findFirst({
+      where: { memberId: { startsWith: prefix } },
+      orderBy: { memberId: 'desc' },
+    });
+
+    let nextNumber = 1;
+    if (lastMember) {
+      const parts = lastMember.memberId.split('-');
+      const lastNum = parseInt(parts[parts.length - 1]);
+      if (!isNaN(lastNum)) nextNumber = lastNum + 1;
+    }
+
+    return `${prefix}-${nextNumber.toString().padStart(4, '0')}`;
+  }
+
+  private getDistrictCode(district: string): string {
+    const mapping: Record<string, string> = {
+      'Chennai': 'CHN',
+      'Tiruvallur': 'TRL',
+      'Kancheepuram': 'KPM',
+      'Chengalpattu': 'CPT',
+      'Coimbatore': 'CBE',
+      'Madurai': 'MDU',
+      'Trichy': 'TRY',
+      'Salem': 'SLM',
+    };
+    return mapping[district] || (district ? district.substring(0, 3).toUpperCase() : 'GEN');
+  }
 
   async findAll(query: any) {
     const page = Number(query.page || 1);
@@ -37,7 +125,7 @@ export class MembersService {
   async getProfile(userId: string) {
     const member = await this.prisma.member.findFirst({
       where: { OR: [{ userId }, { id: userId }, { memberId: userId }] },
-      include: { user: true, depositAccounts: true, loans: true, shareAccounts: true },
+      include: { user: true, depositAccounts: true, loans: true, shareAccounts: true, pigmyAccounts: true },
     });
     if (!member) throw new NotFoundException('Member not found');
     return member;
@@ -68,7 +156,8 @@ export class MembersService {
         loans: {
           include: { emiSchedule: true }
         }, 
-        shareAccounts: true 
+        shareAccounts: true,
+        pigmyAccounts: true
       },
     });
     if (!member) throw new NotFoundException('Member not found');

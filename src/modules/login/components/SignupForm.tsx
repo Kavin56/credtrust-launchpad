@@ -14,10 +14,6 @@ interface SignupFormProps {
 export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [contact, setContact] = useState("");
-  const [address, setAddress] = useState("");
-  const [dob, setDob] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { register } = useAuth();
@@ -30,13 +26,9 @@ export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
       await register({
         email,
         password,
-        fullName,
-        contact,
-        address,
-        dob,
       });
-      toast.success("Account created successfully.");
-      navigate("/dashboard");
+      toast.success("Account created successfully. Please complete your profile.");
+      navigate("/signup-flow");
     } catch (error: any) {
       console.error(error);
       toast.error("Failed to create account. Please try again.");
@@ -47,59 +39,12 @@ export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
 
   return (
     <div className="w-full max-w-sm mx-auto animate-in fade-in slide-in-from-right-4 duration-500">
-      <h1 className="text-3xl font-bold text-[#1a1f36] mb-8">Sign up</h1>
+      <h1 className="text-3xl font-bold text-[#1a1f36] mb-2">Create Account</h1>
+      <p className="text-gray-500 mb-8 font-medium">Join us to start managing your society membership.</p>
       
       <form onSubmit={handleSignup} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="signup-name" className="text-sm font-medium text-gray-700">Full Name</Label>
-          <Input
-            id="signup-name"
-            placeholder="Jane Doe"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            required
-            className="h-12 bg-[#edf2ff] border-transparent focus:bg-white focus:border-[#2563eb] transition-all rounded-lg"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="signup-contact" className="text-sm font-medium text-gray-700">Contact</Label>
-          <Input
-            id="signup-contact"
-            placeholder="+91-99999-99999"
-            value={contact}
-            onChange={(e) => setContact(e.target.value)}
-            required
-            className="h-12 bg-[#edf2ff] border-transparent focus:bg-white focus:border-[#2563eb] transition-all rounded-lg"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="signup-dob" className="text-sm font-medium text-gray-700">Date of Birth</Label>
-          <Input
-            id="signup-dob"
-            type="date"
-            value={dob}
-            onChange={(e) => setDob(e.target.value)}
-            required
-            className="h-12 bg-[#edf2ff] border-transparent focus:bg-white focus:border-[#2563eb] transition-all rounded-lg"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="signup-address" className="text-sm font-medium text-gray-700">Address</Label>
-          <Input
-            id="signup-address"
-            placeholder="Street, City, State"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            required
-            className="h-12 bg-[#edf2ff] border-transparent focus:bg-white focus:border-[#2563eb] transition-all rounded-lg"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="signup-email" className="text-sm font-medium text-gray-700">Email Address</Label>
+          <Label htmlFor="signup-email" className="text-sm font-medium text-gray-700 uppercase tracking-wider text-[10px] font-bold">Email Address</Label>
           <Input
             id="signup-email"
             type="email"
@@ -107,12 +52,12 @@ export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="h-12 bg-[#edf2ff] border-transparent focus:bg-white focus:border-[#2563eb] transition-all rounded-lg"
+            className="h-12 bg-[#edf2ff] border-transparent focus:bg-white focus:border-[#2563eb] transition-all rounded-xl font-medium"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="signup-password" title="Signup" className="text-sm font-medium text-gray-700">Password</Label>
+          <Label htmlFor="signup-password" title="Signup" className="text-sm font-medium text-gray-700 uppercase tracking-wider text-[10px] font-bold">Password</Label>
           <Input
             id="signup-password"
             type="password"
@@ -120,21 +65,21 @@ export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="h-12 bg-[#edf2ff] border-transparent focus:bg-white focus:border-[#2563eb] transition-all rounded-lg"
+            className="h-12 bg-[#edf2ff] border-transparent focus:bg-white focus:border-[#2563eb] transition-all rounded-xl font-medium"
           />
         </div>
 
         <Button 
           type="submit" 
-          className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold h-12 rounded-lg text-base shadow-sm mt-4"
+          className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-black h-12 rounded-xl text-base shadow-lg shadow-blue-500/20 mt-4 transition-all"
           disabled={loading}
         >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign Up"}
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "SIGN UP"}
         </Button>
 
         <div className="flex flex-col gap-4 text-sm mt-6">
           <div className="flex justify-center items-center gap-2">
-            <span className="text-gray-400">Already have an account?</span>
+            <span className="text-gray-400 font-medium">Already have an account?</span>
             <button 
               type="button" 
               onClick={onToggleForm}

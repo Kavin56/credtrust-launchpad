@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreatePigmySchemeDto, EnrollPigmyAccountDto, AddCollectionDto } from './dto/pigmy.dto';
+import { CreatePigmySchemeDto, EnrollPigmyAccountDto, AddCollectionDto, UpdateCollectionStatusDto, InitiatePaymentDto } from './dto/pigmy.dto';
 import { nanoid } from 'nanoid';
 
 @Injectable()
@@ -20,34 +20,152 @@ export class PigmyService {
   }
 
   async enrollAccount(dto: EnrollPigmyAccountDto) {
-    const scheme = await this.prisma.pigmyScheme.findUnique({
-      where: { id: dto.schemeId },
-    });
-    if (!scheme) throw new NotFoundException('Scheme not found');
+    try {
+      const scheme = await this.prisma.pigmyScheme.findUnique({
+        where: { id: dto.schemeId },
+      });
+      if (!scheme) throw new NotFoundException('Scheme not found');
 
-    const lastAccount = await this.prisma.pigmyAccount.findFirst({
-      orderBy: { accountNumber: 'desc' },
-    });
+      const lastAccount = await this.prisma.pigmyAccount.findFirst({
+        orderBy: { accountNumber: 'desc' },
+      });
 
-    let nextNumber = 1;
-    if (lastAccount && lastAccount.accountNumber.startsWith('PIGMY')) {
-      nextNumber = parseInt(lastAccount.accountNumber.replace('PIGMY', '')) + 1;
+      let nextNumber = 1;
+      if (lastAccount && lastAccount.accountNumber.startsWith('PIGMY')) {
+        const numPart = lastAccount.accountNumber.replace('PIGMY', '');
+        const parsed = parseInt(numPart);
+        if (!isNaN(parsed)) nextNumber = parsed + 1;
+      }
+      const accountNumber = `PIGMY${nextNumber.toString().padStart(4, '0')}`;
+
+      const startDate = dto.startDate ? new Date(dto.startDate) : new Date();
+      const maturityDate = new Date(startDate);
+      maturityDate.setMonth(maturityDate.getMonth() + scheme.maturityPeriod);
+
+      return await this.prisma.pigmyAccount.create({
+        data: {
+          accountNumber,
+          memberId: dto.memberId,
+          schemeId: dto.schemeId,
+          agentId: dto.agentId,
+          startDate,
+          maturityDate,
+          status: 'ACTIVE',
+        },
+      });
+    } catch (error) {
+      console.error('ERROR in enrollAccount:', error);
+      throw error;
     }
-    const accountNumber = `PIGMY${nextNumber.toString().padStart(4, '0')}`;
+  }
 
-    const startDate = dto.startDate ? new Date(dto.startDate) : new Date();
-    const maturityDate = new Date(startDate);
-    maturityDate.setMonth(maturityDate.getMonth() + scheme.maturityPeriod);
+  async selfEnroll(userId: string, schemeId: string) {
+    try {
+      let member = await this.prisma.member.findUnique({
+        where: { userId },
+      });
 
-    return this.prisma.pigmyAccount.create({
+      if (!member) {
+        // Create skeleton member profile so they can at least start Pigmy
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user) throw new NotFoundException('User not found');
+
+        // Simple ID generation for skeleton
+        const prefix = 'SRN-GEN';
+        const lastMember = await this.prisma.member.findFirst({
+          where: { memberId: { startsWith: prefix } },
+          orderBy: { memberId: 'desc' },
+        });
+        let nextNumber = 1;
+        if (lastMember) {
+          const parts = lastMember.memberId.split('-');
+          const lastNum = parseInt(parts[parts.length - 1]);
+          if (!isNaN(lastNum)) nextNumber = lastNum + 1;
+        }
+        const memberId = `${prefix}-${nextNumber.toString().padStart(4, '0')}`;
+
+        member = await this.prisma.member.create({
+          data: {
+            userId,
+            memberId: `TEMP-${nanoid(6).toUpperCase()}`,
+            fullName: user.email.split('@')[0],
+            dob: new Date(1990, 0, 1), // Placeholder
+            gender: 'Other',
+            contact: '9999999999', // Placeholder
+            address: 'Update Required',
+            state: 'Tamil Nadu',
+            district: 'Chennai',
+            pincode: '600001',
+            aadhaarNumber: `TEMP-${Date.now()}-${nanoid(4)}`,
+            panNumber: `TEMP-PAN-${Date.now()}-${nanoid(4)}`,
+            kycStatus: 'PENDING',
+          }
+        });
+      }
+
+      // Find any existing agent to assign as primary, or leave null if none found
+      const agent = await this.prisma.user.findFirst({
+        where: { role: 'AGENT' },
+      });
+
+      return await this.enrollAccount({
+        memberId: member.id,
+        schemeId,
+        agentId: agent?.id,
+        startDate: new Date(),
+      });
+    } catch (error: any) {
+      console.error('ERROR in selfEnroll:', error);
+      // Re-throw as a friendly error if it's a known prisma error
+      if (error.code === 'P2002') {
+        throw new BadRequestException('An account is already being created for you. Please refresh.');
+      }
+      throw error;
+    }
+  }
+
+
+
+  async initiatePayment(dto: InitiatePaymentDto, userId: string) {
+    const account = await this.prisma.pigmyAccount.findUnique({
+      where: { id: dto.accountId },
+    });
+    if (!account) throw new NotFoundException('Account not found');
+
+    const transactionId = `TXN-PIG-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const receiptNumber = `RCPT${Date.now().toString().slice(-8)}`;
+
+    return this.prisma.pigmyCollection.create({
       data: {
-        accountNumber,
-        memberId: dto.memberId,
-        schemeId: dto.schemeId,
-        agentId: dto.agentId,
-        startDate,
-        maturityDate,
-        status: 'ACTIVE',
+        transactionId,
+        accountId: dto.accountId,
+        amount: dto.amount,
+        method: 'UPI',
+        status: 'INITIATED',
+        receiptNumber,
+        customerName: dto.customerName,
+        customerEmail: dto.customerEmail,
+        customerPhone: dto.customerPhone,
+        description: dto.description,
+      },
+    });
+  }
+
+  async confirmPayment(collectionId: string, referenceId?: string) {
+    const collection = await this.prisma.pigmyCollection.findUnique({
+      where: { id: collectionId },
+    });
+
+    if (!collection) throw new NotFoundException('Collection not found');
+    if (collection.status !== 'INITIATED') {
+      throw new BadRequestException('Can only confirm initiated payments');
+    }
+
+    return this.prisma.pigmyCollection.update({
+      where: { id: collectionId },
+      data: {
+        status: 'PENDING',
+        referenceId,
       },
     });
   }
@@ -58,14 +176,22 @@ export class PigmyService {
     });
     if (!account) throw new NotFoundException('Account not found');
 
+    const transactionId = `TXN-PIG-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const receiptNumber = `RCPT${Date.now().toString().slice(-8)}`;
+
+    // If it's CASH (usually by agent/admin), it's immediate COMPLETED
+    // If it's UPI, it's PENDING until verified
+    const status = dto.method === 'CASH' ? 'COMPLETED' : 'PENDING';
 
     return this.prisma.$transaction(async (tx) => {
       const collection = await tx.pigmyCollection.create({
         data: {
+          transactionId,
           accountId: dto.accountId,
           amount: dto.amount,
           method: dto.method,
+          upiId: dto.upiId,
+          status,
           referenceId: dto.referenceId,
           agentId: agentId || account.agentId,
           remarks: dto.remarks,
@@ -73,15 +199,71 @@ export class PigmyService {
         },
       });
 
-      await tx.pigmyAccount.update({
-        where: { id: dto.accountId },
+      // ONLY increment balance if status is COMPLETED
+      if (status === 'COMPLETED') {
+        await tx.pigmyAccount.update({
+          where: { id: dto.accountId },
+          data: {
+            balance: { increment: dto.amount },
+            totalPaidDays: { increment: 1 },
+          },
+        });
+      }
+
+      return collection;
+    });
+  }
+
+  async updateCollectionStatus(collectionId: string, dto: UpdateCollectionStatusDto) {
+    const collection = await this.prisma.pigmyCollection.findUnique({
+      where: { id: collectionId },
+      include: { account: true },
+    });
+
+    if (!collection) throw new NotFoundException('Collection not found');
+    if (collection.status !== 'PENDING') {
+      throw new BadRequestException('Can only update pending collections');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.pigmyCollection.update({
+        where: { id: collectionId },
         data: {
-          balance: { increment: dto.amount },
-          totalPaidDays: { increment: 1 },
+          status: dto.status,
+          remarks: dto.remarks || collection.remarks,
         },
       });
 
-      return collection;
+      if (dto.status === 'COMPLETED') {
+        await tx.pigmyAccount.update({
+          where: { id: collection.accountId },
+          data: {
+            balance: { increment: collection.amount },
+            totalPaidDays: { increment: 1 },
+          },
+        });
+      }
+
+      return updated;
+    });
+  }
+
+  async getMemberCollections(userId: string) {
+    const member = await this.prisma.member.findUnique({ where: { userId } });
+    if (!member) return [];
+
+    return this.prisma.pigmyCollection.findMany({
+      where: {
+        account: {
+          memberId: member.id,
+        },
+      },
+      orderBy: { date: 'desc' },
+      include: {
+        account: {
+          include: { scheme: true }
+        }
+      }
     });
   }
 
@@ -180,6 +362,22 @@ export class PigmyService {
         scheme: true
       },
       take: 10
+    });
+  }
+
+  async getRecentCollections(limit = 10) {
+    return this.prisma.pigmyCollection.findMany({
+      take: Number(limit),
+      orderBy: { date: 'desc' },
+      include: {
+        account: {
+          include: {
+            member: {
+              select: { fullName: true }
+            }
+          }
+        }
+      }
     });
   }
 }

@@ -30,3 +30,7 @@ uploads/
 *.sln
 *.sw?
 nul
+
+# Opencode
+opencode.jsonc
+.opencode

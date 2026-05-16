@@ -20,12 +20,7 @@ const Index = () => {
   const { user, loading } = useAuth();
 
   useEffect(() => {
-    console.log("Checking initialization...");
-    if (!loading) {
-      console.log("Firebase Auth Initialized:", user ? `Logged in as ${user.email}` : "Not logged in");
-    }
-    // Avoid probing a non-existent table during boot; Supabase is configured via client init.
-    console.log("Supabase Initialized");
+    // Initialization checks removed
   }, [user, loading]);
 
   return (

@@ -121,17 +121,10 @@ const MemberDashboard = () => {
         localStorage.getItem("fb_id_token")
       : null;
 
-  const cached =
-    typeof window !== "undefined"
-      ? localStorage.getItem("member_overview_cache")
-      : null;
-
   const { data, isLoading } = useQuery({
     queryKey: ["member-overview"],
     queryFn: async () => {
       const { data } = await api.get("/members/me/overview");
-      // cache fresh payload for instant reloads
-      localStorage.setItem("member_overview_cache", JSON.stringify(data));
       return data;
     },
     enabled: !!token,
@@ -139,7 +132,6 @@ const MemberDashboard = () => {
     cacheTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: 0,
-    initialData: cached ? JSON.parse(cached) : undefined,
   });
 
   // Calculate Credit Score based on data

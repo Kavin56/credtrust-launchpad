@@ -12,12 +12,16 @@ import {
 } from 'lucide-react';
 import { toast } from "sonner";
 import { useNavigate } from 'react-router-dom';
+import AdminNavbar from '@/components/AdminNavbar';
+import api from '@/lib/api';
 
 const AddCustomer = () => {
   const navigate = useNavigate();
   const [customerData, setCustomerData] = useState({
     fullName: '',
     mobile: '',
+    email: '',
+    dob: '',
     aadhaar: '',
     address: '',
     nominee: '',
@@ -26,6 +30,19 @@ const AddCustomer = () => {
   });
   const [id, setId] = useState("PIGMYXXXX");
   const [loading, setLoading] = useState(false);
+  const [schemes, setSchemes] = useState<any[]>([]);
+
+  React.useEffect(() => {
+    const fetchSchemes = async () => {
+      try {
+        const res = await api.get('/pigmy/schemes');
+        setSchemes(res.data);
+      } catch (err) {
+        console.error("Failed to fetch schemes", err);
+      }
+    };
+    fetchSchemes();
+  }, []);
 
   const generateId = () => {
     const nextId = "PIGMY" + Math.floor(1000 + Math.random() * 9000);
@@ -33,25 +50,53 @@ const AddCustomer = () => {
     toast.info("ID Generated: " + nextId);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (id === "PIGMYXXXX") {
       toast.error("Please generate a Unique ID first");
       return;
     }
     setLoading(true);
-    setTimeout(() => {
+    try {
+      // 1. Register the member first (local Prisma record)
+      const regRes = await api.post('/auth/register', {
+        email: customerData.email,
+        password: `Pigmy@${customerData.mobile.slice(-4)}`, // Default password
+        fullName: customerData.fullName,
+        contact: customerData.mobile,
+        address: customerData.address,
+        dob: customerData.dob,
+        aadhaarNumber: customerData.aadhaar,
+        panNumber: `PAN${customerData.mobile.slice(-6)}`, // Placeholder
+        role: 'MEMBER'
+      });
+
+      const memberId = regRes.data.userId || regRes.data.sub; // Adjust based on API response
+
+      // 2. Enroll in Pigmy scheme
+      await api.post('/pigmy/enroll', {
+        memberId: regRes.data.userId || regRes.data.sub,
+        schemeId: customerData.scheme,
+        startDate: new Date(),
+      });
+
       toast.success("Customer Enrolled Successfully", {
         description: `${customerData.fullName} assigned to ${id}`
       });
       navigate('/admin/pigmy');
-    }, 1500);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to enroll customer");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleReset = () => {
     setCustomerData({
       fullName: '',
       mobile: '',
+      email: '',
+      dob: '',
       aadhaar: '',
       address: '',
       nominee: '',
@@ -62,7 +107,10 @@ const AddCustomer = () => {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8 bg-slate-50 min-h-screen">
+    <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
+      <AdminNavbar />
+      
+      <div className="p-8 max-w-[1400px] mx-auto w-full space-y-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-blue-600 p-2 rounded-xl">
@@ -134,6 +182,17 @@ const AddCustomer = () => {
 
                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
+                       <Label>Email Address</Label>
+                       <Input required type="email" placeholder="priya@example.com" value={customerData.email} onChange={e => setCustomerData({...customerData, email: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                       <Label>Date of Birth</Label>
+                       <Input required type="date" value={customerData.dob} onChange={e => setCustomerData({...customerData, dob: e.target.value})} />
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
                        <Label>Aadhaar Number</Label>
                        <Input required placeholder="XXXX XXXX XXXX" value={customerData.aadhaar} onChange={e => setCustomerData({...customerData, aadhaar: e.target.value})} />
                     </div>
@@ -153,12 +212,12 @@ const AddCustomer = () => {
                        <Label>Select Scheme</Label>
                        <Select required onValueChange={v => setCustomerData({...customerData, scheme: v})}>
                           <SelectTrigger>
-                             <SelectValue placeholder="Daily/Weekly/Monthly" />
+                             <SelectValue placeholder="Select a plan" />
                           </SelectTrigger>
                           <SelectContent>
-                             <SelectItem value="daily">Daily Deposit (Gold)</SelectItem>
-                             <SelectItem value="weekly">Weekly Savings (Micro)</SelectItem>
-                             <SelectItem value="monthly">Monthly Growth (Fixed)</SelectItem>
+                             {schemes.map(s => (
+                               <SelectItem key={s.id} value={s.id}>{s.name} ({s.type})</SelectItem>
+                             ))}
                           </SelectContent>
                        </Select>
                     </div>
@@ -182,6 +241,7 @@ const AddCustomer = () => {
         </div>
       </form>
     </div>
+  </div>
   );
 };
 

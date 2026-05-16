@@ -31,6 +31,7 @@ import CustomerPigmyDashboard from "./modules/pigmy/pages/CustomerPigmyDashboard
 import PigmyHome from "./modules/pigmy/pages/PigmyHome";
 import AddCustomer from "./modules/pigmy/pages/AddCustomer";
 import MaturityProcess from "./modules/pigmy/pages/MaturityProcess";
+import SignUpFlowPage from "./modules/member/pages/SignUpFlowPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,9 +49,11 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children: React.Re
   if (!user) {
     return <Navigate to={requireAdmin ? "/admin/login" : "/login"} />;
   }
+
   if (requireAdmin && !["ADMIN", "CEO", "AGENT"].includes(user.role)) {
     return <Navigate to="/dashboard" />;
   }
+
   return <>{children}</>;
 };
 
@@ -74,6 +77,7 @@ const App = () => (
           <Route path="/pigmy" element={<PigmyHome />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<LoginPage />} />
+          <Route path="/signup-flow" element={<ProtectedRoute><SignUpFlowPage /></ProtectedRoute>} />
           <Route path="/forgot-password" element={<LoginPage />} />
           <Route path="/loan-apply" element={<ProtectedRoute><LoanApply /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><MemberDashboard /></ProtectedRoute>} />

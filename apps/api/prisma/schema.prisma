@@ -26,15 +26,22 @@ model User {
 
 model Member {
   id                String       @id @default(cuid())
-  memberId          String       @unique // MEM0001
+  memberId          String       @unique // SRN-CHN-0001
   userId            String       @unique
   user              User         @relation(fields: [userId], references: [id])
   fullName          String
   dob               DateTime
+  gender            String
   contact           String
   address           String
+  state             String
+  district          String
+  country           String       @default("India")
+  pincode           String
   aadhaarNumber     String       @unique // Encrypted
   panNumber         String       @unique // Encrypted
+  aadhaarDocUrl     String?
+  panDocUrl         String?
   photoUrl          String?
   nomineeName       String?
   nomineeRelation   String?
@@ -224,15 +231,25 @@ model PigmyAccount {
 
 model PigmyCollection {
   id              String   @id @default(cuid())
+  transactionId   String   @unique // TXN-PIG-XXXXX
   accountId       String
   account         PigmyAccount @relation(fields: [accountId], references: [id])
   amount          Float
   date            DateTime @default(now())
-  method          String   // CASH, QR_CODE
-  referenceId     String?  // UTR or transaction ID
+  method          String   // CASH, UPI
+  upiId           String?  // User's UPI ID
+  status          String   @default("PENDING") // PENDING, COMPLETED, REJECTED
+  referenceId     String?  // External ref or UTR
   agentId         String?  // Collector if manual (User ID)
   agent           User?    @relation("AgentCollections", fields: [agentId], references: [id])
   receiptNumber   String?  @unique
   remarks         String?
+  
+  // Payment Intent Details
+  customerName    String?
+  customerEmail   String?
+  customerPhone   String?
+  description     String?
+
   createdAt       DateTime @default(now())
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import Header from "@/components/Header";
+import AdminNavbar from '@/components/AdminNavbar';
 import Footer from "@/components/Footer";
 import { 
   FileText, 
@@ -97,10 +97,10 @@ const LoanRequestsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
-      <Header />
+    <div className="flex flex-col min-h-screen bg-[#f8fafc] font-sans">
+      <AdminNavbar />
       
-      <main className="pt-24 pb-20 px-4 max-w-7xl mx-auto">
+      <main className="flex-1 pb-20 px-4 max-w-7xl mx-auto w-full pt-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div className="space-y-1">
             <div className="flex items-center gap-2">

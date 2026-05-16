@@ -64,9 +64,14 @@ export class AddCollectionDto {
   @Min(1)
   amount: number;
 
-  @ApiProperty({ enum: ['CASH', 'QR_CODE'] })
-  @IsEnum(['CASH', 'QR_CODE'])
+  @ApiProperty({ enum: ['CASH', 'UPI'] })
+  @IsEnum(['CASH', 'UPI'])
   method: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  upiId?: string;
 
   @ApiProperty()
   @IsString()
@@ -77,4 +82,54 @@ export class AddCollectionDto {
   @IsString()
   @IsOptional()
   remarks?: string;
+}
+
+export class UpdateCollectionStatusDto {
+  @ApiProperty({ enum: ['PENDING', 'COMPLETED', 'REJECTED'] })
+  @IsEnum(['PENDING', 'COMPLETED', 'REJECTED'])
+  status: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  remarks?: string;
+}
+
+export class InitiatePaymentDto {
+  @ApiProperty()
+  @IsString()
+  accountId: string;
+
+  @ApiProperty()
+  @IsNumber()
+  @Min(1)
+  amount: number;
+
+  @ApiProperty()
+  @IsString()
+  customerName: string;
+
+  @ApiProperty()
+  @IsString()
+  customerEmail: string;
+
+  @ApiProperty()
+  @IsString()
+  customerPhone: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  description?: string;
+}
+
+export class ConfirmPaymentDto {
+  @ApiProperty()
+  @IsString()
+  collectionId: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  referenceId?: string;
 }

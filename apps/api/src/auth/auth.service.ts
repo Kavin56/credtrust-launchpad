@@ -67,27 +67,7 @@ export class AuthService {
       },
     });
 
-    // Create a member profile for members.
-    if (user.role === 'MEMBER') {
-      const count = await this.prisma.member.count();
-      const memberId = `MEM${(count + 1).toString().padStart(4, '0')}`;
-      await this.prisma.member.create({
-        data: {
-          userId: user.id,
-          memberId,
-          fullName: dto.fullName,
-          dob: new Date(dto.dob),
-          contact: dto.contact,
-          address: dto.address,
-          aadhaarNumber: dto.aadhaarNumber,
-          panNumber: dto.panNumber,
-          nomineeName: dto.nomineeName,
-          nomineeRelation: dto.nomineeRelation,
-          nomineeAge: Number(dto.nomineeAge),
-        },
-      });
-    }
-
+    // Member profile will be created via the multi-step signup flow
     return this.buildTokens(user.id, user.email, user.role);
   }
 
@@ -123,29 +103,6 @@ export class AuthService {
     dto: FirebaseRegisterDto,
   ) {
     const user = await this.findOrCreateUserFromFirebase(firebaseIdentity, dto.role);
-    const count = await this.prisma.member.count();
-    const memberId = `MEM${(count + 1).toString().padStart(4, '0')}`;
-
-    const member = await this.prisma.member.upsert({
-      where: { userId: user.id },
-      update: {
-        fullName: dto.fullName,
-        dob: new Date(dto.dob),
-        contact: dto.contact,
-        address: dto.address,
-      },
-      create: {
-        userId: user.id,
-        memberId,
-        fullName: dto.fullName,
-        dob: new Date(dto.dob),
-        contact: dto.contact,
-        address: dto.address,
-        aadhaarNumber: `firebase-aadhaar-${firebaseIdentity.firebaseUid}`,
-        panNumber: `firebase-pan-${firebaseIdentity.firebaseUid}`,
-      },
-      include: { user: true },
-    });
 
     await this.prisma.user.update({
       where: { id: user.id },
@@ -159,8 +116,8 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       role: dto.role || user.role || 'MEMBER',
-      memberId: member.id,
-      hasMemberProfile: true,
+      memberId: null,
+      hasMemberProfile: false,
     };
   }
 
@@ -188,6 +145,7 @@ export class AuthService {
       userId: user.id,
       email: user.email,
       role: 'ADMIN',
+      hasMemberProfile: false,
     };
   }
 
@@ -203,28 +161,12 @@ export class AuthService {
     });
 
     if (!member && user.role === 'MEMBER') {
-      const createdMember = await this.prisma.member.create({
-        data: {
-          userId: user.id,
-          memberId: await this.generateMemberId(),
-          fullName:
-            firebaseIdentity.name ||
-            firebaseIdentity.email.split('@')[0] ||
-            'Member',
-          dob: new Date('1970-01-01'),
-          contact: 'Pending',
-          address: 'Pending',
-          aadhaarNumber: `firebase-aadhaar-${firebaseIdentity.firebaseUid}`,
-          panNumber: `firebase-pan-${firebaseIdentity.firebaseUid}`,
-        },
-      });
-
       return {
         userId: user.id,
         email: user.email,
         role: user.role,
-        memberId: createdMember.id,
-        hasMemberProfile: true,
+        memberId: null,
+        hasMemberProfile: false,
       };
     }
 
@@ -258,9 +200,47 @@ export class AuthService {
     });
   }
 
-  private async generateMemberId() {
-    const count = await this.prisma.member.count();
-    return `MEM${(count + 1).toString().padStart(4, '0')}`;
+  private async generateMemberId(district: string) {
+    const districtCode = this.getDistrictCode(district);
+    const prefix = `SRN-${districtCode}`;
+    
+    // Find the last member with this district prefix
+    const lastMember = await this.prisma.member.findFirst({
+      where: {
+        memberId: {
+          startsWith: prefix,
+        },
+      },
+      orderBy: {
+        memberId: 'desc',
+      },
+    });
+
+    let nextNumber = 1;
+    if (lastMember) {
+      const lastIdParts = lastMember.memberId.split('-');
+      const lastNum = parseInt(lastIdParts[lastIdParts.length - 1]);
+      if (!isNaN(lastNum)) {
+        nextNumber = lastNum + 1;
+      }
+    }
+
+    return `${prefix}-${nextNumber.toString().padStart(4, '0')}`;
+  }
+
+  private getDistrictCode(district: string): string {
+    const mapping: Record<string, string> = {
+      'Chennai': 'CHN',
+      'Tiruvallur': 'TRL',
+      'Kancheepuram': 'KPM',
+      'Chengalpattu': 'CPT',
+      'Coimbatore': 'CBE',
+      'Madurai': 'MDU',
+      'Trichy': 'TRY',
+      'Salem': 'SLM',
+    };
+    
+    return mapping[district] || district.substring(0, 3).toUpperCase();
   }
 
   private getFirebaseAuth() {

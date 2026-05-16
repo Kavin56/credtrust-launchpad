@@ -108,18 +108,27 @@ const ProfilePage = () => {
         value: profile?.aadhaarNumber
           ? `XXXX XXXX ${String(profile.aadhaarNumber).slice(-4)}`
           : "Not available",
+        url: profile?.aadhaarDocUrl,
       },
       {
         name: "PAN Number",
         value: profile?.panNumber
           ? `${String(profile.panNumber).slice(0, 2)}XXXX${String(profile.panNumber).slice(-2)}`
           : "Not available",
+        url: profile?.panDocUrl,
       },
-      { name: "KYC Status", value: profileView.status },
-      { name: "Member Since", value: profileView.joined },
+      { name: "KYC Status", value: profileView.status, url: null },
+      { name: "Member Since", value: profileView.joined, url: null },
     ],
     [profile, profileView.joined, profileView.status],
   );
+
+  const getDocUrl = (url: string) => {
+    if (!url) return null;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
+    const origin = baseUrl.replace('/api/v1', '');
+    return `${origin}${url}`;
+  };
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -304,9 +313,18 @@ const ProfilePage = () => {
                                 </div>
                                 <div className="flex justify-between items-center relative z-10 pt-4 border-t border-gray-200/50">
                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Profile Record</p>
-                                   <button className="p-3 bg-white rounded-2xl shadow-sm text-[#1a1f36] hover:bg-[#1a1f36] hover:text-white transition-all">
-                                      <Eye className="w-5 h-5" />
-                                   </button>
+                                   {doc.url ? (
+                                     <button 
+                                       onClick={() => window.open(getDocUrl(doc.url), '_blank')}
+                                       className="p-3 bg-white rounded-2xl shadow-sm text-[#1a1f36] hover:bg-[#1a1f36] hover:text-white transition-all"
+                                     >
+                                        <Eye className="w-5 h-5" />
+                                     </button>
+                                   ) : (
+                                     <div className="p-3 bg-gray-100/50 rounded-2xl text-gray-300">
+                                        <Eye className="w-5 h-5" />
+                                     </div>
+                                   )}
                                 </div>
                              </div>
                            ))}

@@ -4,13 +4,13 @@ import { getAnalytics } from "firebase/analytics";
 
 // Fallback to provided config when env not set
 const fallbackConfig = {
-  apiKey: "AIzaSyB9G-zJyIg1Ur1KGGsWoeWDDQQhPCI10bI",
-  authDomain: "financial-tracker-a9357.firebaseapp.com",
-  projectId: "financial-tracker-a9357",
-  storageBucket: "financial-tracker-a9357.firebasestorage.app",
-  messagingSenderId: "489079524100",
-  appId: "1:489079524100:web:d18280d358a070101dde51",
-  measurementId: "G-93QNN37Z72",
+  apiKey: "AIzaSyBCJfF3ynqJHCkhWbiokzG6i-mXKxRprvA",
+  authDomain: "cred-trust.firebaseapp.com",
+  projectId: "cred-trust",
+  storageBucket: "cred-trust.firebasestorage.app",
+  messagingSenderId: "525769770230",
+  appId: "1:525769770230:web:02b32fe4882ea8b5ee58d7",
+  measurementId: "G-E9JT7Z3RP0",
 };
 
 const firebaseConfig = {

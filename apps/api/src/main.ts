@@ -20,7 +20,7 @@ import { resolve } from 'path';
 import * as Sentry from '@sentry/node';
 
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
-const DEFAULT_UPLOAD_ROOT = resolve(process.cwd(), '../../uploads');
+const DEFAULT_UPLOAD_ROOT = resolve(process.cwd(), 'uploads');
 const LEGACY_UPLOAD_ROOT = resolve(process.cwd(), 'uploads');
 
 async function bootstrap() {
@@ -40,7 +40,7 @@ async function bootstrap() {
   const logger = app.get(Logger);
   const uploadRoot = resolve(
     process.cwd(),
-    process.env.LOCAL_UPLOAD_DIR || '../../uploads',
+    process.env.LOCAL_UPLOAD_DIR || 'uploads',
   );
 
   // Enable CORS for the frontend dev server

@@ -12,12 +12,12 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
+import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import Footer from "@/components/Footer";
+import AdminNavbar from "@/components/AdminNavbar";
 
 const AdminDashboard = () => {
   const { data: overview, isLoading } = useQuery({
@@ -35,10 +35,10 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Header />
+    <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
+      <AdminNavbar />
       
-      <main className="pt-24 pb-20 px-4 max-w-7xl mx-auto">
+      <main className="flex-1 pb-20 px-4 max-w-7xl mx-auto w-full pt-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <motion.div
             initial={{ opacity: 0, y: -10 }}

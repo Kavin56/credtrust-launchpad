@@ -17,24 +17,22 @@ type AuthUser = {
   id: string;
   email: string;
   role: string;
+  hasMemberProfile: boolean;
 };
 
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  login: (email: string, password: string, devRole?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   loginAdminWithGoogle: (secretKey: string) => Promise<void>;
   register: (payload: {
     email: string;
     password: string;
-    fullName: string;
-    contact: string;
-    address: string;
-    dob: string;
   }) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => void;
+  refreshProfileStatus: () => Promise<void>;
 }
 
 const provider = import.meta.env.VITE_AUTH_PROVIDER || "api"; // 'api' | 'firebase'
@@ -48,6 +46,7 @@ const AuthContext = createContext<AuthContextType>({
   register: async () => {},
   resetPassword: async () => {},
   logout: () => {},
+  refreshProfileStatus: async () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -58,30 +57,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const pauseFirebaseSyncRef = useRef(false);
 
   useEffect(() => {
-    // Prevent "mixed-mode" sessions when switching providers.
-    // If we previously ran with mock tokens, wipe them so API auth can work.
     const token = localStorage.getItem("accessToken");
     const isMockToken = !!token && token.startsWith("mock-token-");
     const looksLikeJwt = !!token && token.split(".").length === 3;
     if (provider !== "mock" && (isMockToken || (token && !looksLikeJwt))) {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("email");
-      localStorage.removeItem("role");
-      localStorage.removeItem("userId");
+      localStorage.clear();
     }
 
     if (provider === "firebase") {
-      const getFirebaseSession = async (fbUser: User, roleFallback = "MEMBER") => {
+      const getFirebaseSession = async (fbUser: User) => {
         try {
           const { data } = await api.post("/auth/firebase/session");
           return data;
         } catch (error) {
-          console.warn("Backend not reachable. Using client-only Firebase session.", error);
           return {
             email: fbUser.email,
-            role: roleFallback,
-            userId: fbUser.uid
+            role: "MEMBER",
+            userId: fbUser.uid,
+            hasMemberProfile: false
           };
         }
       };
@@ -89,45 +82,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const syncFirebaseSession = async (fbUser: User) => {
         const token = await fbUser.getIdToken(false);
         api.defaults.headers.common.Authorization = `Bearer ${token}`;
-        localStorage.setItem(
-          "fb_user",
-          JSON.stringify({ id: fbUser.uid, email: fbUser.email }),
-        );
-        localStorage.setItem("fb_id_token", token);
-        localStorage.setItem("accessToken", token);
-
         const session = await getFirebaseSession(fbUser);
+        
+        localStorage.setItem("accessToken", token);
         localStorage.setItem("email", session.email);
         localStorage.setItem("role", session.role);
         localStorage.setItem("userId", session.userId);
-        setUser({ id: session.userId, email: session.email, role: session.role });
-      };
-
-      const clearFirebaseSession = () => {
-        setUser(null);
-        delete api.defaults.headers.common.Authorization;
-        localStorage.removeItem("fb_user");
-        localStorage.removeItem("fb_id_token");
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        localStorage.removeItem("email");
-        localStorage.removeItem("role");
-        localStorage.removeItem("userId");
+        localStorage.setItem("hasMemberProfile", String(session.hasMemberProfile));
+        
+        setUser({ 
+          id: session.userId, 
+          email: session.email, 
+          role: session.role,
+          hasMemberProfile: session.hasMemberProfile
+        });
       };
 
       const unsub = onAuthStateChanged(auth, async (fbUser) => {
-        if (pauseFirebaseSyncRef.current) {
-          return;
-        }
+        if (pauseFirebaseSyncRef.current) return;
         try {
           if (fbUser?.email) {
             await syncFirebaseSession(fbUser);
           } else {
-            clearFirebaseSession();
+            setUser(null);
+            localStorage.clear();
           }
         } catch (error) {
-          console.error("Failed to sync Firebase session:", error);
-          clearFirebaseSession();
+          setUser(null);
+          localStorage.clear();
         } finally {
           setLoading(false);
         }
@@ -137,7 +119,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (fbUser) {
           const token = await fbUser.getIdToken(false);
           api.defaults.headers.common.Authorization = `Bearer ${token}`;
-          localStorage.setItem("fb_id_token", token);
           localStorage.setItem("accessToken", token);
         }
       });
@@ -151,213 +132,102 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const email = localStorage.getItem("email");
       const role = localStorage.getItem("role");
       const userId = localStorage.getItem("userId");
+      const hasProfile = localStorage.getItem("hasMemberProfile") === "true";
       if (token && email && role && userId) {
-        setUser({ id: userId, email, role });
+        setUser({ id: userId, email, role, hasMemberProfile: hasProfile });
       }
       setLoading(false);
     }
   }, []);
 
-  const login = async (email: string, password: string, devRole?: string) => {
-    if (provider === "firebase") {
-      pauseFirebaseSyncRef.current = true;
-      setLoading(true);
-      try {
-        const cred = await signInWithEmailAndPassword(auth, email, password);
-        const token = await cred.user.getIdToken(false);
-        api.defaults.headers.common.Authorization = `Bearer ${token}`;
-        
-        let session;
-        try {
-          const { data } = await api.post("/auth/firebase/session");
-          session = data;
-        } catch (error) {
-          console.warn("Backend not reachable. Using client-only Firebase session.", error);
-          session = { email: cred.user.email, role: "MEMBER", userId: cred.user.uid };
-        }
-        
-        localStorage.setItem(
-          "fb_user",
-          JSON.stringify({ id: cred.user.uid, email: cred.user.email }),
-        );
-        localStorage.setItem("fb_id_token", token);
-        localStorage.setItem("accessToken", token);
-        localStorage.setItem("email", session.email);
-        localStorage.setItem("role", session.role);
-        localStorage.setItem("userId", session.userId);
-        setUser({ id: session.userId, email: session.email, role: session.role });
-        return;
-      } finally {
-        pauseFirebaseSyncRef.current = false;
-        setLoading(false);
-      }
+  const refreshProfileStatus = async () => {
+    try {
+      const { data } = await api.post("/auth/firebase/session");
+      localStorage.setItem("hasMemberProfile", String(data.hasMemberProfile));
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("userId", data.userId);
+      localStorage.setItem("email", data.email);
+      
+      setUser({ 
+        id: data.userId, 
+        email: data.email, 
+        role: data.role, 
+        hasMemberProfile: data.hasMemberProfile 
+      });
+    } catch (e) {
+      console.error("Failed to refresh profile status", e);
     }
-    const { data } = await api.post("/auth/login", { email, password, secretKey: devRole });
-    localStorage.setItem("accessToken", data.accessToken);
-    localStorage.setItem("refreshToken", data.refreshToken);
-    localStorage.setItem("email", email);
-    localStorage.setItem("role", data.role);
-    const payload = JSON.parse(atob(data.accessToken.split(".")[1] || "{}"));
-    localStorage.setItem("userId", payload.sub);
-    setUser({ id: payload.sub, email, role: data.role });
   };
 
-  const loginWithGoogle = async () => {
-    const googleProvider = new GoogleAuthProvider();
+  const login = async (email: string, password: string) => {
     if (provider === "firebase") {
       pauseFirebaseSyncRef.current = true;
       setLoading(true);
       try {
-        const cred = await signInWithPopup(auth, googleProvider);
-        const token = await cred.user.getIdToken(false);
-        api.defaults.headers.common.Authorization = `Bearer ${token}`;
-        
-        let session;
-        try {
-          const { data } = await api.post("/auth/firebase/session");
-          session = data;
-        } catch (error) {
-          console.warn("Backend not reachable. Using client-only Firebase session.", error);
-          session = { email: cred.user.email, role: "MEMBER", userId: cred.user.uid };
-        }
-        
-        localStorage.setItem(
-          "fb_user",
-          JSON.stringify({ id: cred.user.uid, email: cred.user.email }),
-        );
-        localStorage.setItem("fb_id_token", token);
-        localStorage.setItem("accessToken", token);
-        localStorage.setItem("email", session.email);
-        localStorage.setItem("role", session.role);
-        localStorage.setItem("userId", session.userId);
-        setUser({ id: session.userId, email: session.email, role: session.role });
+        await signInWithEmailAndPassword(auth, email, password);
+        await refreshProfileStatus();
       } finally {
         pauseFirebaseSyncRef.current = false;
         setLoading(false);
       }
       return;
     }
-    await signInWithPopup(auth, googleProvider);
+    const { data } = await api.post("/auth/login", { email, password });
+    localStorage.setItem("accessToken", data.accessToken);
+    localStorage.setItem("email", email);
+    localStorage.setItem("role", data.role);
+    localStorage.setItem("hasMemberProfile", "true");
+    const payload = JSON.parse(atob(data.accessToken.split(".")[1] || "{}"));
+    setUser({ id: payload.sub, email, role: data.role, hasMemberProfile: true });
+  };
+
+  const loginWithGoogle = async () => {
+    if (provider === "firebase") {
+      const googleProvider = new GoogleAuthProvider();
+      await signInWithPopup(auth, googleProvider);
+      await refreshProfileStatus();
+    }
   };
 
   const loginAdminWithGoogle = async (secretKey: string) => {
-    const googleProvider = new GoogleAuthProvider();
-    if (provider !== "firebase") {
-      throw new Error("Admin Google sign-in requires Firebase auth mode.");
-    }
-
-    pauseFirebaseSyncRef.current = true;
-    setLoading(true);
-    try {
-      const cred = await signInWithPopup(auth, googleProvider);
-      const token = await cred.user.getIdToken(false);
+    if (provider === "firebase") {
+      const googleProvider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, googleProvider);
+      const token = await result.user.getIdToken(false);
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
-      
-      let session;
-      try {
-        await api.post("/auth/firebase/admin-access", { secretKey });
-        const { data } = await api.post("/auth/firebase/session");
-        session = data;
-      } catch (error) {
-        console.warn("Backend not reachable for admin login. Proceeding with client-only session.", error);
-        session = { email: cred.user.email, role: "ADMIN", userId: cred.user.uid };
-      }
-      
-      localStorage.setItem(
-        "fb_user",
-        JSON.stringify({ id: cred.user.uid, email: cred.user.email }),
-      );
-      localStorage.setItem("fb_id_token", token);
       localStorage.setItem("accessToken", token);
-      localStorage.setItem("email", session.email);
-      localStorage.setItem("role", session.role);
-      localStorage.setItem("userId", session.userId);
-      setUser({ id: session.userId, email: session.email, role: session.role });
-    } catch (error) {
-      await signOut(auth).catch(() => undefined);
-      throw error;
-    } finally {
-      pauseFirebaseSyncRef.current = false;
-      setLoading(false);
+      
+      const { data } = await api.post("/auth/firebase/admin-access", { secretKey });
+      
+      localStorage.setItem("hasMemberProfile", String(data.hasMemberProfile));
+      localStorage.setItem("role", data.role);
+      localStorage.setItem("userId", data.userId);
+      localStorage.setItem("email", data.email);
+      
+      setUser({ 
+        id: data.userId, 
+        email: data.email, 
+        role: data.role, 
+        hasMemberProfile: data.hasMemberProfile 
+      });
     }
   };
 
-  const register = async (payload: {
-    email: string;
-    password: string;
-    fullName: string;
-    contact: string;
-    address: string;
-    dob: string;
-  }) => {
+  const register = async (payload: { email: string; password: string }) => {
     if (provider === "firebase") {
-      pauseFirebaseSyncRef.current = true;
-      setLoading(true);
-      try {
-        const cred = await createUserWithEmailAndPassword(
-          auth,
-          payload.email,
-          payload.password,
-        );
-        const token = await cred.user.getIdToken(false);
-        api.defaults.headers.common.Authorization = `Bearer ${token}`;
-        
-        let session;
-        try {
-          await api.post("/auth/firebase/register", {
-            fullName: payload.fullName,
-            contact: payload.contact,
-            address: payload.address,
-            dob: payload.dob,
-            role: "MEMBER",
-          });
-          const { data } = await api.post("/auth/firebase/session");
-          session = data;
-        } catch (error) {
-          console.warn("Backend not reachable for registration. Proceeding with client-only session.", error);
-          session = { email: cred.user.email, role: "MEMBER", userId: cred.user.uid };
-        }
-        
-        localStorage.setItem(
-          "fb_user",
-          JSON.stringify({ id: cred.user.uid, email: cred.user.email }),
-        );
-        localStorage.setItem("fb_id_token", token);
-        localStorage.setItem("accessToken", token);
-        localStorage.setItem("email", session.email);
-        localStorage.setItem("role", session.role);
-        localStorage.setItem("userId", session.userId);
-        setUser({ id: session.userId, email: session.email, role: session.role });
-        return;
-      } finally {
-        pauseFirebaseSyncRef.current = false;
-        setLoading(false);
-      }
+      await createUserWithEmailAndPassword(auth, payload.email, payload.password);
+      // Profile creation will be handled by the new flow
     }
-
-    await api.post("/auth/register", {
-      email: payload.email,
-      password: payload.password,
-      fullName: payload.fullName,
-      contact: payload.contact,
-      address: payload.address,
-      dob: payload.dob,
-      role: "MEMBER",
-    });
   };
 
   const resetPassword = async (email: string) => {
     if (provider === "firebase") {
       await sendPasswordResetEmail(auth, email);
-    } else {
-      await api.post("/auth/reset-password", { email });
     }
   };
 
   const logout = () => {
-    if (provider === "firebase") {
-      signOut(auth);
-    }
+    if (provider === "firebase") signOut(auth);
     localStorage.clear();
     setUser(null);
   };
@@ -373,6 +243,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         register,
         resetPassword,
         logout,
+        refreshProfileStatus,
       }}
     >
       {children}
@@ -380,4 +251,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};

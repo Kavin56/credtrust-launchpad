@@ -12,6 +12,8 @@ interface StatsProps {
   todayCollections: number;
   maturityAccounts: number;
   activeAgents: number;
+  pendingCollections?: number;
+  pendingCount?: number;
 }
 
 export const PigmyStats: React.FC<StatsProps> = ({ 
@@ -20,7 +22,9 @@ export const PigmyStats: React.FC<StatsProps> = ({
   activeAccounts, 
   todayCollections,
   maturityAccounts,
-  activeAgents
+  activeAgents,
+  pendingCollections = 0,
+  pendingCount = 0
 }) => {
   const stats = [
     {
@@ -49,9 +53,9 @@ export const PigmyStats: React.FC<StatsProps> = ({
     },
     {
       title: "Pending Collections",
-      value: `₹6,200`,
+      value: `₹${pendingCollections.toLocaleString()}`,
       icon: HandCoins,
-      trend: "12 dues",
+      trend: `${pendingCount} dues`,
       trendColor: "text-rose-400 bg-rose-400/10",
       iconColor: "text-rose-500 bg-rose-500/10"
     },
@@ -59,7 +63,7 @@ export const PigmyStats: React.FC<StatsProps> = ({
       title: "Active Agents",
       value: activeAgents.toString(),
       icon: ShieldCheck,
-      trend: "18 active",
+      trend: `${activeAgents} active`,
       trendColor: "text-blue-400 bg-blue-400/10",
       iconColor: "text-indigo-500 bg-indigo-500/10"
     },
@@ -67,7 +71,7 @@ export const PigmyStats: React.FC<StatsProps> = ({
       title: "Maturity Accounts",
       value: maturityAccounts.toString(),
       icon: PiggyBank,
-      trend: "+7 this mo.",
+      trend: `+${maturityAccounts} this mo.`,
       trendColor: "text-emerald-400 bg-emerald-400/10",
       iconColor: "text-emerald-500 bg-emerald-500/10"
     }
@@ -76,20 +80,20 @@ export const PigmyStats: React.FC<StatsProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {stats.map((stat, i) => (
-        <Card key={i} className="bg-zinc-900 border-zinc-800 text-white hover:bg-zinc-800/50 transition-all cursor-pointer">
+        <Card key={i} className="bg-white border-gray-100 text-[#1a1f36] hover:shadow-md transition-all cursor-pointer shadow-sm rounded-2xl">
           <CardContent className="p-6">
             <div className="flex justify-between items-start mb-4">
-              <div className={`p-2 rounded-xl ${stat.iconColor}`}>
+              <div className={`p-2 rounded-xl ${stat.iconColor.replace('bg-', 'bg-opacity-10 bg-').replace('text-', 'text-')}`}>
                 {/* Fallback for ShieldCheck icon which wasn't imported in this scope but used in mapping logic */}
-                {stat.icon ? <stat.icon className="h-5 w-5" /> : <div className="h-5 w-5 bg-zinc-700 rounded" />}
+                {stat.icon ? <stat.icon className="h-5 w-5" /> : <div className="h-5 w-5 bg-gray-200 rounded" />}
               </div>
-              <Badge className={`${stat.trendColor} border-none font-bold text-[10px] px-2`}>
+              <Badge className={`${stat.trendColor.replace('bg-', 'bg-opacity-10 bg-').replace('text-zinc-200', 'text-gray-600').replace('bg-zinc-800', 'bg-gray-100')} border-none font-bold text-[10px] px-2`}>
                 {stat.trend}
               </Badge>
             </div>
             <div>
-              <div className="text-2xl font-black mb-1">{stat.value}</div>
-              <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">{stat.title}</p>
+              <div className="text-2xl font-black mb-1 text-[#1a1f36]">{stat.value}</div>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">{stat.title}</p>
             </div>
           </CardContent>
         </Card>

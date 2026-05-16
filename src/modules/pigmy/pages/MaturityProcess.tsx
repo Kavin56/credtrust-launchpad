@@ -9,6 +9,7 @@ import {
   ArrowRight, ShieldAlert, History
 } from 'lucide-react';
 import { toast } from "sonner";
+import AdminNavbar from '@/components/AdminNavbar';
 
 const MaturityProcess = () => {
   const [loading, setLoading] = useState(false);
@@ -40,7 +41,10 @@ const MaturityProcess = () => {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8 bg-slate-50 min-h-screen">
+    <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
+      <AdminNavbar />
+      
+      <div className="p-8 max-w-[1400px] mx-auto w-full space-y-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="bg-emerald-600 p-2 rounded-xl">
@@ -171,6 +175,7 @@ const MaturityProcess = () => {
         </div>
       </div>
     </div>
+  </div>
   );
 };
 

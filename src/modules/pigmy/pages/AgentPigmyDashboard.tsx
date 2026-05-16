@@ -1,39 +1,87 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
   HandCoins, Users, TrendingUp, Download, Play, 
-  CheckCircle2, Search, Printer, History, RefreshCw, MapPin
+  CheckCircle2, Search, Printer, History, RefreshCw, MapPin, Loader2
 } from 'lucide-react';
 import { PigmyStats } from '../components/PigmyStats';
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
+import AdminNavbar from '@/components/AdminNavbar';
 
 const AgentPigmyDashboard = () => {
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = useState(false);
+  const [searchId, setSearchId] = useState('');
+  const [collectAmount, setCollectAmount] = useState('');
+  const queryClient = useQueryClient();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['agent-pigmy-stats'],
+    queryFn: async () => {
+      const res = await api.get('/pigmy/stats');
+      return res.data;
+    }
+  });
+
+  const { data: customers, isLoading: customersLoading } = useQuery({
+    queryKey: ['agent-customers'],
+    queryFn: async () => {
+      // In a real app, we'd filter by agentId on the backend.
+      // For now, we'll search for all or use a search query.
+      const res = await api.get('/pigmy/search?q=');
+      return res.data;
+    }
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!searchId || !collectAmount) {
+      toast.error("Please select a customer and enter amount");
+      return;
+    }
     setLoading(true);
-    setTimeout(() => {
-      toast.success("Collection Recorded", {
-        description: "Receipt #RCPT8821 generated. SMS sent to customer."
+    try {
+      // Find the account first
+      const searchRes = await api.get(`/pigmy/search?q=${searchId}`);
+      const account = searchRes.data[0];
+      
+      if (!account) {
+        toast.error("Customer not found");
+        return;
+      }
+
+      await api.post('/pigmy/collection', {
+        accountId: account.id,
+        amount: Number(collectAmount),
+        method: 'CASH',
+        remarks: 'Agent Collection'
       });
+
+      toast.success("Collection Recorded", {
+        description: `Receipt generated for ${account.member?.fullName}.`
+      });
+      setCollectAmount('');
+      setSearchId('');
+      queryClient.invalidateQueries(['agent-pigmy-stats']);
+      queryClient.invalidateQueries(['agent-customers']);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to record collection");
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
-  const assignedCustomers = [
-    { id: 'PIGMY0001', name: 'Priya Murugan', status: 'PENDING', amount: 100, lastPaid: '2026-05-11' },
-    { id: 'PIGMY0002', name: 'Ramesh R', status: 'PAID', amount: 500, lastPaid: '2026-05-12' },
-    { id: 'PIGMY0003', name: 'Selvam K', status: 'PENDING', amount: 100, lastPaid: '2026-05-10' },
-  ];
-
   return (
-    <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
+    <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
+      <AdminNavbar />
+      
+      <div className="p-8 max-w-[1600px] mx-auto w-full space-y-8">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Agent Dashboard</h1>
@@ -49,15 +97,21 @@ const AgentPigmyDashboard = () => {
         </div>
       </div>
 
-      <PigmyStats 
-        totalDeposits={125000} 
-        totalWithdrawals={0}
-        activeAccounts={45} 
-        todayCollections={3400} 
-        maturityAccounts={2}
-        activeAgents={1} // Just self
-        pendingCollections={12}
-      />
+      {!statsLoading && stats ? (
+        <PigmyStats 
+          totalDeposits={stats.totalDeposits} 
+          totalWithdrawals={stats.totalWithdrawals}
+          activeAccounts={stats.activeAccounts} 
+          todayCollections={stats.todayCollections} 
+          maturityAccounts={stats.maturityAccounts}
+          activeAgents={1}
+          pendingCollections={stats.pendingCollections}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+           {[1,2,3].map(i => <div key={i} className="h-32 bg-white rounded-2xl animate-pulse shadow-sm" />)}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Collection Form */}
@@ -74,12 +128,23 @@ const AgentPigmyDashboard = () => {
                        <Label className="text-xs font-black uppercase text-slate-400">Search Customer</Label>
                        <div className="relative">
                           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                          <Input placeholder="Enter Unique ID or Name" className="pl-10" />
+                          <Input 
+                            placeholder="Enter Unique ID or Name" 
+                            className="pl-10" 
+                            value={searchId}
+                            onChange={(e) => setSearchId(e.target.value)}
+                          />
                        </div>
                     </div>
                     <div className="space-y-2">
                        <Label className="text-xs font-black uppercase text-slate-400">Amount Collected (₹)</Label>
-                       <Input type="number" placeholder="100" required />
+                       <Input 
+                        type="number" 
+                        placeholder="100" 
+                        required 
+                        value={collectAmount}
+                        onChange={(e) => setCollectAmount(e.target.value)}
+                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2 pt-2">
                        <Button type="button" variant="outline" className="flex-1 gap-2 border-blue-200 bg-blue-50 text-xs font-bold">
@@ -90,7 +155,7 @@ const AgentPigmyDashboard = () => {
                        </Button>
                     </div>
                     <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 h-12 font-bold text-lg" disabled={loading}>
-                       Submit Collection
+                       {loading ? <Loader2 className="h-5 w-5 animate-spin mx-auto" /> : "Submit Collection"}
                     </Button>
                     <div className="flex gap-2">
                        <Button type="button" variant="ghost" className="flex-1 text-[10px] font-black uppercase text-slate-500 gap-1">
@@ -128,9 +193,11 @@ const AgentPigmyDashboard = () => {
               <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100">
                  <div>
                     <CardTitle className="text-lg">Assigned Customers</CardTitle>
-                    <p className="text-xs text-slate-500 font-medium mt-1">Showing 3 customers on your route</p>
+                    <p className="text-xs text-slate-500 font-medium mt-1">
+                      {customersLoading ? "Loading customers..." : `Showing ${customers?.length || 0} customers on your route`}
+                    </p>
                  </div>
-                 <Button variant="ghost" className="text-blue-600 text-xs font-bold" onClick={() => navigate('/agent/customers')}>View All Customers</Button>
+                 <Button variant="ghost" className="text-blue-600 text-xs font-bold">View All Customers</Button>
               </CardHeader>
               <CardContent className="p-0">
                  <Table>
@@ -139,27 +206,40 @@ const AgentPigmyDashboard = () => {
                           <TableHead className="text-[10px] font-black uppercase text-slate-400">Unique ID</TableHead>
                           <TableHead className="text-[10px] font-black uppercase text-slate-400">Customer Name</TableHead>
                           <TableHead className="text-[10px] font-black uppercase text-slate-400">Status</TableHead>
-                          <TableHead className="text-right text-[10px] font-black uppercase text-slate-400">Amount</TableHead>
+                          <TableHead className="text-right text-[10px] font-black uppercase text-slate-400">Scheme</TableHead>
                           <TableHead className="text-right text-[10px] font-black uppercase text-slate-400">Action</TableHead>
                        </TableRow>
                     </TableHeader>
                     <TableBody>
-                       {assignedCustomers.map((c) => (
+                       {!customersLoading && customers && customers.map((c: any) => (
                           <TableRow key={c.id}>
-                             <TableCell className="font-bold text-xs">{c.id}</TableCell>
-                             <TableCell className="font-bold">{c.name}</TableCell>
+                             <TableCell className="font-bold text-xs">{c.accountNumber}</TableCell>
+                             <TableCell className="font-bold">{c.member?.fullName}</TableCell>
                              <TableCell>
-                                <Badge className={c.status === 'PAID' ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}>
-                                   {c.status}
+                                <Badge className="bg-emerald-100 text-emerald-700">
+                                   ACTIVE
                                 </Badge>
                              </TableCell>
-                             <TableCell className="text-right font-black">₹{c.amount}</TableCell>
+                             <TableCell className="text-right font-bold text-xs">{c.scheme?.name}</TableCell>
                              <TableCell className="text-right">
-                                <Button size="sm" variant={c.status === 'PAID' ? "ghost" : "default"} className={c.status === 'PAID' ? "text-emerald-600" : "bg-blue-600"}>
-                                   {c.status === 'PAID' ? "View Receipt" : "Collect Now"}
+                                <Button 
+                                  size="sm" 
+                                  variant="default" 
+                                  className="bg-blue-600"
+                                  onClick={() => {
+                                    setSearchId(c.accountNumber);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }}
+                                >
+                                   Collect Now
                                 </Button>
                              </TableCell>
                           </TableRow>
+                       ))}
+                       {customersLoading && [1,2,3].map(i => (
+                         <TableRow key={i} className="animate-pulse">
+                            <TableCell colSpan={5} className="h-12 bg-slate-100" />
+                         </TableRow>
                        ))}
                     </TableBody>
                  </Table>
@@ -168,6 +248,7 @@ const AgentPigmyDashboard = () => {
         </div>
       </div>
     </div>
+  </div>
   );
 };
 
