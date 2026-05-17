@@ -61,7 +61,7 @@ const AdminDashboard = () => {
                Download Trial Balance (Excel)
             </Button>
             <Link to="/admin/pigmy">
-              <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              <Button className="bg-[#c9a84c] hover:bg-[#b0923f] text-white">
                 Pigmy Management
               </Button>
             </Link>
