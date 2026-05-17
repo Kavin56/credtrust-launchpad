@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { 
   Download, Search, Bell, Calendar, Filter, RefreshCw,
@@ -37,6 +39,43 @@ const PigmyDashboard = () => {
       return res.data;
     }
   });
+
+  // Filter States
+  const [filterPigmyId, setFilterPigmyId] = React.useState('');
+  const [filterTimeframe, setFilterTimeframe] = React.useState('all');
+  const [filterDate, setFilterDate] = React.useState('');
+
+  // Filter Logic
+  const filteredCollections = React.useMemo(() => {
+    if (!recentCollections) return [];
+    
+    return recentCollections.filter((item: any) => {
+      if (filterPigmyId && !item.account?.accountNumber?.toLowerCase().includes(filterPigmyId.toLowerCase())) {
+        return false;
+      }
+      if (filterDate) {
+        const itemDate = new Date(item.date).toISOString().split('T')[0];
+        if (itemDate !== filterDate) return false;
+      }
+      if (filterTimeframe !== 'all') {
+        const itemD = new Date(item.date);
+        const now = new Date();
+        
+        if (filterTimeframe === 'today') {
+           if (itemD.toDateString() !== now.toDateString()) return false;
+        } else if (filterTimeframe === 'week') {
+           const weekAgo = new Date();
+           weekAgo.setDate(now.getDate() - 7);
+           if (itemD < weekAgo) return false;
+        } else if (filterTimeframe === 'month') {
+           if (itemD.getMonth() !== now.getMonth() || itemD.getFullYear() !== now.getFullYear()) return false;
+        } else if (filterTimeframe === 'year') {
+           if (itemD.getFullYear() !== now.getFullYear()) return false;
+        }
+      }
+      return true;
+    });
+  }, [recentCollections, filterPigmyId, filterDate, filterTimeframe]);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8fafc] font-sans selection:bg-blue-500/30">
@@ -91,7 +130,7 @@ const PigmyDashboard = () => {
               />
            </div>
            <div className="flex items-center gap-2">
-              <Button onClick={() => navigate('/admin/pigmy/add-customer')} className="bg-[#4f46e5] hover:bg-[#4338ca] text-white gap-2 text-xs font-bold rounded-xl h-10">
+              <Button onClick={() => navigate('/admin/pigmy/add-customer')} className="bg-[#c9a84c] hover:bg-[#b0923f] text-white gap-2 text-xs font-bold rounded-xl h-10">
                 <UserPlus className="h-4 w-4" /> Add Customer
               </Button>
               <Button variant="outline" className="bg-white border-gray-200 text-gray-600 gap-2 text-xs font-bold rounded-xl h-10">
@@ -107,9 +146,62 @@ const PigmyDashboard = () => {
               <Button variant="outline" className="bg-white border-gray-200 text-gray-600 gap-2 text-xs rounded-xl h-10">
                 <Calendar className="h-4 w-4" /> {new Date().toDateString()}
               </Button>
-              <Button variant="outline" className="bg-white border-gray-200 text-gray-600 gap-2 text-xs rounded-xl h-10">
-                <Filter className="h-4 w-4" /> Filters
-              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="bg-white border-gray-200 text-gray-600 gap-2 text-xs rounded-xl h-10">
+                    <Filter className="h-4 w-4" /> Filters
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4 space-y-4" align="end">
+                  <h4 className="font-bold text-[#1a1f36]">Filter Collections</h4>
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500">Pigmy ID</label>
+                    <Input 
+                      placeholder="e.g. PIGMY001" 
+                      value={filterPigmyId}
+                      onChange={(e) => setFilterPigmyId(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500">Timeframe</label>
+                    <Select value={filterTimeframe} onValueChange={setFilterTimeframe}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select timeframe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Time</SelectItem>
+                        <SelectItem value="today">Today</SelectItem>
+                        <SelectItem value="week">This Week</SelectItem>
+                        <SelectItem value="month">This Month</SelectItem>
+                        <SelectItem value="year">This Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-500">Specific Date</label>
+                    <Input 
+                      type="date"
+                      value={filterDate}
+                      onChange={(e) => setFilterDate(e.target.value)}
+                    />
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full mt-2"
+                    onClick={() => {
+                      setFilterPigmyId('');
+                      setFilterTimeframe('all');
+                      setFilterDate('');
+                    }}
+                  >
+                    Reset Filters
+                  </Button>
+                </PopoverContent>
+              </Popover>
               <Button size="icon" variant="ghost" className="text-gray-400 hover:text-[#1a1f36] rounded-xl h-10 w-10">
                  <RefreshCw className="h-4 w-4" />
               </Button>
@@ -142,7 +234,7 @@ const PigmyDashboard = () => {
                <CardTitle className="text-lg font-bold">Recent Collections</CardTitle>
                <p className="text-xs text-gray-500 mt-1 font-medium">Showing latest 10 transactions</p>
             </div>
-            <Button variant="ghost" className="text-[#4f46e5] text-xs font-bold hover:bg-indigo-50">View All</Button>
+            <Button variant="ghost" className="text-[#c9a84c] text-xs font-bold hover:bg-[#c9a84c]/10">View All</Button>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -157,7 +249,7 @@ const PigmyDashboard = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                  {recentCollections?.map((item: any) => (
+                  {filteredCollections?.map((item: any) => (
                     <TableRow key={item.id} className="border-gray-50 hover:bg-gray-50/50 transition-colors">
                       <TableCell className="text-xs font-medium text-gray-600">
                          {new Date(item.date).toLocaleDateString()}
@@ -168,7 +260,7 @@ const PigmyDashboard = () => {
                          {item.upiId && <div className="text-[10px] text-gray-400 font-medium">UPI: {item.upiId}</div>}
                       </TableCell>
                       <TableCell>
-                         <code className="text-xs text-[#4f46e5] bg-indigo-50 px-2 py-0.5 rounded-md font-bold">{item.account?.accountNumber}</code>
+                         <code className="text-xs text-[#c9a84c] bg-[#c9a84c]/10 px-2 py-0.5 rounded-md font-bold">{item.account?.accountNumber}</code>
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="bg-gray-100 text-gray-600 border-none font-bold text-[9px]">
@@ -194,6 +286,7 @@ const PigmyDashboard = () => {
                       <TableCell className="text-right">
                          <div className="flex flex-col items-end gap-1">
                             <span className="font-black text-[#1a1f36]">₹{item.amount.toLocaleString()}</span>
+                            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-sm">+ ₹{(item.amount * 0.015).toFixed(2)} (Interest)</span>
                             {item.status === 'PENDING' && (
                                <div className="flex gap-1">
                                   <Button 
