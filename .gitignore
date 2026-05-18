@@ -18,6 +18,7 @@ dist-ssr
 apps/api/.env
 **/*firebase-adminsdk-*.json
 uploads/
+apps/api/uploads/
 
 # Editor directories and files
 .vscode/*
