@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import * as fs from 'fs';
@@ -9,56 +9,64 @@ export class MembersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async completeProfile(userId: string, data: any, files: any[]) {
-    // 1. Check if member already exists
-    let member = await this.prisma.member.findUnique({ where: { userId } });
-    
-    // 2. Generate Member ID if it doesn't exist
-    if (!member) {
-      const memberId = await this.generateMemberId(data.district);
-      member = await this.prisma.member.create({
+    try {
+      // 1. Check if member already exists
+      let member = await this.prisma.member.findUnique({ where: { userId } });
+      
+      // 2. Generate Member ID if it doesn't exist
+      if (!member) {
+        const memberId = await this.generateMemberId(data.district);
+        member = await this.prisma.member.create({
+          data: {
+            userId,
+            memberId,
+            fullName: data.fullName,
+            dob: new Date(data.dob),
+            gender: data.gender || 'Other',
+            contact: data.contact,
+            address: data.address,
+            state: data.state,
+            district: data.district,
+            pincode: data.pincode,
+            aadhaarNumber: data.aadhaarNumber,
+            panNumber: data.panNumber,
+          }
+        });
+      }
+
+      // 3. Handle File Uploads
+      const uploadDir = path.join(process.cwd(), 'uploads', 'signup');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const filePaths: any = {};
+      for (const file of files) {
+        const fileName = `${member.memberId}-${file.fieldname}-${Date.now()}${path.extname(file.filename)}`;
+        const filePath = path.join(uploadDir, fileName);
+        
+        fs.writeFileSync(filePath, file.buffer);
+        
+        filePaths[file.fieldname] = `/uploads/signup/${fileName}`;
+      }
+
+      console.log(`Profile completed successfully for user ${userId}. Member ID: ${member.memberId}`);
+      // 4. Update member with file paths
+      return await this.prisma.member.update({
+        where: { id: member.id },
         data: {
-          userId,
-          memberId,
-          fullName: data.fullName,
-          dob: new Date(data.dob),
-          gender: data.gender || 'Other',
-          contact: data.contact,
-          address: data.address,
-          state: data.state,
-          district: data.district,
-          pincode: data.pincode,
-          aadhaarNumber: data.aadhaarNumber,
-          panNumber: data.panNumber,
+          aadhaarDocUrl: filePaths['aadhaarDoc'] || member.aadhaarDocUrl,
+          panDocUrl: filePaths['panDoc'] || member.panDocUrl,
+          kycStatus: 'PENDING',
         }
       });
-    }
-
-    // 3. Handle File Uploads
-    const uploadDir = path.join(process.cwd(), 'uploads', 'signup');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const filePaths: any = {};
-    for (const file of files) {
-      const fileName = `${member.memberId}-${file.fieldname}-${Date.now()}${path.extname(file.filename)}`;
-      const filePath = path.join(uploadDir, fileName);
-      
-      fs.writeFileSync(filePath, file.buffer);
-      
-      filePaths[file.fieldname] = `/uploads/signup/${fileName}`;
-    }
-
-    console.log(`Profile completed successfully for user ${userId}. Member ID: ${member.memberId}`);
-    // 4. Update member with file paths
-    return this.prisma.member.update({
-      where: { id: member.id },
-      data: {
-        aadhaarDocUrl: filePaths['aadhaarDoc'] || member.aadhaarDocUrl,
-        panDocUrl: filePaths['panDoc'] || member.panDocUrl,
-        kycStatus: 'PENDING',
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        const fields = error.meta?.target || [];
+        throw new BadRequestException(`The ${fields.join(', ')} is already registered to another account.`);
       }
-    });
+      throw error;
+    }
   }
 
   private async generateMemberId(district: string) {

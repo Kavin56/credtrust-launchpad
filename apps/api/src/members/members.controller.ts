@@ -8,6 +8,8 @@ import {
   Post,
   Query,
   UseGuards,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { MembersService } from './members.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
@@ -43,29 +45,30 @@ export class MembersController {
 
   @Post('complete-profile')
   async completeProfile(@Req() req: any) {
-    const parts = req.parts();
-    const data: any = {};
-    const uploadedFiles: any[] = [];
-    
-    for await (const part of parts) {
-      if (part.file) {
-        // We must consume the stream immediately or it will hang
-        // We'll store the stream and handle it in the service
-        // Actually, to avoid issues, let's buffer the file or save to a temp location
-        // But for now, let's just make sure we don't block the loop
-        const buffer = await part.toBuffer();
-        uploadedFiles.push({
-          fieldname: part.fieldname,
-          filename: part.filename,
-          mimetype: part.mimetype,
-          buffer: buffer
-        });
-      } else {
-        data[part.fieldname] = part.value;
+    try {
+      const parts = req.parts();
+      const data: any = {};
+      const uploadedFiles: any[] = [];
+      
+      for await (const part of parts) {
+        if (part.type === 'file') {
+          const buffer = await part.toBuffer();
+          uploadedFiles.push({
+            fieldname: part.fieldname,
+            filename: part.filename,
+            mimetype: part.mimetype,
+            buffer: buffer
+          });
+        } else {
+          data[part.fieldname] = part.value;
+        }
       }
+      
+      return await this.membersService.completeProfile(req.user.userId, data, uploadedFiles);
+    } catch (error: any) {
+      console.error('COMPLETE PROFILE ERROR:', error);
+      throw new HttpException(error.message || 'Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
-    
-    return this.membersService.completeProfile(req.user.userId, data, uploadedFiles);
   }
 
   @Get('me/overview')

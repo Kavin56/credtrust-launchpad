@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import { SignUpFlowModal } from "../../member/components/SignUpFlowModal";
 
 interface SignupFormProps {
   onToggleForm: () => void;
@@ -15,6 +16,7 @@ export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
   const { register } = useAuth();
 
@@ -28,7 +30,7 @@ export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
         password,
       });
       toast.success("Account created successfully. Please complete your profile.");
-      navigate("/signup-flow");
+      setShowModal(true);
     } catch (error: any) {
       console.error(error);
       toast.error("Failed to create account. Please try again.");
@@ -90,6 +92,7 @@ export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
           </div>
         </div>
       </form>
+      <SignUpFlowModal open={showModal} onOpenChange={setShowModal} />
     </div>
   );
 };
