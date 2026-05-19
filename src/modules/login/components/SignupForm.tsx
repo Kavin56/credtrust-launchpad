@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../AuthContext";
 import { SignUpFlowModal } from "../../member/components/SignUpFlowModal";
 
 interface SignupFormProps {
@@ -15,33 +14,22 @@ interface SignupFormProps {
 export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
-  const { register } = useAuth();
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      await register({
-        email,
-        password,
-      });
-      toast.success("Account created successfully. Please complete your profile.");
-      setShowModal(true);
-    } catch (error: any) {
-      console.error(error);
-      toast.error("Failed to create account. Please try again.");
-    } finally {
-      setLoading(false);
+    if (!email || !password) {
+      toast.error("Please provide email and password.");
+      return;
     }
+    // Defer creation to the modal
+    setShowModal(true);
   };
 
   return (
     <div className="w-full max-w-sm mx-auto animate-in fade-in slide-in-from-right-4 duration-500">
-      <h1 className="text-3xl font-bold text-[#1a1f36] mb-2">Create Account</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
       <p className="text-gray-500 mb-8 font-medium">Join us to start managing your society membership.</p>
       
       <form onSubmit={handleSignup} className="space-y-4">
@@ -54,7 +42,7 @@ export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="h-12 bg-[#edf2ff] border-transparent focus:bg-white focus:border-[#2563eb] transition-all rounded-xl font-medium"
+            className="h-12 bg-amber-50 border-transparent focus:bg-white focus:border-amber-500 transition-all rounded-xl font-medium"
           />
         </div>
 
@@ -67,16 +55,15 @@ export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="h-12 bg-[#edf2ff] border-transparent focus:bg-white focus:border-[#2563eb] transition-all rounded-xl font-medium"
+            className="h-12 bg-amber-50 border-transparent focus:bg-white focus:border-amber-500 transition-all rounded-xl font-medium"
           />
         </div>
 
         <Button 
           type="submit" 
-          className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-black h-12 rounded-xl text-base shadow-lg shadow-blue-500/20 mt-4 transition-all"
-          disabled={loading}
+          className="w-full bg-amber-500 hover:bg-amber-600 text-white font-black h-12 rounded-xl text-base shadow-lg shadow-amber-500/20 mt-4 transition-all"
         >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "SIGN UP"}
+          SIGN UP
         </Button>
 
         <div className="flex flex-col gap-4 text-sm mt-6">
@@ -85,14 +72,14 @@ export const SignupForm = ({ onToggleForm }: SignupFormProps) => {
             <button 
               type="button" 
               onClick={onToggleForm}
-              className="text-[#2563eb] font-bold hover:underline transition-colors"
+              className="text-amber-600 font-bold hover:underline transition-colors"
             >
               Log in
             </button>
           </div>
         </div>
       </form>
-      <SignUpFlowModal open={showModal} onOpenChange={setShowModal} />
+      <SignUpFlowModal open={showModal} onOpenChange={setShowModal} email={email} password={password} />
     </div>
   );
 };
