@@ -93,6 +93,11 @@ export class UpdateCollectionStatusDto {
   @IsString()
   @IsOptional()
   remarks?: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsOptional()
+  agentId?: string;
 }
 
 export class InitiatePaymentDto {

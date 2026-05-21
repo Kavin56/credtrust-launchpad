@@ -177,7 +177,8 @@ const LandingHeader = () => {
                           <h4 className="text-[#a21caf] font-semibold text-[13px] tracking-tight">Internet Banking</h4>
                           <div className="space-y-2 pl-4">
                              <Link to="/login" className="block text-[12px] text-gray-500 hover:text-[#6b21a8] font-medium transition-colors">Personal</Link>
-                             <Link to="/login" className="block text-[12px] text-gray-400 hover:text-[#6b21a8] font-medium transition-colors">Corporate</Link>
+                             <Link to="/admin/login" className="block text-[12px] text-gray-500 hover:text-[#6b21a8] font-medium transition-colors">Admin</Link>
+                             <Link to="/agent/login" className="block text-[12px] text-gray-500 hover:text-[#6b21a8] font-medium transition-colors">Agent</Link>
                           </div>
                        </div>
 

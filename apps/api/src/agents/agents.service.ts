@@ -128,6 +128,32 @@ export class AgentsService {
     });
   }
 
+  async deleteAgent(id: string) {
+    const agent = await this.agentPrisma.agent.findUnique({
+      where: { id },
+    });
+    if (!agent) {
+      throw new NotFoundException('Agent not found');
+    }
+
+    // Unassign accounts assigned to this agent
+    await this.prisma.pigmyAccount.updateMany({
+      where: { agentId: id },
+      data: { agentId: null },
+    });
+
+    // Unassign collections assigned to this agent
+    await this.prisma.pigmyCollection.updateMany({
+      where: { agentId: id },
+      data: { agentId: null },
+    });
+
+    // Delete agent
+    return this.agentPrisma.agent.delete({
+      where: { id },
+    });
+  }
+
   private async nextAgentCode() {
     const count = await this.agentPrisma.agent.count();
     return `AGT-${String(count + 1).padStart(4, '0')}`;

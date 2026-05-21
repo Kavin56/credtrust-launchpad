@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -51,5 +52,11 @@ export class AgentsController {
   @ApiOperation({ summary: 'Search Pigmy accounts for assignment' })
   accounts(@Query('q') q?: string) {
     return this.agentsService.listAccountsForAssignment(q);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete collection agent' })
+  delete(@Param('id') id: string) {
+    return this.agentsService.deleteAgent(id);
   }
 }

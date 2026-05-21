@@ -26,6 +26,7 @@ import { toast } from "sonner";
 const PigmyDashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [agentDialogOpen, setAgentDialogOpen] = React.useState(false);
   
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['pigmy-stats'],
@@ -106,7 +107,13 @@ const PigmyDashboard = () => {
                <Button variant="outline" className="bg-white hover:bg-gray-50 text-[#1a1f36] border-gray-200 gap-2 text-sm font-bold h-11 px-6 rounded-xl shadow-sm">
                   <Download className="h-4 w-4" /> Export
                </Button>
-               <AgentManagementDialog />
+                <Button 
+                  className="bg-[#1a1f36] hover:bg-black text-white gap-2 font-bold h-11 rounded-xl"
+                  onClick={() => setAgentDialogOpen(true)}
+                >
+                  <UserPlus className="h-4 w-4" /> Manage Agents
+                </Button>
+                <AgentManagementDialog open={agentDialogOpen} onOpenChange={setAgentDialogOpen} />
                <AssignCustomerDialog />
                <NewEntryDialog />
             </div>
@@ -218,7 +225,8 @@ const PigmyDashboard = () => {
             activeAccounts={stats.activeAccounts || 0} 
             todayCollections={stats.todayCollections || 0} 
             maturityAccounts={stats.maturityAccounts || 0}
-            activeAgents={18}
+            activeAgents={stats.activeAgents || 0}
+            onActiveAgentsClick={() => setAgentDialogOpen(true)}
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

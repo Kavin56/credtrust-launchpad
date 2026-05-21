@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
   HandCoins, Users, TrendingUp, Download, Play, 
-  CheckCircle2, Search, Printer, History, RefreshCw, MapPin, Loader2
+  CheckCircle2, XCircle, Search, Printer, History, RefreshCw, MapPin, Loader2
 } from 'lucide-react';
 import { PigmyStats } from '../components/PigmyStats';
 import { toast } from "sonner";
@@ -16,7 +16,6 @@ import api from '@/lib/api';
 import { useAuth } from '@/modules/login/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
-import { PendingCollectionsPanel } from '../components/PendingCollectionsPanel';
 
 const AgentPigmyDashboard = () => {
   const { user, logout } = useAuth();
@@ -25,7 +24,13 @@ const AgentPigmyDashboard = () => {
   const [searchId, setSearchId] = useState('');
   const [collectAmount, setCollectAmount] = useState('');
   const [selectedAccountId, setSelectedAccountId] = useState('');
+  const [actingId, setActingId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    console.log("AgentPigmyDashboard version 104 loaded");
+    toast.info("Agent Dashboard Loaded");
+  }, []);
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['agent-pigmy-stats'],
@@ -42,6 +47,30 @@ const AgentPigmyDashboard = () => {
       return res.data;
     }
   });
+
+  const { data: pendingCollections, isLoading: pendingLoading } = useQuery({
+    queryKey: ['pigmy-pending-collections'],
+    queryFn: async () => {
+      const res = await api.get('/pigmy/collections/pending');
+      return res.data;
+    },
+    refetchInterval: 30000,
+  });
+
+  const updateStatus = async (collectionId: string, status: "COMPLETED" | "REJECTED") => {
+    setActingId(collectionId);
+    try {
+      await api.patch(`/pigmy/collections/${collectionId}/status`, { status });
+      toast.success(status === "COMPLETED" ? "Payment approved" : "Payment rejected");
+      queryClient.invalidateQueries({ queryKey: ["pigmy-pending-collections"] });
+      queryClient.invalidateQueries({ queryKey: ["agent-pigmy-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["agent-customers"] });
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Action failed");
+    } finally {
+      setActingId(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,8 +134,6 @@ const AgentPigmyDashboard = () => {
         </div>
       </div>
 
-      <PendingCollectionsPanel />
-
       {!statsLoading && stats ? (
         <PigmyStats 
           totalDeposits={stats.totalDeposits} 
@@ -114,7 +141,7 @@ const AgentPigmyDashboard = () => {
           activeAccounts={stats.activeAccounts} 
           todayCollections={stats.todayCollections} 
           maturityAccounts={stats.maturityAccounts}
-          activeAgents={1}
+          activeAgents={stats.activeAgents || 0}
           pendingCollections={stats.pendingCollections}
         />
       ) : (
@@ -199,63 +226,128 @@ const AgentPigmyDashboard = () => {
 
         {/* Customer List */}
         <div className="lg:col-span-2">
-           <Card className="border-none shadow-xl overflow-hidden h-full">
-              <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100">
-                 <div>
-                    <CardTitle className="text-lg">Assigned Customers</CardTitle>
-                    <p className="text-xs text-slate-500 font-medium mt-1">
-                      {customersLoading ? "Loading customers..." : `Showing ${customers?.length || 0} customers on your route`}
-                    </p>
-                 </div>
-                 <Button variant="ghost" className="text-blue-600 text-xs font-bold">View All Customers</Button>
-              </CardHeader>
-              <CardContent className="p-0">
-                 <Table>
-                    <TableHeader className="bg-slate-50/50">
-                       <TableRow>
-                          <TableHead className="text-[10px] font-black uppercase text-slate-400">Unique ID</TableHead>
-                          <TableHead className="text-[10px] font-black uppercase text-slate-400">Customer Name</TableHead>
-                          <TableHead className="text-[10px] font-black uppercase text-slate-400">Status</TableHead>
-                          <TableHead className="text-right text-[10px] font-black uppercase text-slate-400">Scheme</TableHead>
-                          <TableHead className="text-right text-[10px] font-black uppercase text-slate-400">Action</TableHead>
-                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                       {!customersLoading && customers && customers.map((c: any) => (
-                          <TableRow key={c.id}>
-                             <TableCell className="font-bold text-xs">{c.accountNumber}</TableCell>
-                             <TableCell className="font-bold">{c.member?.fullName}</TableCell>
-                             <TableCell>
-                                <Badge className="bg-emerald-100 text-emerald-700">
-                                   ACTIVE
-                                </Badge>
-                             </TableCell>
-                             <TableCell className="text-right font-bold text-xs">{c.scheme?.name}</TableCell>
-                             <TableCell className="text-right">
-                                <Button 
-                                  size="sm" 
-                                  variant="default" 
-                                  className="bg-blue-600"
-                                  onClick={() => {
-                                    setSearchId(c.accountNumber);
-                                    setSelectedAccountId(c.id);
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                  }}
-                                >
-                                   Collect Now
-                                </Button>
-                             </TableCell>
+            <Card className="border-none shadow-xl overflow-hidden h-full">
+               <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100">
+                  <div>
+                     <CardTitle className="text-lg">Assigned Customers</CardTitle>
+                     <p className="text-xs text-slate-500 font-medium mt-1">
+                       {customersLoading || pendingLoading 
+                         ? "Loading..." 
+                         : `Showing ${customers?.length || 0} active customers and ${pendingCollections?.length || 0} pending collections`}
+                     </p>
+                  </div>
+                  <Button variant="ghost" className="text-blue-600 text-xs font-bold">View All Customers</Button>
+               </CardHeader>
+               <CardContent className="p-0">
+                  <Table>
+                     <TableHeader className="bg-slate-50/50">
+                        <TableRow>
+                           <TableHead className="text-[10px] font-black uppercase text-slate-400">Unique ID</TableHead>
+                           <TableHead className="text-[10px] font-black uppercase text-slate-400">Customer Name</TableHead>
+                           <TableHead className="text-[10px] font-black uppercase text-slate-400">Status</TableHead>
+                           <TableHead className="text-right text-[10px] font-black uppercase text-slate-400">Scheme</TableHead>
+                           <TableHead className="text-right text-[10px] font-black uppercase text-slate-400">Action</TableHead>
+                        </TableRow>
+                     </TableHeader>
+                     <TableBody>
+                        {/* Pending Collections */}
+                        {!pendingLoading && pendingCollections && pendingCollections.map((p: any) => (
+                           <TableRow key={`pending-${p.id}`} className="bg-amber-50/50">
+                              <TableCell className="font-bold text-xs font-mono">{p.account?.accountNumber}</TableCell>
+                              <TableCell className="font-bold">
+                                 <div>{p.account?.member?.fullName}</div>
+                                 <div className="text-[10px] text-slate-500 font-medium">Pending Online Payment</div>
+                              </TableCell>
+                              <TableCell>
+                                 <div className="flex flex-col gap-1">
+                                    <Badge className="bg-amber-100 text-amber-700 w-fit">
+                                       PENDING
+                                    </Badge>
+                                    <span className="text-xs font-bold text-slate-700">₹{p.amount?.toLocaleString()} ({p.method})</span>
+                                 </div>
+                              </TableCell>
+                              <TableCell className="text-right font-bold text-xs">{p.account?.scheme?.name}</TableCell>
+                              <TableCell className="text-right">
+                                 <div className="flex justify-end gap-2">
+                                    <Button
+                                      size="sm"
+                                      className="bg-emerald-600 hover:bg-emerald-700 h-8 text-xs font-bold"
+                                      disabled={actingId === p.id}
+                                      onClick={() => updateStatus(p.id, "COMPLETED")}
+                                    >
+                                      {actingId === p.id ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                                      )}
+                                      Approve
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-8 text-red-600 border-red-200 text-xs font-bold bg-white"
+                                      disabled={actingId === p.id}
+                                      onClick={() => updateStatus(p.id, "REJECTED")}
+                                    >
+                                      {actingId === p.id ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        <XCircle className="h-3.5 w-3.5 mr-1" />
+                                      )}
+                                      Reject
+                                    </Button>
+                                 </div>
+                              </TableCell>
+                           </TableRow>
+                        ))}
+
+                        {/* Active Customers */}
+                        {!customersLoading && customers && customers.map((c: any) => (
+                           <TableRow key={c.id}>
+                              <TableCell className="font-bold text-xs font-mono">{c.accountNumber}</TableCell>
+                              <TableCell className="font-bold">{c.member?.fullName}</TableCell>
+                              <TableCell>
+                                 <Badge className="bg-emerald-100 text-emerald-700">
+                                    ACTIVE
+                                 </Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-bold text-xs">{c.scheme?.name}</TableCell>
+                              <TableCell className="text-right">
+                                 <Button 
+                                   size="sm" 
+                                   variant="default" 
+                                   className="bg-blue-600 hover:bg-blue-700"
+                                   onClick={() => {
+                                     setSearchId(c.accountNumber);
+                                     setSelectedAccountId(c.id);
+                                     window.scrollTo({ top: 0, behavior: 'smooth' });
+                                   }}
+                                 >
+                                    Collect Now
+                                 </Button>
+                              </TableCell>
+                           </TableRow>
+                        ))}
+
+                        {(customersLoading || pendingLoading) && [1,2,3].map(i => (
+                          <TableRow key={i} className="animate-pulse">
+                             <TableCell colSpan={5} className="h-12 bg-slate-100" />
                           </TableRow>
-                       ))}
-                       {customersLoading && [1,2,3].map(i => (
-                         <TableRow key={i} className="animate-pulse">
-                            <TableCell colSpan={5} className="h-12 bg-slate-100" />
-                         </TableRow>
-                       ))}
-                    </TableBody>
-                 </Table>
-              </CardContent>
-           </Card>
+                        ))}
+
+                        {!(customersLoading || pendingLoading) && 
+                         (!pendingCollections || pendingCollections.length === 0) && 
+                         (!customers || customers.length === 0) && (
+                           <TableRow>
+                             <TableCell colSpan={5} className="text-center py-8 text-slate-500 font-medium">
+                               No assigned customers or pending collections
+                             </TableCell>
+                           </TableRow>
+                        )}
+                     </TableBody>
+                  </Table>
+               </CardContent>
+            </Card>
         </div>
       </div>
     </div>

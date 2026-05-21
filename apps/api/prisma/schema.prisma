@@ -18,10 +18,7 @@ model User {
   lastLoginAt   DateTime?
   member        Member?
   auditLogs     AuditLog[]
-  
-  // Pigmy Relations
-  assignedPigmyAccounts PigmyAccount[] @relation("AgentAccounts")
-  collectedPigmyDeposits PigmyCollection[] @relation("AgentCollections")
+
 }
 
 model Member {
@@ -216,7 +213,6 @@ model PigmyAccount {
   schemeId        String
   scheme          PigmyScheme @relation(fields: [schemeId], references: [id])
   agentId         String?  // Assigned collection agent
-  agent           User?    @relation("AgentAccounts", fields: [agentId], references: [id])
   startDate       DateTime @default(now())
   maturityDate    DateTime
   status          String   @default("ACTIVE") // ACTIVE, MATURED, CLOSED
@@ -241,7 +237,6 @@ model PigmyCollection {
   status          String   @default("PENDING") // PENDING, COMPLETED, REJECTED
   referenceId     String?  // External ref or UTR
   agentId         String?  // Collector if manual (User ID)
-  agent           User?    @relation("AgentCollections", fields: [agentId], references: [id])
   receiptNumber   String?  @unique
   remarks         String?
   

@@ -14,6 +14,7 @@ interface StatsProps {
   activeAgents: number;
   pendingCollections?: number;
   pendingCount?: number;
+  onActiveAgentsClick?: () => void;
 }
 
 export const PigmyStats: React.FC<StatsProps> = ({ 
@@ -24,7 +25,8 @@ export const PigmyStats: React.FC<StatsProps> = ({
   maturityAccounts,
   activeAgents,
   pendingCollections = 0,
-  pendingCount = 0
+  pendingCount = 0,
+  onActiveAgentsClick
 }) => {
   const stats = [
     {
@@ -65,7 +67,8 @@ export const PigmyStats: React.FC<StatsProps> = ({
       icon: ShieldCheck,
       trend: `${activeAgents} active`,
       trendColor: "text-blue-400 bg-blue-400/10",
-      iconColor: "text-indigo-500 bg-indigo-500/10"
+      iconColor: "text-indigo-500 bg-indigo-500/10",
+      onClick: onActiveAgentsClick
     },
     {
       title: "Maturity Accounts",
@@ -80,7 +83,13 @@ export const PigmyStats: React.FC<StatsProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {stats.map((stat, i) => (
-        <Card key={i} className="bg-white border-gray-100 text-[#1a1f36] hover:shadow-md transition-all cursor-pointer shadow-sm rounded-2xl">
+        <Card 
+          key={i} 
+          onClick={stat.onClick}
+          className={`bg-white border-gray-100 text-[#1a1f36] transition-all shadow-sm rounded-2xl ${
+            stat.onClick ? "hover:shadow-md cursor-pointer hover:border-gray-200" : ""
+          }`}
+        >
           <CardContent className="p-6">
             <div className="flex justify-between items-start mb-4">
               <div className={`p-2 rounded-xl ${stat.iconColor.replace('bg-', 'bg-opacity-10 bg-').replace('text-', 'text-')}`}>

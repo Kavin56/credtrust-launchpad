@@ -8,9 +8,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePigmySchemeDto, EnrollPigmyAccountDto, AddCollectionDto, UpdateCollectionStatusDto, InitiatePaymentDto } from './dto/pigmy.dto';
 import { nanoid } from 'nanoid';
 
+import { AgentPrismaService } from '../prisma/agent-prisma.service';
+
 @Injectable()
 export class PigmyService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private agentPrisma: AgentPrismaService,
+  ) {}
 
   async createScheme(dto: CreatePigmySchemeDto) {
     return this.prisma.pigmyScheme.create({
@@ -251,7 +256,14 @@ export class PigmyService {
     }
 
     if (role === 'AGENT' && actorId) {
-      this.assertAgentOwnsAccount(role, actorId, collection.account);
+      const isAssigned =
+        collection.agentId === actorId ||
+        collection.account.agentId === actorId;
+      if (!isAssigned) {
+        throw new ForbiddenException(
+          'This collection is not assigned to you.',
+        );
+      }
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -260,6 +272,7 @@ export class PigmyService {
         data: {
           status: dto.status,
           remarks: dto.remarks || collection.remarks,
+          agentId: dto.agentId !== undefined ? (dto.agentId === 'none' || dto.agentId === '' ? null : dto.agentId) : collection.agentId,
         },
       });
 
@@ -302,9 +315,6 @@ export class PigmyService {
       include: {
         member: true,
         scheme: true,
-        agent: {
-          select: { id: true, email: true }
-        },
         collections: {
           orderBy: { date: 'desc' },
           take: 50,
@@ -312,7 +322,27 @@ export class PigmyService {
       },
     });
     if (!account) throw new NotFoundException('Account not found');
-    return account;
+
+    let agent = null;
+    if (account.agentId) {
+      const agentRecord = await this.agentPrisma.agent.findUnique({
+        where: { id: account.agentId },
+        select: { id: true, username: true, fullName: true, agentCode: true },
+      });
+      if (agentRecord) {
+        agent = {
+          id: agentRecord.id,
+          email: agentRecord.username,
+          fullName: agentRecord.fullName,
+          agentCode: agentRecord.agentCode,
+        };
+      }
+    }
+
+    return {
+      ...account,
+      agent,
+    };
   }
 
   async calculateInterest(accountId: string) {
@@ -351,10 +381,19 @@ export class PigmyService {
     return { agentId };
   }
 
+  private agentCollectionFilter(agentId: string) {
+    return {
+      OR: [
+        { agentId },
+        { account: { agentId } },
+      ],
+    };
+  }
+
   async getDashboardStats(role = 'ADMIN', actorId?: string) {
     const agentScope =
       role === 'AGENT' && actorId
-        ? { account: this.agentAccountFilter(actorId) }
+        ? this.agentCollectionFilter(actorId)
         : undefined;
 
     const accountWhere =
@@ -368,6 +407,7 @@ export class PigmyService {
       todayCollections,
       maturityAccounts,
       pendingCollections,
+      activeAgentsCount,
     ] = await Promise.all([
       this.prisma.pigmyCollection.aggregate({
         where: agentScope,
@@ -395,6 +435,9 @@ export class PigmyService {
           ...(agentScope || {}),
         },
       }),
+      this.agentPrisma.agent.count({
+        where: { status: 'ACTIVE' },
+      }),
     ]);
 
     return {
@@ -404,6 +447,7 @@ export class PigmyService {
       todayCollections: todayCollections._sum.amount || 0,
       maturityAccounts,
       pendingCollections,
+      activeAgents: activeAgentsCount,
     };
   }
 
@@ -454,7 +498,7 @@ export class PigmyService {
     return this.prisma.pigmyCollection.findMany({
       where: {
         status: 'PENDING',
-        account: this.agentAccountFilter(agentId),
+        ...this.agentCollectionFilter(agentId),
       },
       orderBy: { date: 'desc' },
       include: {
@@ -471,7 +515,7 @@ export class PigmyService {
   async getRecentCollections(limit = 10, role = 'ADMIN', actorId?: string) {
     const agentScope =
       role === 'AGENT' && actorId
-        ? { account: this.agentAccountFilter(actorId) }
+        ? this.agentCollectionFilter(actorId)
         : undefined;
 
     return this.prisma.pigmyCollection.findMany({
@@ -493,7 +537,7 @@ export class PigmyService {
   async getPendingCollections(role = 'ADMIN', actorId?: string) {
     const agentScope =
       role === 'AGENT' && actorId
-        ? { account: this.agentAccountFilter(actorId) }
+        ? this.agentCollectionFilter(actorId)
         : undefined;
 
     return this.prisma.pigmyCollection.findMany({
