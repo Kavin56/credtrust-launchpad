@@ -32,6 +32,8 @@ import PigmyHome from "./modules/pigmy/pages/PigmyHome";
 import AddCustomer from "./modules/pigmy/pages/AddCustomer";
 import MaturityProcess from "./modules/pigmy/pages/MaturityProcess";
 import SignUpFlowPage from "./modules/member/pages/SignUpFlowPage";
+import AgentLoginPage from "./modules/pigmy/pages/AgentLoginPage";
+import RoleRoute from "./components/RoleRoute";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,8 +52,8 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children: React.Re
     return <Navigate to={requireAdmin ? "/admin/login" : "/login"} />;
   }
 
-  if (requireAdmin && !["ADMIN", "CEO", "AGENT"].includes(user.role)) {
-    return <Navigate to="/dashboard" />;
+  if (requireAdmin && !["ADMIN", "CEO"].includes(user.role)) {
+    return <Navigate to={user.role === "AGENT" ? "/agent" : "/dashboard"} />;
   }
 
   return <>{children}</>;
@@ -72,7 +74,9 @@ const App = () => (
           <Route path="/admin/pigmy" element={<ProtectedRoute requireAdmin><PigmyDashboard /></ProtectedRoute>} />
           <Route path="/admin/pigmy/add-customer" element={<ProtectedRoute requireAdmin><AddCustomer /></ProtectedRoute>} />
           <Route path="/admin/pigmy/maturity" element={<ProtectedRoute requireAdmin><MaturityProcess /></ProtectedRoute>} />
-          <Route path="/agent/pigmy" element={<ProtectedRoute><AgentPigmyDashboard /></ProtectedRoute>} />
+          <Route path="/agent/login" element={<AgentLoginPage />} />
+          <Route path="/agent" element={<RoleRoute roles={["AGENT"]} loginPath="/agent/login" fallbackPath="/pigmy"><AgentPigmyDashboard /></RoleRoute>} />
+          <Route path="/agent/pigmy" element={<Navigate to="/agent" replace />} />
           <Route path="/dashboard/pigmy" element={<ProtectedRoute><CustomerPigmyDashboard /></ProtectedRoute>} />
           <Route path="/pigmy" element={<PigmyHome />} />
           <Route path="/login" element={<LoginPage />} />

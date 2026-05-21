@@ -27,9 +27,16 @@ export const LoginForm = ({ onToggleForm, onAdminMode, onForgotPassword }: Login
     setLoading(true);
 
     try {
-      await login(email, password, "MEMBER");
+      await login(email, password);
       toast.success("Logged in successfully");
-      navigate("/dashboard");
+      const role = localStorage.getItem("role");
+      if (role === "ADMIN" || role === "CEO") {
+        navigate("/admin/pigmy");
+      } else if (role === "AGENT") {
+        navigate("/agent");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error: any) {
       console.error(error);
       toast.error(error?.message || "Invalid email or password.");

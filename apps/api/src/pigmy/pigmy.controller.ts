@@ -12,8 +12,12 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 export class PigmyController {
   constructor(private readonly pigmyService: PigmyService) {}
 
+  private actor(req: any) {
+    return { role: req.user?.role as string, userId: req.user?.userId as string };
+  }
+
   @Post('schemes')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'CEO')
   @ApiOperation({ summary: 'Create a new Pigmy scheme (Admin only)' })
   async createScheme(@Body() dto: CreatePigmySchemeDto) {
     return this.pigmyService.createScheme(dto);
@@ -26,7 +30,7 @@ export class PigmyController {
   }
 
   @Post('enroll')
-  @Roles('ADMIN', 'AGENT')
+  @Roles('ADMIN', 'CEO', 'AGENT')
   @ApiOperation({ summary: 'Enroll a customer into a Pigmy scheme' })
   async enrollAccount(@Body() dto: EnrollPigmyAccountDto) {
     return this.pigmyService.enrollAccount(dto);
@@ -40,19 +44,19 @@ export class PigmyController {
   }
 
   @Post('collection')
-  @Roles('ADMIN', 'AGENT', 'COLLECTOR')
-  @ApiOperation({ summary: 'Add a collection entry (Agent/Admin)' })
+  @Roles('ADMIN', 'CEO', 'AGENT')
+  @ApiOperation({ summary: 'Add a collection entry (cash or record)' })
   async addCollection(@Body() dto: AddCollectionDto, @Request() req: any) {
-    return this.pigmyService.addCollection(dto, req.user.userId);
+    const { role, userId } = this.actor(req);
+    return this.pigmyService.addCollection(dto, userId, role);
   }
 
   @Post('pay')
   @Roles('MEMBER')
   @ApiOperation({ summary: 'Make a Pigmy payment (Member)' })
   async memberPay(@Body() dto: AddCollectionDto, @Request() req: any) {
-    // Force method to UPI for member self-pay
     dto.method = 'UPI';
-    return this.pigmyService.addCollection(dto, req.user.userId);
+    return this.pigmyService.addCollection(dto, req.user.userId, 'MEMBER');
   }
 
   @Post('pay/initiate')
@@ -77,10 +81,30 @@ export class PigmyController {
   }
 
   @Patch('collections/:id/status')
-  @Roles('ADMIN')
-  @ApiOperation({ summary: 'Update collection status (Admin only)' })
-  async updateStatus(@Param('id') id: string, @Body() dto: UpdateCollectionStatusDto) {
-    return this.pigmyService.updateCollectionStatus(id, dto);
+  @Roles('ADMIN', 'CEO', 'AGENT')
+  @ApiOperation({ summary: 'Approve or reject a pending online collection' })
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateCollectionStatusDto,
+    @Request() req: any,
+  ) {
+    const { role, userId } = this.actor(req);
+    return this.pigmyService.updateCollectionStatus(id, dto, userId, role);
+  }
+
+  @Get('collections/pending')
+  @Roles('ADMIN', 'CEO', 'AGENT')
+  @ApiOperation({ summary: 'Pending online collections (admin: all, agent: assigned)' })
+  async getPending(@Request() req: any) {
+    const { role, userId } = this.actor(req);
+    return this.pigmyService.getPendingCollections(role, userId);
+  }
+
+  @Get('agent/customers')
+  @Roles('AGENT')
+  @ApiOperation({ summary: 'Assigned Pigmy customers for logged-in agent' })
+  async getAgentCustomers(@Request() req: any) {
+    return this.pigmyService.getAgentCustomers(req.user.userId);
   }
 
   @Get('account/:number')
@@ -90,29 +114,33 @@ export class PigmyController {
   }
 
   @Post('interest/:id')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'CEO')
   @ApiOperation({ summary: 'Trigger interest calculation for an account' })
   async calculateInterest(@Param('id') accountId: string) {
     return this.pigmyService.calculateInterest(accountId);
   }
 
   @Get('stats')
-  @Roles('ADMIN', 'AGENT')
+  @Roles('ADMIN', 'CEO', 'AGENT')
   @ApiOperation({ summary: 'Get dashboard statistics' })
-  async getStats() {
-    return this.pigmyService.getDashboardStats();
+  async getStats(@Request() req: any) {
+    const { role, userId } = this.actor(req);
+    return this.pigmyService.getDashboardStats(role, userId);
   }
 
   @Get('search')
-  @ApiOperation({ summary: 'Search accounts by ID, name or phone' })
-  async search(@Query('q') query: string) {
-    return this.pigmyService.searchAccount(query);
+  @Roles('ADMIN', 'CEO', 'AGENT')
+  @ApiOperation({ summary: 'Search accounts (agents: assigned only)' })
+  async search(@Query('q') query: string, @Request() req: any) {
+    const { role, userId } = this.actor(req);
+    return this.pigmyService.searchAccount(query || '', role, userId);
   }
 
   @Get('collections/recent')
-  @Roles('ADMIN', 'AGENT')
+  @Roles('ADMIN', 'CEO', 'AGENT')
   @ApiOperation({ summary: 'Get recent collection entries' })
-  async getRecentCollections(@Query('limit') limit?: number) {
-    return this.pigmyService.getRecentCollections(limit);
+  async getRecentCollections(@Query('limit') limit?: number, @Request() req?: any) {
+    const { role, userId } = this.actor(req);
+    return this.pigmyService.getRecentCollections(limit, role, userId);
   }
 }

@@ -5,6 +5,9 @@ import { PigmyStats } from '../components/PigmyStats';
 import { PigmyCharts } from '../components/PigmyCharts';
 import AdminNavbar from '@/components/AdminNavbar';
 import { NewEntryDialog } from '../components/NewEntryDialog';
+import { AgentManagementDialog } from '../components/AgentManagementDialog';
+import { AssignCustomerDialog } from '../components/AssignCustomerDialog';
+import { PendingCollectionsPanel } from '../components/PendingCollectionsPanel';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -103,6 +106,8 @@ const PigmyDashboard = () => {
                <Button variant="outline" className="bg-white hover:bg-gray-50 text-[#1a1f36] border-gray-200 gap-2 text-sm font-bold h-11 px-6 rounded-xl shadow-sm">
                   <Download className="h-4 w-4" /> Export
                </Button>
+               <AgentManagementDialog />
+               <AssignCustomerDialog />
                <NewEntryDialog />
             </div>
 
@@ -132,9 +137,6 @@ const PigmyDashboard = () => {
            <div className="flex items-center gap-2">
               <Button onClick={() => navigate('/admin/pigmy/add-customer')} className="bg-[#c9a84c] hover:bg-[#b0923f] text-white gap-2 text-xs font-bold rounded-xl h-10">
                 <UserPlus className="h-4 w-4" /> Add Customer
-              </Button>
-              <Button variant="outline" className="bg-white border-gray-200 text-gray-600 gap-2 text-xs font-bold rounded-xl h-10">
-                <ShieldCheck className="h-4 w-4" /> Add Agent
               </Button>
               <Button variant="outline" className="bg-white border-gray-200 text-gray-600 gap-2 text-xs font-bold rounded-xl h-10">
                 <Landmark className="h-4 w-4" /> Manage Branch
@@ -223,6 +225,8 @@ const PigmyDashboard = () => {
              {[1,2,3,4,5,6].map(i => <div key={i} className="h-32 bg-white rounded-2xl animate-pulse border border-gray-100" />)}
           </div>
         )}
+
+        <PendingCollectionsPanel />
 
         {/* Charts Section */}
         <PigmyCharts />

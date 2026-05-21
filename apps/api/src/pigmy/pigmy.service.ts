@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePigmySchemeDto, EnrollPigmyAccountDto, AddCollectionDto, UpdateCollectionStatusDto, InitiatePaymentDto } from './dto/pigmy.dto';
 import { nanoid } from 'nanoid';
@@ -103,15 +108,10 @@ export class PigmyService {
         });
       }
 
-      // Find any existing agent to assign as primary, or leave null if none found
-      const agent = await this.prisma.user.findFirst({
-        where: { role: 'AGENT' },
-      });
-
       return await this.enrollAccount({
         memberId: member.id,
         schemeId,
-        agentId: agent?.id,
+        agentId: undefined,
         startDate: new Date(),
       });
     } catch (error: any) {
@@ -170,11 +170,31 @@ export class PigmyService {
     });
   }
 
-  async addCollection(dto: AddCollectionDto, agentId?: string) {
+  private assertAgentOwnsAccount(
+    role: string,
+    actorId: string,
+    account: { agentId: string | null },
+  ) {
+    if (role !== 'AGENT') return;
+    if (!account.agentId || account.agentId !== actorId) {
+      throw new ForbiddenException(
+        'This Pigmy account is not assigned to you.',
+      );
+    }
+  }
+
+  async addCollection(
+    dto: AddCollectionDto,
+    actorId?: string,
+    role = 'ADMIN',
+  ) {
     const account = await this.prisma.pigmyAccount.findUnique({
       where: { id: dto.accountId },
     });
     if (!account) throw new NotFoundException('Account not found');
+    if (actorId) {
+      this.assertAgentOwnsAccount(role, actorId, account);
+    }
 
     const transactionId = `TXN-PIG-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const receiptNumber = `RCPT${Date.now().toString().slice(-8)}`;
@@ -193,7 +213,7 @@ export class PigmyService {
           upiId: dto.upiId,
           status,
           referenceId: dto.referenceId,
-          agentId: agentId || account.agentId,
+          agentId: role === 'AGENT' ? actorId : actorId || account.agentId,
           remarks: dto.remarks,
           receiptNumber,
         },
@@ -214,7 +234,12 @@ export class PigmyService {
     });
   }
 
-  async updateCollectionStatus(collectionId: string, dto: UpdateCollectionStatusDto) {
+  async updateCollectionStatus(
+    collectionId: string,
+    dto: UpdateCollectionStatusDto,
+    actorId?: string,
+    role = 'ADMIN',
+  ) {
     const collection = await this.prisma.pigmyCollection.findUnique({
       where: { id: collectionId },
       include: { account: true },
@@ -223,6 +248,10 @@ export class PigmyService {
     if (!collection) throw new NotFoundException('Collection not found');
     if (collection.status !== 'PENDING') {
       throw new BadRequestException('Can only update pending collections');
+    }
+
+    if (role === 'AGENT' && actorId) {
+      this.assertAgentOwnsAccount(role, actorId, collection.account);
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -318,12 +347,36 @@ export class PigmyService {
     return account;
   }
 
-  async getDashboardStats() {
-    const [totalCollections, activeAccounts, todayCollections, maturityAccounts] = await Promise.all([
-      this.prisma.pigmyCollection.aggregate({ _sum: { amount: true } }),
-      this.prisma.pigmyAccount.count({ where: { status: 'ACTIVE' } }),
+  private agentAccountFilter(agentId: string) {
+    return { agentId };
+  }
+
+  async getDashboardStats(role = 'ADMIN', actorId?: string) {
+    const agentScope =
+      role === 'AGENT' && actorId
+        ? { account: this.agentAccountFilter(actorId) }
+        : undefined;
+
+    const accountWhere =
+      role === 'AGENT' && actorId
+        ? { status: 'ACTIVE' as const, ...this.agentAccountFilter(actorId) }
+        : { status: 'ACTIVE' as const };
+
+    const [
+      totalCollections,
+      activeAccounts,
+      todayCollections,
+      maturityAccounts,
+      pendingCollections,
+    ] = await Promise.all([
+      this.prisma.pigmyCollection.aggregate({
+        where: agentScope,
+        _sum: { amount: true },
+      }),
+      this.prisma.pigmyAccount.count({ where: accountWhere }),
       this.prisma.pigmyCollection.aggregate({
         where: {
+          ...agentScope,
           date: {
             gte: new Date(new Date().setHours(0, 0, 0, 0)),
           },
@@ -332,52 +385,132 @@ export class PigmyService {
       }),
       this.prisma.pigmyAccount.count({
         where: {
-          status: 'ACTIVE',
-          maturityDate: { lte: new Date() }
-        }
-      })
+          ...accountWhere,
+          maturityDate: { lte: new Date() },
+        },
+      }),
+      this.prisma.pigmyCollection.count({
+        where: {
+          status: 'PENDING',
+          ...(agentScope || {}),
+        },
+      }),
     ]);
 
     return {
       totalDeposits: totalCollections._sum.amount || 0,
-      totalWithdrawals: 0, // Placeholder for future withdrawal logic
+      totalWithdrawals: 0,
       activeAccounts,
       todayCollections: todayCollections._sum.amount || 0,
       maturityAccounts,
-      pendingCollections: 15, // Mocked based on route logic
+      pendingCollections,
     };
   }
 
-  async searchAccount(query: string) {
+  async searchAccount(query: string, role = 'ADMIN', actorId?: string) {
+    const q = query?.trim() || '';
     return this.prisma.pigmyAccount.findMany({
       where: {
-        OR: [
-          { accountNumber: { contains: query } },
-          { member: { fullName: { contains: query } } },
-          { member: { contact: { contains: query } } },
-        ]
+        ...(role === 'AGENT' && actorId
+          ? this.agentAccountFilter(actorId)
+          : {}),
+        ...(q
+          ? {
+              OR: [
+                { accountNumber: { contains: q } },
+                { member: { fullName: { contains: q } } },
+                { member: { contact: { contains: q } } },
+              ],
+            }
+          : {}),
       },
       include: {
         member: true,
-        scheme: true
+        scheme: true,
       },
-      take: 10
+      take: role === 'AGENT' ? 100 : 10,
     });
   }
 
-  async getRecentCollections(limit = 10) {
+  async getAgentCustomers(agentId: string) {
+    return this.prisma.pigmyAccount.findMany({
+      where: this.agentAccountFilter(agentId),
+      include: {
+        member: {
+          select: {
+            fullName: true,
+            contact: true,
+            memberId: true,
+            address: true,
+          },
+        },
+        scheme: { select: { name: true, type: true, minAmount: true } },
+      },
+      orderBy: { accountNumber: 'asc' },
+    });
+  }
+
+  async getAgentPendingCollections(agentId: string) {
     return this.prisma.pigmyCollection.findMany({
+      where: {
+        status: 'PENDING',
+        account: this.agentAccountFilter(agentId),
+      },
+      orderBy: { date: 'desc' },
+      include: {
+        account: {
+          include: {
+            member: { select: { fullName: true, contact: true } },
+            scheme: { select: { name: true } },
+          },
+        },
+      },
+    });
+  }
+
+  async getRecentCollections(limit = 10, role = 'ADMIN', actorId?: string) {
+    const agentScope =
+      role === 'AGENT' && actorId
+        ? { account: this.agentAccountFilter(actorId) }
+        : undefined;
+
+    return this.prisma.pigmyCollection.findMany({
+      where: agentScope,
       take: Number(limit),
       orderBy: { date: 'desc' },
       include: {
         account: {
           include: {
             member: {
-              select: { fullName: true }
-            }
-          }
-        }
-      }
+              select: { fullName: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async getPendingCollections(role = 'ADMIN', actorId?: string) {
+    const agentScope =
+      role === 'AGENT' && actorId
+        ? { account: this.agentAccountFilter(actorId) }
+        : undefined;
+
+    return this.prisma.pigmyCollection.findMany({
+      where: {
+        status: 'PENDING',
+        ...agentScope,
+      },
+      orderBy: { date: 'desc' },
+      take: 50,
+      include: {
+        account: {
+          include: {
+            member: { select: { fullName: true, contact: true } },
+            scheme: { select: { name: true } },
+          },
+        },
+      },
     });
   }
 }

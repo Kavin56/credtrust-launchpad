@@ -75,7 +75,7 @@ const PigmyHome = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { title: "Pay via QR", icon: Smartphone, color: "bg-blue-500", desc: "Scan and deposit instantly", path: "/dashboard/pigmy" },
-            { title: "Search Customer", icon: Search, color: "bg-emerald-500", desc: "Find details using Unique ID", path: "/admin/pigmy" },
+            { title: "Agent Portal", icon: ShieldCheck, color: "bg-emerald-500", desc: "Collection agents login", path: "/agent/login" },
             { title: "View Schemes", icon: Info, color: "bg-orange-500", desc: "Explore daily deposit plans", path: "/about-pigmy" },
             { title: "Contact Support", icon: HelpCircle, color: "bg-purple-500", desc: "Need help? Reach us 24/7", path: "/contact" }
           ].map((service, i) => (

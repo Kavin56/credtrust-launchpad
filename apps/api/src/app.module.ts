@@ -21,6 +21,8 @@ import { StorageModule } from './storage/storage.module';
 import { AccountsModule } from './accounts/accounts.module';
 import { AdminModule } from './admin/admin.module';
 import { PigmyModule } from './pigmy/pigmy.module';
+import { PortalAuthModule } from './portal-auth/portal-auth.module';
+import { AgentsModule } from './agents/agents.module';
 
 @Module({
   imports: [
@@ -52,6 +54,8 @@ import { PigmyModule } from './pigmy/pigmy.module';
     ReportsModule,
     NotificationsModule,
     PigmyModule,
+    PortalAuthModule,
+    AgentsModule,
   ],
   providers: [
 /*

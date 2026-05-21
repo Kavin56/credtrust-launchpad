@@ -33,6 +33,8 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<void>;
   logout: () => void;
   refreshProfileStatus: () => Promise<void>;
+  loginPortalAdmin: (email: string, password: string, adminKey: string) => Promise<void>;
+  loginAgent: (username: string, password: string) => Promise<void>;
 }
 
 const provider = import.meta.env.VITE_AUTH_PROVIDER || "api"; // 'api' | 'firebase'
@@ -47,6 +49,8 @@ const AuthContext = createContext<AuthContextType>({
   resetPassword: async () => {},
   logout: () => {},
   refreshProfileStatus: async () => {},
+  loginPortalAdmin: async () => {},
+  loginAgent: async () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -134,6 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const userId = localStorage.getItem("userId");
       const hasProfile = localStorage.getItem("hasMemberProfile") === "true";
       if (token && email && role && userId) {
+        api.defaults.headers.common.Authorization = `Bearer ${token}`;
         setUser({ id: userId, email, role, hasMemberProfile: hasProfile });
       }
       setLoading(false);
@@ -173,12 +178,64 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
     const { data } = await api.post("/auth/login", { email, password });
-    localStorage.setItem("accessToken", data.accessToken);
-    localStorage.setItem("email", email);
-    localStorage.setItem("role", data.role);
-    localStorage.setItem("hasMemberProfile", "true");
     const payload = JSON.parse(atob(data.accessToken.split(".")[1] || "{}"));
-    setUser({ id: payload.sub, email, role: data.role, hasMemberProfile: true });
+    applySession({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      role: data.role,
+      email,
+      userId: payload.sub,
+      hasMemberProfile: true,
+    });
+  };
+
+  const applySession = (data: {
+    accessToken: string;
+    refreshToken?: string;
+    role: string;
+    email: string;
+    userId?: string;
+    hasMemberProfile?: boolean;
+  }) => {
+    localStorage.setItem("accessToken", data.accessToken);
+    if (data.refreshToken) localStorage.setItem("refreshToken", data.refreshToken);
+    localStorage.setItem("email", data.email);
+    localStorage.setItem("role", data.role);
+    localStorage.setItem("hasMemberProfile", String(data.hasMemberProfile ?? false));
+    const payload = JSON.parse(atob(data.accessToken.split(".")[1] || "{}"));
+    const id = data.userId || payload.sub;
+    localStorage.setItem("userId", id);
+    api.defaults.headers.common.Authorization = `Bearer ${data.accessToken}`;
+    setUser({
+      id,
+      email: data.email,
+      role: data.role,
+      hasMemberProfile: data.hasMemberProfile ?? false,
+    });
+  };
+
+  const loginPortalAdmin = async (email: string, password: string, adminKey: string) => {
+    const { data } = await api.post("/auth/admin/login", { email, password, adminKey });
+    applySession({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      role: data.role,
+      email: data.email,
+      userId: data.userId,
+      hasMemberProfile: false,
+    });
+  };
+
+  const loginAgent = async (username: string, password: string) => {
+    const { data } = await api.post("/auth/agent/login", { username, password });
+    applySession({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      role: data.role,
+      email: data.email || username,
+      userId: data.userId,
+      hasMemberProfile: false,
+    });
   };
 
   const loginWithGoogle = async () => {
@@ -244,6 +301,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         resetPassword,
         logout,
         refreshProfileStatus,
+        loginPortalAdmin,
+        loginAgent,
       }}
     >
       {children}

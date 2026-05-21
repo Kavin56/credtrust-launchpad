@@ -17,22 +17,21 @@ export const AdminLoginForm = ({ onBack }: AdminLoginFormProps) => {
   const [secretKey, setSecretKey] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { loginPortalAdmin } = useAuth();
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
+    if (!secretKey.trim()) {
+      toast.error("Admin access key is required");
+      setLoading(false);
+      return;
+    }
     try {
-      await login(email, password, secretKey);
-      const role = localStorage.getItem("role");
-      if (role !== "ADMIN" && role !== "CEO") {
-        toast.error("Insufficient privileges");
-        setLoading(false);
-        return;
-      }
+      await loginPortalAdmin(email, password, secretKey.trim());
       toast.success("Admin access granted!");
-      navigate("/admin");
+      navigate("/admin/pigmy");
     } catch (error: any) {
       console.error(error);
       toast.error("Auth failed. Please check credentials.");

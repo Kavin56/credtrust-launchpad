@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma-agent"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("AGENT_DATABASE_URL")
+}
+
+model Agent {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  passwordHash String
+  fullName     String
+  phone        String?
+  agentCode    String    @unique
+  status       String    @default("ACTIVE")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lastLoginAt  DateTime?
+}

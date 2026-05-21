@@ -13,12 +13,18 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import AdminNavbar from '@/components/AdminNavbar';
+import { useAuth } from '@/modules/login/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
+import { PendingCollectionsPanel } from '../components/PendingCollectionsPanel';
 
 const AgentPigmyDashboard = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [searchId, setSearchId] = useState('');
   const [collectAmount, setCollectAmount] = useState('');
+  const [selectedAccountId, setSelectedAccountId] = useState('');
   const queryClient = useQueryClient();
 
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -32,42 +38,34 @@ const AgentPigmyDashboard = () => {
   const { data: customers, isLoading: customersLoading } = useQuery({
     queryKey: ['agent-customers'],
     queryFn: async () => {
-      // In a real app, we'd filter by agentId on the backend.
-      // For now, we'll search for all or use a search query.
-      const res = await api.get('/pigmy/search?q=');
+      const res = await api.get('/pigmy/agent/customers');
       return res.data;
     }
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchId || !collectAmount) {
+    const accountId = selectedAccountId || customers?.find((c: any) => c.accountNumber === searchId)?.id;
+    if (!accountId || !collectAmount) {
       toast.error("Please select a customer and enter amount");
       return;
     }
     setLoading(true);
     try {
-      // Find the account first
-      const searchRes = await api.get(`/pigmy/search?q=${searchId}`);
-      const account = searchRes.data[0];
-      
-      if (!account) {
-        toast.error("Customer not found");
-        return;
-      }
-
       await api.post('/pigmy/collection', {
-        accountId: account.id,
+        accountId,
         amount: Number(collectAmount),
         method: 'CASH',
         remarks: 'Agent Collection'
       });
 
+      const account = customers?.find((c: any) => c.id === accountId);
       toast.success("Collection Recorded", {
-        description: `Receipt generated for ${account.member?.fullName}.`
+        description: account ? `Cash recorded for ${account.member?.fullName}.` : undefined,
       });
       setCollectAmount('');
       setSearchId('');
+      setSelectedAccountId('');
       queryClient.invalidateQueries(['agent-pigmy-stats']);
       queryClient.invalidateQueries(['agent-customers']);
     } catch (err: any) {
@@ -79,23 +77,35 @@ const AgentPigmyDashboard = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
-      <AdminNavbar />
+      <header className="sticky top-0 z-50 bg-[#1a1f36] text-white border-b border-white/10">
+        <div className="max-w-[1600px] mx-auto px-6 h-14 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-bold text-[#c9a84c] uppercase tracking-widest">Agent Portal</p>
+            <p className="text-sm font-bold">{user?.email}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link to="/pigmy" className="text-xs font-bold text-white/60 hover:text-white">Pigmy home</Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/10 gap-2"
+              onClick={() => { logout(); navigate('/agent/login'); }}
+            >
+              <LogOut className="h-4 w-4" /> Logout
+            </Button>
+          </div>
+        </div>
+      </header>
       
       <div className="p-8 max-w-[1600px] mx-auto w-full space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Agent Dashboard</h1>
-          <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-1">Collection Mode: Active</p>
-        </div>
-        <div className="flex gap-3">
-           <Button variant="outline" className="gap-2 border-slate-200 font-bold">
-              <Download className="h-4 w-4" /> Download Report
-           </Button>
-           <Button className="bg-blue-600 hover:bg-blue-700 gap-2 font-bold shadow-lg shadow-blue-100">
-              <Play className="h-4 w-4" /> Start Collection
-           </Button>
+          <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-1">Assigned customers & collections</p>
         </div>
       </div>
+
+      <PendingCollectionsPanel />
 
       {!statsLoading && stats ? (
         <PigmyStats 
@@ -228,6 +238,7 @@ const AgentPigmyDashboard = () => {
                                   className="bg-blue-600"
                                   onClick={() => {
                                     setSearchId(c.accountNumber);
+                                    setSelectedAccountId(c.id);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
                                   }}
                                 >
