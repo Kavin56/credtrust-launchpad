@@ -42,7 +42,7 @@ const AccountsPage = () => {
     else if (tab === 'accounts') setActiveTabIndex(0);
   }, [searchParams]);
 
-  const accountTabs = ["Transaction Accounts", "Deposits", "Loans", "Investments", "Insurance"];
+  const accountTabs = ["Transaction Accounts", "Deposits", "Loans"];
   const subTabs = ["Account Summary", "Transactions", "Statements", "Spend Analysis"];
 
   return (
@@ -158,12 +158,12 @@ const AccountsPage = () => {
                   </div>
 
                   {/* Summary Grid */}
-                  <div className="grid md:grid-cols-[1fr,320px] gap-10">
+                  <div className="grid lg:grid-cols-[1fr,320px] gap-10">
                     <div className="space-y-8">
-                        <div className="grid grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                           <div className="space-y-1.5">
                               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Account Description</p>
-                              <p className="text-[13px] font-bold text-[#1a1f36]">LOTUS SAVING BANK-ADHAR- CHQ</p>
+                              <p className="text-[13px] font-bold text-[#1a1f36]">LOTUS SAVINGS SOCIETY-ADHAAR- CHQ</p>
                           </div>
                           <div className="space-y-1.5">
                               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Currency</p>
@@ -178,7 +178,7 @@ const AccountsPage = () => {
                         {/* Debit Card */}
                         <div className="pt-8 border-t border-gray-100">
                           <h4 className="text-[13px] font-bold text-[#1a1f36] mb-6">Associated Debit Card</h4>
-                          <div className="w-[340px] h-[210px] bg-gradient-to-br from-[#4c1d95] via-[#2d0a4e] to-[#4c1d95] rounded-3xl p-6 text-white relative overflow-hidden group shadow-2xl shadow-purple-950/20">
+                          <div className="w-full max-w-[340px] h-[210px] bg-gradient-to-br from-[#4c1d95] via-[#2d0a4e] to-[#4c1d95] rounded-3xl p-6 text-white relative overflow-hidden group shadow-2xl shadow-purple-950/20">
                               <div className="relative z-10 flex flex-col h-full">
                                 <div className="flex justify-between items-start mb-10">
                                     <span className="text-[10px] uppercase font-bold tracking-tighter opacity-50">CREDTRUST</span>
@@ -192,7 +192,7 @@ const AccountsPage = () => {
                         </div>
                     </div>
 
-                    <div className="bg-[#f1f5f9] rounded-[32px] p-8 space-y-6 self-start border border-gray-100 h-fit">
+                    <div className="bg-[#f1f5f9] rounded-[32px] p-8 space-y-6 self-start border border-gray-100 h-fit w-full">
                         <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
                           <p className="text-[12px] font-bold text-gray-500 uppercase tracking-tight">Available Balance</p>
                           <p className="text-[15px] font-black text-[#1a1f36]">₹{accounts?.[0]?.balance ? Number(accounts[0].balance).toLocaleString() : "0.00"}</p>

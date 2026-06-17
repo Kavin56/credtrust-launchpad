@@ -10,7 +10,9 @@ import {
   ChevronUp,
   LayoutDashboard,
   ShieldAlert,
-  Users
+  Users,
+  Menu,
+  X
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const AdminLandingHeader = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const topMenuItems = [
@@ -33,7 +36,7 @@ const AdminLandingHeader = () => {
   return (
     <header className="w-full z-[100] font-sans">
       {/* TOP TIER: DARKER ADMIN BAR */}
-      <div className="bg-[#1a1f36] text-white h-8 flex items-center">
+      <div className="bg-[#1a1f36] text-white h-8 flex items-center hidden xl:flex">
         <div className="max-w-[1400px] mx-auto w-full px-4 flex justify-between items-center text-[11px] font-medium uppercase tracking-tight">
           <div className="flex items-center gap-6 h-full">
             {topMenuItems.map((item) => (
@@ -57,12 +60,12 @@ const AdminLandingHeader = () => {
           {/* Official Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/admin')}>
              <img src="/logo.jpeg" alt="Sharanam Logo" className="h-10 w-auto" />
-             <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-[#1a1f36] tracking-tighter leading-none">
-                  Sharanam
-                </h1>
-                <p className="text-[#6b21a8] text-[9px] block tracking-widest font-bold opacity-60 uppercase">Management Portal</p>
-             </div>
+              <div className="hidden sm:block">
+                 <h1 className="text-[11px] md:text-[12px] font-extrabold text-[#1a1f36] tracking-tight leading-none uppercase">
+                   Sri Roja Shabarish Guruji Souharada Sahakara Niyamitha
+                 </h1>
+                 <p className="text-[#6b21a8] text-[10px] block tracking-widest font-black opacity-80 uppercase mt-0.5">Sharanam - Management Portal</p>
+              </div>
           </div>
 
           {/* Navigation Items */}
@@ -76,10 +79,10 @@ const AdminLandingHeader = () => {
           </nav>
 
           {/* Utility / Login */}
-          <div className="flex items-center gap-5 relative">
+          <div className="flex items-center gap-3 sm:gap-5 relative">
             <button 
               onClick={() => navigate('/')}
-              className="text-[13px] font-bold text-gray-400 hover:text-[#6b21a8] transition-colors mr-2"
+              className="text-[13px] font-bold text-gray-400 hover:text-[#6b21a8] transition-colors mr-2 hidden sm:block"
             >
               Public Site
             </button>
@@ -87,7 +90,7 @@ const AdminLandingHeader = () => {
             <div className="relative">
               <Button 
                 onClick={() => setIsLoginOpen(!isLoginOpen)}
-                className="bg-[#1a1f36] hover:bg-black text-[#c9a84c] px-6 h-10 rounded-full font-bold text-[15px] flex items-center gap-2 shadow-lg shadow-indigo-900/10 transition-all active:scale-95"
+                className="bg-[#1a1f36] hover:bg-black text-[#c9a84c] px-4 sm:px-6 h-10 rounded-full font-bold text-[13px] sm:text-[15px] flex items-center gap-1.5 sm:gap-2 shadow-lg shadow-indigo-900/10 transition-all active:scale-95"
               >
                 Staff Login
                 {isLoginOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -133,9 +136,57 @@ const AdminLandingHeader = () => {
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Mobile Hamburger toggle */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+              className="p-2 text-gray-500 hover:text-[#1a1f36] transition-colors xl:hidden"
+            >
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Dropdown */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="xl:hidden bg-white border-t border-gray-100 overflow-hidden"
+          >
+            <div className="p-4 space-y-4">
+              <div className="space-y-1">
+                {mainNavItems.map((item) => (
+                  <button 
+                    key={item} 
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      navigate('/admin/login');
+                    }}
+                    className="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-gray-50 text-sm font-bold text-gray-700 text-left transition-colors"
+                  >
+                    <span>{item}</span>
+                    <ChevronDown className="-rotate-90 w-4 h-4 text-gray-400" />
+                  </button>
+                ))}
+                <button 
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    navigate('/');
+                  }}
+                  className="w-full flex items-center justify-between p-3.5 rounded-xl bg-gray-50 text-sm font-bold text-[#6b21a8] text-left transition-colors"
+                >
+                  <span>Public Site</span>
+                  <ChevronDown className="-rotate-90 w-4 h-4 text-[#6b21a8]" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 };

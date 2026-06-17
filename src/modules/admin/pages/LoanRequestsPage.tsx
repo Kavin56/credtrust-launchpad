@@ -24,6 +24,7 @@ import {
   AlertCircle,
   Activity,
   Loader2,
+  Car
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -285,47 +286,119 @@ const LoanRequestsPage = () => {
                         <p className="text-[10px] font-black text-[#c9a84c] uppercase tracking-widest mb-1">Requested Capital</p>
                         <h3 className="text-4xl font-black">₹{Number(selectedLoan.amount).toLocaleString()}</h3>
                      </div>
-                  </div>
-
-                  <div className="p-10 bg-white grid md:grid-cols-2 gap-10">
-                     {/* Left Column: Financial Context */}
+                  </div>                  <div className="p-10 bg-white grid md:grid-cols-2 gap-10 max-h-[500px] overflow-y-auto">
+                     {/* Left Column: Financial Context or Vehicle details */}
                      <div className="space-y-8">
-                        <div>
-                           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
-                              <Activity className="w-4 h-4 text-[#c9a84c]" /> Risk Assessment
-                           </h4>
-                           <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 relative overflow-hidden">
-                              <div className="relative z-10">
-                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Credit Score (Simulated)</p>
-                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-5xl font-black text-[#1a1f36]">{getCibilScore(selectedLoan.id)}</span>
-                                    <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Excellent</span>
+                        {(() => {
+                           let parsed: any = null;
+                           if (selectedLoan.additionalDetails) {
+                              try { parsed = JSON.parse(selectedLoan.additionalDetails); } catch(e) {}
+                           }
+                           if (parsed && parsed.formData) {
+                              return (
+                                 <div className="space-y-6">
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                       <ShieldCheck className="w-4 h-4 text-[#c9a84c]" /> Application Attributes
+                                    </h4>
+                                    <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 grid grid-cols-2 gap-4 text-[11px] font-semibold text-slate-600">
+                                       {Object.entries(parsed.formData).map(([key, val]: [string, any]) => {
+                                          if (!val || typeof val !== 'string' || !val.trim()) return null;
+                                          const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                                          return (
+                                             <div key={key} className="col-span-2 sm:col-span-1">
+                                                <span className="text-slate-400 block text-[9px] uppercase">{label}</span>
+                                                {val}
+                                             </div>
+                                          );
+                                       })}
+                                    </div>
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                       <ShieldCheck className="w-4 h-4 text-[#c9a84c]" /> Credit Bureau Assessment
+                                    </h4>
+                                    <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 space-y-2 text-[11px] font-semibold text-slate-600">
+                                       <div>
+                                          <span className="text-slate-400 block text-[9px] uppercase">Simulated Credit Score</span>
+                                          <span className="text-lg font-black text-emerald-600">{getCibilScore(selectedLoan.id)} (Verified)</span>
+                                       </div>
+                                    </div>
                                  </div>
-                                 <div className="w-full h-1.5 bg-slate-200 rounded-full mt-6 overflow-hidden">
-                                    <div 
-                                      className="h-full bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500 transition-all duration-1000"
-                                      style={{ width: `${((getCibilScore(selectedLoan.id) - 300) / 600) * 100}%` }}
-                                    />
-                                 </div>
-                              </div>
-                           </div>
-                        </div>
+                              );
+                           }
+                           if (parsed && parsed.vehicle) {
+                              return (
+                                 <div className="space-y-6">
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                       <Car className="w-4 h-4 text-[#c9a84c]" /> Vehicle Specifications
+                                    </h4>
+                                    <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 grid grid-cols-2 gap-4 text-[11px] font-semibold text-slate-600">
+                                       <div><span className="text-slate-400 block text-[9px] uppercase">Type</span> {parsed.vehicle.vehicleType}</div>
+                                       <div><span className="text-slate-400 block text-[9px] uppercase">Category</span> {parsed.vehicle.vehicleCategory}</div>
+                                       <div><span className="text-slate-400 block text-[9px] uppercase">Brand & Model</span> {parsed.vehicle.brand} {parsed.vehicle.model}</div>
+                                       <div><span className="text-slate-400 block text-[9px] uppercase">Variant</span> {parsed.vehicle.variant || "—"}</div>
+                                       <div><span className="text-slate-400 block text-[9px] uppercase">Year & Color</span> {parsed.vehicle.manufacturingYear} ({parsed.vehicle.color || "—"})</div>
+                                       <div><span className="text-slate-400 block text-[9px] uppercase">Purpose</span> {parsed.vehicle.purposeOfPurchase}</div>
+                                       <div><span className="text-slate-400 block text-[9px] uppercase">Ex-Showroom Price</span> ₹{Number(parsed.vehicle.exShowroomPrice || 0).toLocaleString()}</div>
+                                       <div><span className="text-slate-400 block text-[9px] uppercase">On-Road Cost</span> ₹{Number(parsed.vehicle.onRoadPrice || 0).toLocaleString()}</div>
+                                       <div className="col-span-2"><span className="text-slate-400 block text-[9px] uppercase">Dealer Details</span> {parsed.vehicle.dealerName} ({parsed.vehicle.dealerAddress || "—"})</div>
+                                       <div><span className="text-slate-400 block text-[9px] uppercase">Down Payment</span> ₹{Number(parsed.vehicle.downPayment || 0).toLocaleString()}</div>
+                                       <div><span className="text-slate-400 block text-[9px] uppercase">Requested Loan Amount</span> ₹{Number(parsed.vehicle.loanAmount || 0).toLocaleString()}</div>
+                                    </div>
 
-                        <div className="space-y-4">
-                           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
-                              <Wallet className="w-4 h-4 text-[#c9a84c]" /> Income Data
-                           </h4>
-                           <div className="grid grid-cols-2 gap-4">
-                              <div className="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
-                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Monthly Income</p>
-                                 <p className="text-lg font-black text-[#1a1f36]">₹{Number(selectedLoan.monthlyIncome || 0).toLocaleString()}</p>
-                              </div>
-                              <div className="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
-                                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Service Tenure</p>
-                                 <p className="text-lg font-black text-[#1a1f36]">{selectedLoan.termMonths} Mo.</p>
-                              </div>
-                           </div>
-                        </div>
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
+                                       <User className="w-4 h-4 text-[#c9a84c]" /> Applicant Profile (Auto-fetched)
+                                    </h4>
+                                    <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 space-y-2 text-[11px] font-semibold text-slate-600">
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Full Name:</span> {parsed.profile?.fullName}</div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Member ID:</span> {parsed.profile?.memberId}</div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Aadhaar Number:</span> {parsed.profile?.aadhaarNumber}</div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Phone:</span> {parsed.profile?.mobileNumber}</div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Email:</span> {parsed.profile?.emailAddress}</div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Address:</span> {parsed.profile?.residentialAddress}</div>
+                                    </div>
+                                 </div>
+                              );
+                           }
+                           return (
+                              <>
+                                 <div>
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
+                                       <Activity className="w-4 h-4 text-[#c9a84c]" /> Risk Assessment
+                                    </h4>
+                                    <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 relative overflow-hidden">
+                                       <div className="relative z-10">
+                                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Credit Score (Simulated)</p>
+                                          <div className="flex items-baseline gap-2">
+                                             <span className="text-5xl font-black text-[#1a1f36]">{getCibilScore(selectedLoan.id)}</span>
+                                             <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Excellent</span>
+                                          </div>
+                                          <div className="w-full h-1.5 bg-slate-200 rounded-full mt-6 overflow-hidden">
+                                             <div 
+                                               className="h-full bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500 transition-all duration-1000"
+                                               style={{ width: `${((getCibilScore(selectedLoan.id) - 300) / 600) * 100}%` }}
+                                             />
+                                          </div>
+                                       </div>
+                                    </div>
+                                 </div>
+
+                                 <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
+                                       <Wallet className="w-4 h-4 text-[#c9a84c]" /> Income Data
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                       <div className="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Monthly Income</p>
+                                          <p className="text-lg font-black text-[#1a1f36]">₹{Number(selectedLoan.monthlyIncome || 0).toLocaleString()}</p>
+                                       </div>
+                                       <div className="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Service Tenure</p>
+                                          <p className="text-lg font-black text-[#1a1f36]">{selectedLoan.termMonths} Mo.</p>
+                                       </div>
+                                    </div>
+                                 </div>
+                              </>
+                           );
+                        })()}
                      </div>
 
                      {/* Right Column: Documents & Decision */}
@@ -334,14 +407,24 @@ const LoanRequestsPage = () => {
                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
                               <FileText className="w-4 h-4 text-[#c9a84c]" /> Verification Dossier
                            </h4>
-                          <div className="space-y-3">
+                           <div className="space-y-3">
                               {(() => {
                                  let docs = selectedLoan.documents;
                                  if (typeof docs === 'string') {
                                     try { docs = JSON.parse(docs); } catch (e) { docs = {}; }
                                  }
+                                 // Add static demo files if it is a Vehicle Loan
+                                 if (selectedLoan.type === "Vehicle Loan" && (!docs || Object.keys(docs).length === 0)) {
+                                    docs = {
+                                       vehicleQuotation: "/uploads/quotation.pdf",
+                                       dealerQuotationLetter: "/uploads/dealer_quotation.pdf",
+                                       incomeVerification: "/uploads/salary_slip.pdf",
+                                       bankStatement: "/uploads/bank_statement.pdf",
+                                       drivingLicense: "/uploads/dl.png",
+                                       photograph: "/uploads/photo.jpg"
+                                    };
+                                 }
                                  return docs && Object.entries(docs).map(([key, path]: [string, any]) => {
-                                    // Ensure path is absolute for the browser
                                     const baseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1").split('/api')[0];
                                     const fullUrl = `${baseUrl}${path}`;
                                     return (
@@ -378,15 +461,25 @@ const LoanRequestsPage = () => {
                      </div>
                   </div>
 
-                  <DialogFooter className="p-8 bg-slate-50/50 border-t border-slate-100 sm:justify-between flex gap-4">
-                     <Button 
-                        disabled={updateStatusMutation.isPending}
-                        onClick={() => handleAction(selectedLoan.id, "REJECTED")}
-                        variant="outline" 
-                        className="h-14 px-10 border-red-100 text-red-600 hover:bg-red-50 font-black text-xs uppercase tracking-widest rounded-2xl"
-                     >
-                        Reject Application
-                     </Button>
+                  <DialogFooter className="p-8 bg-slate-50/50 border-t border-slate-100 sm:justify-between flex flex-wrap gap-4">
+                     <div className="flex gap-2">
+                        <Button 
+                           disabled={updateStatusMutation.isPending}
+                           onClick={() => handleAction(selectedLoan.id, "REJECTED")}
+                           variant="outline" 
+                           className="h-14 px-8 border-red-100 text-red-600 hover:bg-red-50 font-black text-xs uppercase tracking-widest rounded-2xl"
+                        >
+                           Reject Application
+                        </Button>
+                        <Button 
+                           disabled={updateStatusMutation.isPending}
+                           onClick={() => handleAction(selectedLoan.id, "ADDITIONAL_DOCUMENTS_REQUIRED")}
+                           variant="outline" 
+                           className="h-14 px-8 border-amber-200 text-amber-600 hover:bg-amber-50 font-black text-xs uppercase tracking-widest rounded-2xl"
+                        >
+                           Request Info
+                        </Button>
+                     </div>
                      <Button 
                         disabled={updateStatusMutation.isPending}
                         onClick={() => handleAction(selectedLoan.id, "APPROVED")}
@@ -396,8 +489,8 @@ const LoanRequestsPage = () => {
                         Approve & Disburse
                      </Button>
                   </DialogFooter>
-                </div>
-              )}
+               </div>
+               )}
            </DialogContent>
         </Dialog>
       </main>

@@ -43,9 +43,16 @@ const AuthPage = () => {
       {/* LEFT SECTION (Form) */}
       <div className="w-full lg:w-[40%] flex flex-col p-6 lg:px-12 lg:py-10 relative z-10 max-h-screen overflow-y-auto">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 mb-8 lg:mb-12 scale-90 origin-left shrink-0">
-          <div className="w-10 h-10 bg-[#2563eb] rounded-lg flex items-center justify-center text-white font-bold text-xl">E</div>
-          <span className="text-2xl font-bold text-[#1a1f36]">Sri Roja Shabarish Guruji</span>
+        <Link to="/" className="flex items-start gap-3 mb-8 lg:mb-12 scale-90 origin-left shrink-0">
+          <img src="/logo.jpeg" alt="Logo" className="w-10 h-10 object-contain rounded-lg shadow-sm" />
+          <div>
+            <h1 className="text-sm font-bold text-[#1a1f36] leading-none uppercase">
+              Sri Roja Shabarish Guruji Souharada Sahakara Niyamitha
+            </h1>
+            <span className="text-[#6b21a8] text-[10px] block tracking-widest font-black opacity-80 uppercase mt-1">
+              Sharanam
+            </span>
+          </div>
         </Link>
 
         {/* Dynamic Form Area */}

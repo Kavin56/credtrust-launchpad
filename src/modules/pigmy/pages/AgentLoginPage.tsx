@@ -32,11 +32,14 @@ const AgentLoginPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100">
         <div className="bg-[#1a1f36] p-8 text-center">
-          <div className="mx-auto w-14 h-14 bg-[#c9a84c]/20 rounded-2xl flex items-center justify-center mb-4">
-            <ShieldCheck className="h-7 w-7 text-[#c9a84c]" />
+          <div className="mx-auto w-14 h-14 bg-white rounded-2xl flex items-center justify-center mb-4">
+            <img src="/logo.jpeg" alt="Logo" className="w-10 h-10 object-contain rounded-lg" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Agent Portal</h1>
-          <p className="text-slate-300 text-sm mt-2">Cash collection & online payment approval</p>
+          <h1 className="text-sm font-extrabold text-white tracking-tight uppercase">
+            Sri Roja Shabarish Guruji Souharada Sahakara Niyamitha
+          </h1>
+          <p className="text-[#c9a84c] text-xs font-black tracking-widest uppercase mt-1">Sharanam Agent Portal</p>
+          <p className="text-slate-300 text-[11px] mt-2 italic">Cash collection & online payment approval</p>
         </div>
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
           <div className="space-y-2">

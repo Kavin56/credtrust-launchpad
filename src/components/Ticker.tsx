@@ -8,9 +8,9 @@ const Ticker = () => {
         {[...Array(10)].map((_, i) => (
           <div key={i} className="flex items-center gap-4">
             <Sparkles className="w-4 h-4 text-[#6b21a8]" />
-            <span>Celebrating 100+ Years - Honoring a Legacy of Service, Trust and Togetherness.</span>
+            <span>Sri Roja Shabarish Guruji: 1floor, Gowri Complex, D. V. G park opposite, Kashipura, shimoga</span>
             <span>★</span>
-            <span>Karnataka Bank Visionary Banking - Adapting to Your Modern Life.</span>
+            <span>Honoring a Legacy of Service, Trust and Togetherness.</span>
           </div>
         ))}
       </div>

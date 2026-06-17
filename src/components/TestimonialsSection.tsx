@@ -1,8 +1,11 @@
 import { useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ChevronLeft, ChevronRight, Play } from "lucide-react";
-const testimonial1 = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop";
-const testimonial2 = "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=2070&auto=format&fit=crop";
+import hl5 from "@/Highlights-Images/HL-5.jpeg";
+import hl6 from "@/Highlights-Images/HL-6.jpeg";
+
+const testimonial1 = hl5;
+const testimonial2 = hl6;
 
 const testimonials = [
   {

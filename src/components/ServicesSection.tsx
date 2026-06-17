@@ -3,12 +3,8 @@ import { useRef } from "react";
 import { Landmark, CreditCard, PiggyBank, ShieldCheck, Smartphone, TrendingUp } from "lucide-react";
 
 const services = [
-  { icon: Landmark, title: "Savings Accounts", desc: "High-interest savings accounts with zero balance options" },
-  { icon: CreditCard, title: "Credit Cards", desc: "Rewards & cashback on every transaction with premium cards" },
   { icon: PiggyBank, title: "Fixed Deposits", desc: "Secure deposits with up to 7.5% p.a. interest rates" },
-  { icon: ShieldCheck, title: "Insurance", desc: "Comprehensive life & general insurance solutions" },
   { icon: Smartphone, title: "Digital Banking", desc: "Bank anytime, anywhere with our mobile-first platform" },
-  { icon: TrendingUp, title: "Investments", desc: "Mutual funds, bonds & portfolio management services" },
 ];
 
 const ServicesSection = () => {

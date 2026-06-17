@@ -3,6 +3,9 @@ import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, TrendingUp, ShieldCheck, Sparkles } from 'lucide-react';
+import hl3 from "@/Highlights-Images/HL-3.jpeg";
+import hl4 from "@/Highlights-Images/HL-4.jpeg";
+import hl7 from "@/Highlights-Images/HL-7.jpeg";
 
 const offers = [
   {
@@ -10,7 +13,7 @@ const offers = [
     title: "Instant Gold Loans",
     subtitle: "At just 0.5% p.m. interest rates",
     description: "Unlock the value of your gold instantly with minimal documentation and spot disbursal.",
-    image: "https://images.unsplash.com/photo-1610375461246-83df859d849d?auto=format&fit=crop&q=80&w=1200&h=400",
+    image: hl3,
     icon: Sparkles,
     color: "#c9a84c"
   },
@@ -19,7 +22,7 @@ const offers = [
     title: "Fixed Deposit Booster",
     subtitle: "Earn up to 9.5% p.a. returns",
     description: "Highest safety rating with attractive interest rates for senior citizens and long-term savers.",
-    image: "https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&q=80&w=1200&h=400",
+    image: hl4,
     icon: TrendingUp,
     color: "#10b981"
   },
@@ -28,7 +31,7 @@ const offers = [
     title: "Lifestyle Flexi-Loans",
     subtitle: "Zero processing fee on first loan",
     description: "Finance your dreams with our flexible repayment terms and lightning-fast digital approvals.",
-    image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=1200&h=400",
+    image: hl7,
     icon: ShieldCheck,
     color: "#6b21a8"
   }

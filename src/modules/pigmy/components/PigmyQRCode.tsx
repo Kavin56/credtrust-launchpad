@@ -24,9 +24,9 @@ export const PigmyQRCode: React.FC<QRProps> = ({
       <div className="bg-blue-900 text-white p-4 text-center">
         <div className="flex items-center justify-between mb-2">
            <img src="/logo.png" alt="Bank Logo" className="h-8 invert" onError={(e) => e.currentTarget.style.display='none'} />
-           <h2 className="text-xl font-bold tracking-wider">Karnataka Bank</h2>
+           <h2 className="text-sm font-extrabold tracking-tight leading-none uppercase">Sri Roja Shabarish Guruji</h2>
         </div>
-        <p className="text-xs opacity-80 uppercase font-semibold">Your Family Bank. Across India.</p>
+        <p className="text-[9px] opacity-80 uppercase font-black tracking-widest">Souharada Sahakara Niyamitha</p>
       </div>
 
       <div className="bg-white p-6 text-center space-y-4">

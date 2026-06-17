@@ -11,7 +11,9 @@ import {
   FileText,
   Landmark,
   ChevronUp,
-  Bell
+  Bell,
+  Menu,
+  X
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,7 @@ const LandingHeader = () => {
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const getActiveLang = () => {
@@ -63,53 +66,12 @@ const LandingHeader = () => {
   ];
 
   const mainNavItems = [
-    "Accounts", "Deposits", "Cards", "Loans", "Insurance", "Investments", "Payments", "More"
+    "Accounts", "Deposits", "Loans", "Payments", "More"
   ];
 
   return (
     <header className="w-full z-[100] font-sans">
-      {/* TOP TIER: MUCH DARKER VIOLET BAR */}
-      <div className="bg-[#4a148c] text-white h-8 flex items-center">
-        <div className="max-w-[1400px] mx-auto w-full px-4 flex justify-between items-center text-[11px] font-medium uppercase tracking-tight">
-          <div className="flex items-center gap-6 h-full">
-            {topMenuItems.map((item) => (
-              <button 
-                key={item.name} 
-                className={`h-8 px-1 border-b-2 transition-all ${item.active ? "border-white opacity-100" : "border-transparent opacity-60 hover:opacity-100"}`}
-              >
-                {item.name}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-5">
-            {topUtilityItems.map((item, i) => (
-              <button key={i} className="flex items-center gap-1 opacity-80 hover:opacity-100 transition-opacity">
-                {item.icon === Phone && <item.icon className="w-3 h-3" />}
-                {item.name}
-                {item.icon === ChevronDown && <item.icon className="w-3 h-3" />}
-              </button>
-            ))}
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-1 opacity-80 hover:opacity-100 transition-opacity focus:outline-none">
-                {getActiveLang()}
-                <ChevronDown className="w-3 h-3" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="z-[200]">
-                <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
-                  English (en)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleLanguageChange('kn')}>
-                  Kannada (kn)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleLanguageChange('ta')}>
-                  Tamil (ta)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </div>
+
 
       {/* MAIN TIER: COMPACT WHITE BAR */}
       <div className="bg-white shadow-sm h-16 flex items-center border-b border-gray-100">
@@ -117,12 +79,12 @@ const LandingHeader = () => {
           {/* Official Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
              <img src="/logo.jpeg" alt="Sri Roja Shabarish Guruji Logo" className="h-10 w-auto" />
-             <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-[#1a1f36] tracking-tighter leading-none">
-                  Sri Roja Shabarish Guruji
-                </h1>
-                <p className="text-[#6b21a8] text-[9px] block tracking-widest font-medium opacity-60 uppercase">souharada sahakata niyamitha</p>
-             </div>
+              <div className="hidden sm:block">
+                 <h1 className="text-[11px] md:text-[12px] font-extrabold text-[#1a1f36] tracking-tight leading-none uppercase">
+                   Sri Roja Shabarish Guruji Souharada Sahakara Niyamitha
+                 </h1>
+                 <p className="text-[#6b21a8] text-[10px] block tracking-widest font-black opacity-80 uppercase mt-0.5">Sharanam</p>
+              </div>
           </div>
 
           {/* Navigation Items - Normal (not bold) */}
@@ -136,8 +98,8 @@ const LandingHeader = () => {
           </nav>
 
           {/* Utility / Login */}
-          <div className="flex items-center gap-5 relative">
-            <button className="p-2 text-gray-400 hover:text-[#6b21a8] transition-colors">
+          <div className="flex items-center gap-2 sm:gap-5 relative">
+            <button className="p-2 text-gray-400 hover:text-[#6b21a8] transition-colors hidden sm:block">
               <Search className="w-5 h-5" />
             </button>
 
@@ -153,7 +115,7 @@ const LandingHeader = () => {
             <div className="relative">
               <Button 
                 onClick={() => setIsLoginOpen(!isLoginOpen)}
-                className="bg-[#4a148c] hover:bg-[#311b92] text-white px-6 h-10 rounded-full font-medium text-[15px] flex items-center gap-2 shadow-lg shadow-purple-900/10 transition-all active:scale-95"
+                className="bg-[#4a148c] hover:bg-[#311b92] text-white px-4 sm:px-6 h-10 rounded-full font-medium text-[13px] sm:text-[15px] flex items-center gap-1.5 sm:gap-2 shadow-lg shadow-purple-900/10 transition-all active:scale-95"
               >
                 Login
                 {isLoginOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -204,9 +166,85 @@ const LandingHeader = () => {
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Mobile Hamburger toggle */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+              className="p-2 text-gray-500 hover:text-[#6b21a8] transition-colors xl:hidden"
+            >
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
         </div>
       </div>
+      
+      {/* Mobile Drawer Dropdown Menu (for xl:hidden) */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="xl:hidden bg-white border-t border-gray-100 overflow-hidden"
+          >
+            <div className="p-4 space-y-4">
+              {/* Language switcher */}
+              <div className="flex justify-between items-center bg-gray-50 p-3 rounded-xl">
+                <span className="text-xs font-semibold text-gray-500">Language</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger className="flex items-center gap-1 text-xs font-bold text-gray-700 focus:outline-none">
+                    {getActiveLang()}
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="z-[200]">
+                    <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
+                      English (en)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleLanguageChange('kn')}>
+                      Kannada (kn)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleLanguageChange('ta')}>
+                      Tamil (ta)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Utility shortcuts */}
+              <div className="grid grid-cols-2 gap-2 text-center text-xs font-semibold text-gray-700">
+                <a href="#about" className="p-3 bg-gray-50 rounded-xl hover:bg-gray-100">About Us</a>
+                <a href="#support" className="p-3 bg-gray-50 rounded-xl hover:bg-gray-100">Support</a>
+              </div>
+
+              {/* Main Nav Items */}
+              <div className="space-y-1">
+                {mainNavItems.map((item) => (
+                  <Link 
+                    key={item} 
+                    to={
+                      item === "Loans" 
+                        ? "/loan-apply" 
+                        : item === "Deposits" 
+                          ? "/deposit-apply" 
+                          : item === "Accounts"
+                            ? "/accounts"
+                            : item === "Payments"
+                              ? "/payments"
+                              : "/services"
+                    }
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-between p-3.5 rounded-xl hover:bg-[#fdf4ff] text-sm font-bold text-gray-700 hover:text-[#6b21a8] transition-colors"
+                  >
+                    <span>{item}</span>
+                    <ChevronDown className="-rotate-90 w-4 h-4 text-gray-400" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <NotificationDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
     </header>
   );

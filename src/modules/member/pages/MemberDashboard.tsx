@@ -40,7 +40,8 @@ import {
   Settings,
   Percent,
   Lock,
-  User
+  User,
+  Headset
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Header from "@/components/Header";
@@ -66,7 +67,6 @@ const quickActions = [
   { label: "Explore", icon: Compass, bg: "bg-orange-100", color: "text-orange-600" },
   { label: "Offers", icon: Gift, bg: "bg-pink-100", color: "text-pink-600" },
   { label: "Discover", icon: Smartphone, bg: "bg-indigo-100", color: "text-indigo-600" },
-  { label: "Savings Ac", icon: PiggyBank, bg: "bg-emerald-100", color: "text-emerald-600" },
   { label: "Coming Soon", icon: Hourglass, bg: "bg-slate-100", color: "text-slate-600" },
   { label: "Invest Now", icon: GraduationCap, bg: "bg-rose-100", color: "text-rose-600" },
 ];
@@ -444,20 +444,11 @@ const MemberDashboard = () => {
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#6b21a8]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             
             <SidebarGroup 
-              title="Investments" 
-              items={[
-                { label: "Mutual Funds", icon: Activity, path: "/product/investments/mutual-funds" },
-                { label: "Demat & Securities", icon: Wallet, path: "/product/investments/demat" },
-                { label: "NPS", icon: LayoutGrid, path: "/product/investments/nps" },
-                { label: "PPF", icon: PiggyBank, path: "/product/investments/ppf" }
-              ]} 
-            />
-            <div className="h-px bg-gray-50 my-8" />
-            <SidebarGroup 
               title="Loans" 
               items={[
                 { label: "Personal Loan", icon: UserCheck, path: "/product/loans/personal-loan" },
-                { label: "SHG Credit", icon: HandCoins, path: "/product/loans/shg-credit" },
+                { label: "Unsecured Loan", icon: User, path: "/product/loans/unsecured-loan" },
+                { label: "Vehicle Loan", icon: Car, path: "/product/loans/vehicle-loan" },
                 { label: "Home Loan", icon: Landmark, path: "/product/loans/home-loan" },
                 { label: "Gold Loan", icon: Gem, path: "/product/loans/gold-loan" }
               ]} 
@@ -467,39 +458,14 @@ const MemberDashboard = () => {
               title="Deposits" 
               items={[
                 { label: "Fixed Deposit", icon: ShieldCheck, path: "/product/deposits/fixed-deposit" },
-                { label: "Recurring Deposit", icon: Calendar, path: "/product/deposits/recurring-deposit" },
-                { label: "Annuity Deposit", icon: FileText, path: "/product/deposits/annuity" },
-                { label: "Auto Sweep", icon: Zap, path: "/product/deposits/auto-sweep" }
-              ]} 
-            />
-            <div className="h-px bg-gray-50 my-8" />
-            <SidebarGroup 
-              title="Insurance" 
-              items={[
-                { label: "Life", icon: HeartPulse, path: "/product/insurance/life-insurance" },
-                { label: "Health", icon: ShieldCheck, path: "/product/insurance/health-insurance" },
-                { label: "Accident", icon: Info, path: "/product/insurance/accident-cover" },
-                { label: "Motor", icon: Car, path: "/product/insurance/motor-insurance" }
-              ]} 
-            />
-             <div className="h-px bg-gray-50 my-8" />
-            <SidebarGroup 
-              title="Cards" 
-              items={[
-                { label: "Credit Cards", icon: CreditCard, path: "/product/cards/credit-cards" },
-                { label: "Debit Cards", icon: Wallet, path: "/product/cards/debit-cards" },
-                { label: "Forex Cards", icon: Globe2, path: "/product/cards/forex-cards" },
-                { label: "NCMC", icon: Smartphone, path: "/product/cards/ncmc-card" }
+                { label: "Recurring Deposit", icon: Calendar, path: "/product/deposits/recurring-deposit" }
               ]} 
             />
              <div className="h-px bg-gray-50 my-8" />
             <SidebarGroup 
               title="Services" 
               items={[
-                { label: "Account Related", icon: LayoutGrid, path: "/product/services/account-services" },
-                { label: "Tax Related", icon: BadgePercent, path: "/product/services/tax-services" },
-                { label: "Cheque Services", icon: FileText, path: "/product/services/cheque-services" },
-                { label: "e-Secure Lock", icon: ShieldCheck, path: "/product/services/e-secure-lock" }
+                { label: "Contact & Support", icon: Headset, path: "/services" }
               ]} 
             />
           </div>

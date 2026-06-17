@@ -43,18 +43,23 @@ const AdminLoginPage = () => {
            <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
            
            <div className="relative z-10">
-              <div className="flex items-center gap-3 cursor-pointer mb-16" onClick={() => navigate('/admin')}>
-                 <div className="bg-white/10 p-2 rounded-xl backdrop-blur-md">
-                    <Landmark className="w-6 h-6 text-[#c9a84c]" />
+              <div className="flex items-start gap-3 cursor-pointer mb-16" onClick={() => navigate('/')}>
+                 <img src="/logo.jpeg" alt="Logo" className="w-10 h-10 object-contain rounded-lg shadow-sm" />
+                 <div>
+                    <h1 className="text-xs font-extrabold text-white tracking-tight uppercase">
+                       Sri Roja Shabarish Guruji Souharada Sahakara Niyamitha
+                    </h1>
+                    <span className="text-[#c9a84c] text-[10px] block tracking-widest font-black uppercase mt-1">
+                       Sharanam Admin Portal
+                    </span>
                  </div>
-                 <h1 className="text-xl font-bold tracking-tighter">CredTrust Admin</h1>
               </div>
               
               <h2 className="text-4xl font-bold tracking-tighter leading-tight mb-8">
                 Institutional <br /> <span className="text-[#c9a84c]">Access.</span>
               </h2>
               <p className="text-white/40 font-medium leading-relaxed italic mb-12">
-                Log in to access the CredTrust Cooperative Management System. Authorized personnel only. All access is logged and audited.
+                Log in to access the Sri Roja Shabarish Guruji Souharada Sahakara Niyamitha Management System. Authorized personnel only. All access is logged and audited.
               </p>
            </div>
 
@@ -78,7 +83,7 @@ const AdminLoginPage = () => {
                    <label className="text-[12px] font-black text-gray-400 uppercase tracking-widest">Authorized Email</label>
                    <Input 
                       type="email" 
-                      placeholder="admin@credtrust.local" 
+                      placeholder="admin@sharanam.local" 
                       className="h-14 rounded-2xl border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-[#c9a84c] transition-all font-bold"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}

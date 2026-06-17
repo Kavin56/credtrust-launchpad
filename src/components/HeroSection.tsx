@@ -1,29 +1,36 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-const heroBanking = "https://media.istockphoto.com/id/1426365010/photo/smiling-customer-at-reception-desk.jpg?s=612x612&w=0&k=20&c=knCVzsPczNBBsmr5IJbq3mnhcxBOWzx6YOF5mZGaLjs=";
-const familyBanking = "https://www.euroschoolindia.com/blogs/wp-content/uploads/2023/07/importance-of-family-time.jpg";
-const professionalBanking = "https://cdn.shopify.com/s/files/1/0291/6266/8110/files/conservative-business-suits-foundation-formal-dress.jpg?v=1756694799";
+import hl1 from "@/Highlights-Images/HL-1.jpeg";
+import hl2 from "@/Highlights-Images/HL-2.jpeg";
+import hl3 from "@/Highlights-Images/HL-3.jpeg";
+import hl4 from "@/Highlights-Images/HL-4.jpeg";
+import hl5 from "@/Highlights-Images/HL-5.jpeg";
+import hl6 from "@/Highlights-Images/HL-6.jpeg";
+import hl7 from "@/Highlights-Images/HL-7.jpeg";
+import hl8 from "@/Highlights-Images/HL-8.jpeg";
 
-const slides = [
-  {
-    image: heroBanking,
-    title: "Drive Your Dreams with Sharanam Loans",
-    subtitle: "Competitive rates starting at just 8.50%* p.a.",
-    cta: "Know More",
-  },
-  {
-    image: familyBanking,
-    title: "Secure Your Family's Future Today",
-    subtitle: "Smart savings & investment solutions for every goal.",
-    cta: "Start Saving",
-  },
-  {
-    image: professionalBanking,
-    title: "Banking Built for Modern Professionals",
-    subtitle: "Instant digital account opening in minutes.",
-    cta: "Open Account",
-  },
+const quotes = [
+  "Service to humanity is the highest form of leadership and the foundation of a compassionate society.",
+  "When we serve others, we create a stronger, kinder, and more united community.",
+  "A society grows not by what it gains, but by what it gives to those in need.",
+  "Every act of kindness, no matter how small, has the power to transform lives.",
+  "Together we can build a future where every individual has the opportunity to thrive.",
+  "True success is measured by the positive impact we make in the lives of others.",
+  "Serving people today creates hope, dignity, and opportunity for tomorrow.",
+  "Compassion in action is the driving force behind meaningful social change.",
+  "A trust is built on integrity, strengthened by service, and sustained by community support.",
+  "Our mission is simple: empower people, uplift communities, and inspire lasting change."
 ];
+
+const slides = quotes.map((quote, idx) => {
+  const images = [hl1, hl2, hl3, hl4, hl5, hl6, hl7, hl8];
+  return {
+    image: images[idx % images.length],
+    title: quote,
+    subtitle: "Sharanam Cooperative Credit Society",
+    cta: "Learn More",
+  };
+});
 
 const HeroSection = () => {
   const [current, setCurrent] = useState(0);
@@ -45,16 +52,15 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-heading font-black tracking-tight text-[#1a1f36] flex flex-wrap items-center justify-center gap-x-3 md:gap-x-4">
-              <span>ಶರಣಂ</span>
-              <span className="text-primary font-light opacity-40 hidden md:block">|</span>
-              <span className="text-primary font-light opacity-40 md:hidden">-</span>
-              <span>Sharanam</span>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-heading font-black tracking-tight text-[#1a1f36] leading-tight text-center max-w-5xl mx-auto uppercase">
+              Sri Roja Shabarish Guruji Souharada Sahakara Niyamitha
             </h1>
-            <p className="text-sm md:text-base text-muted-foreground font-light tracking-[0.2em] uppercase mt-2 opacity-80 italic">
-              A Space of Refuge and Peace
-            </p>
-            <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent mx-auto mt-4 rounded-full" />
+            <div className="text-2xl md:text-4xl font-heading font-extrabold text-[#6b21a8] tracking-widest mt-4 uppercase flex items-center justify-center gap-2">
+              <span>ಶರಣಂ</span>
+              <span className="opacity-40 font-light">|</span>
+              <span>Sharanam</span>
+            </div>
+            <div className="w-16 h-0.5 bg-gradient-to-r from-transparent via-[#6b21a8]/30 to-transparent mx-auto mt-4 rounded-full" />
           </motion.div>
         </div>
 
@@ -69,10 +75,10 @@ const HeroSection = () => {
               transition={{ duration: 0.5 }}
               className="z-10"
             >
-              <h2 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-heading font-bold text-foreground leading-tight mb-4">
-                {slide.title}
+              <h2 className="text-xl md:text-2xl lg:text-3xl font-heading font-bold text-foreground leading-snug mb-4 italic text-[#1a1f36]">
+                "{slide.title}"
               </h2>
-              <p className="text-base md:text-lg text-muted-foreground mb-8 max-w-md">
+              <p className="text-xs md:text-sm text-muted-foreground mb-8 max-w-md uppercase tracking-widest font-black">
                 {slide.subtitle}
               </p>
               <div className="flex flex-wrap gap-4">
@@ -129,7 +135,7 @@ const HeroSection = () => {
         <div className="animate-scroll inline-flex gap-12 py-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <span key={i} className="flex items-center gap-3 text-xs md:text-sm font-bold whitespace-nowrap">
-              ✦ Celebrating 100+ Years of Legacy ✦ Awarded Best Cooperative Society 2025 ✦ Over 1 Lakh+ Satisfied Members ✦
+              ✦ 1floor, Gowri Complex, D. V. G park opposite, Kashipura, shimoga ✦ Celebrating 100+ Years of Legacy ✦ Awarded Best Cooperative Society 2025 ✦ Over 1 Lakh+ Satisfied Members ✦
             </span>
           ))}
         </div>

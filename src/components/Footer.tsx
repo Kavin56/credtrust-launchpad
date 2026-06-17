@@ -2,8 +2,8 @@ import { Phone, Facebook, Linkedin, Twitter, Youtube, Instagram } from "lucide-r
 import { useLocation } from "react-router-dom";
 
 const footerLinks = {
-  "Popular Products": ["Savings Accounts", "Loans", "Deposits", "Cards", "Insurance"],
-  "Customer Relations": ["Loan Rates", "Deposit Rates", "Savings Rates", "Charges", "Blog"],
+  "Popular Products": ["Loans", "Deposits"],
+  "Customer Relations": ["Loan Rates", "Deposit Rates", "Charges", "Blog"],
   "About Us": ["About CredTrust", "Team", "Careers", "CSR", "Awards"],
   Support: ["Contact Us", "Locate Us", "FAQs", "Raise Concerns", "Download Center"],
 };

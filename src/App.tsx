@@ -83,7 +83,7 @@ const App = () => (
           <Route path="/signup" element={<LoginPage />} />
           <Route path="/signup-flow" element={<ProtectedRoute><SignUpFlowPage /></ProtectedRoute>} />
           <Route path="/forgot-password" element={<LoginPage />} />
-          <Route path="/loan-apply" element={<ProtectedRoute><LoanApply /></ProtectedRoute>} />
+          <Route path="/loan-apply" element={<ProtectedRoute><LoanApplicationPage /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><MemberDashboard /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/accounts" element={<ProtectedRoute><AccountsPage /></ProtectedRoute>} />

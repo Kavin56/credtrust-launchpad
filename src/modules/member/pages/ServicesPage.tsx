@@ -76,38 +76,27 @@ const ServicesPage = () => {
                  </div>
               </div>
 
-              <div className="grid gap-8">
-                 <ServiceDirectory 
-                    title="Account Related"
-                    items={[
-                       { name: "Order Certificate", icon: FileCheck },
-                       { name: "Statement Requests", icon: FileText },
-                       { name: "Manage Nomination", icon: HelpCircle },
-                       { name: "Address Update", icon: Search }
-                    ]}
-                 />
-
-                 <ServiceDirectory 
-                    title="Tax & Finance"
-                    items={[
-                       { name: "Form 15G / 15H", icon: Percent },
-                       { name: "Interest Certificate", icon: Zap },
-                       { name: "Tax Dashboard", icon: Activity },
-                       { name: "Annual Summary", icon: FileText }
-                    ]}
-                 />
-
-                 <ServiceDirectory 
-                    title="Cheque & Security"
-                    items={[
-                       { name: "Order Cheque Book", icon: FileText },
-                       { name: "e-Secure Lock", icon: Lock },
-                       { name: "Block / Unblock NetBanking", icon: ShieldCheck },
-                       { name: "Manage IP Whitelist", icon: MonitorSmartphone }
-                    ]}
-                 />
-              </div>
-           </div>
+               <div className="bg-white rounded-[40px] border border-gray-100 p-10 shadow-sm space-y-6">
+                  <h3 className="text-2xl font-black text-[#1a1f36]">Support & Customer Services</h3>
+                  <p className="text-sm text-gray-500 font-medium leading-relaxed">
+                    For all service requests, account queries, updates, and support, please contact our support team.
+                  </p>
+                  <div className="grid md:grid-cols-2 gap-6 pt-4">
+                     <div className="p-8 bg-gray-50/50 rounded-3xl border border-transparent hover:border-purple-100 transition-all flex flex-col items-center gap-3 text-center">
+                        <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Contact Number</span>
+                        <a href="tel:9845457250" className="text-xl font-bold text-[#6b21a8] hover:underline">
+                           9845457250
+                        </a>
+                     </div>
+                     <div className="p-8 bg-gray-50/50 rounded-3xl border border-transparent hover:border-purple-100 transition-all flex flex-col items-center gap-3 text-center">
+                        <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Email Support</span>
+                        <a href="mailto:srirojashabharishguruji@gmail.com" className="text-sm font-bold text-[#6b21a8] hover:underline break-all">
+                           srirojashabharishguruji@gmail.com
+                        </a>
+                     </div>
+                  </div>
+               </div>
+            </div>
 
            <aside className="lg:w-[320px] space-y-8 shrink-0">
               <div className="bg-[#1a1f36] rounded-[40px] p-8 text-white space-y-8 shadow-2xl shadow-indigo-900/10">

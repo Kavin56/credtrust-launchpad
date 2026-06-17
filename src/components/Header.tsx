@@ -73,9 +73,7 @@ const megaMenuData = {
     products: [
       { name: "Pigmy Deposit (Daily)", icon: HandCoins, path: "/dashboard/pigmy" },
       { name: "Fixed Deposit", icon: ShieldCheck, path: "/product/deposits/fixed-deposit" },
-      { name: "Recurring Deposit", icon: Calendar, path: "/product/deposits/recurring-deposit" },
-      { name: "Annuity Deposit", icon: FileText, path: "/product/deposits/annuity" },
-      { name: "Auto Sweep", icon: Zap, path: "/product/deposits/auto-sweep" }
+      { name: "Recurring Deposit", icon: Calendar, path: "/product/deposits/recurring-deposit" }
     ],
     links: [
       { name: "Manage Deposits", path: "/accounts?tab=deposits" },
@@ -87,68 +85,16 @@ const megaMenuData = {
   Loans: {
     products: [
       { name: "Personal Loan", icon: User, path: "/product/loans/personal-loan" },
-      { name: "SHG Credit", icon: HandCoins, path: "/product/loans/shg-credit" },
+      { name: "Unsecured Loan", icon: Users, path: "/product/loans/unsecured-loan" },
+      { name: "Vehicle Loan", icon: Car, path: "/product/loans/vehicle-loan" },
       { name: "Home Loan", icon: Landmark, path: "/product/loans/home-loan" },
-      { name: "Gold Loan", icon: Gem, path: "/product/loans/gold-loan" },
-      { name: "Education Loan", icon: GraduationCap, path: "/product/loans/personal-loan" }
+      { name: "Gold Loan", icon: Gem, path: "/product/loans/gold-loan" }
     ],
     links: [
       { name: "View Existing Loans", path: "/accounts?tab=loans" },
       { name: "Apply Instant Loan", path: "/loan-apply" },
       { name: "Check Credit Score", path: "/dashboard" },
       { name: "Calculate Loan EMI", path: "/loan-apply" }
-    ]
-  },
-  Cards: {
-    products: [
-      { name: "Credit Cards", icon: CreditCard, path: "/product/cards/credit-cards" },
-      { name: "Debit Cards", icon: MonitorSmartphone, path: "/product/cards/debit-cards" },
-      { name: "Forex Cards", icon: Globe2, path: "/product/cards/forex-cards" },
-      { name: "NCMC", icon: Smartphone, path: "/product/cards/ncmc-card" }
-    ],
-    links: [
-      { name: "Manage Credit Card", path: "/cards" },
-      { name: "Manage Debit Card", path: "/cards" },
-      { name: "Manage Forex Card", path: "/cards" }
-    ]
-  },
-  Investments: {
-    products: [
-      { name: "Mutual Funds", icon: Activity, path: "/product/investments/mutual-funds" },
-      { name: "NPS", icon: PiggyBank, path: "/product/investments/nps" },
-      { name: "PPF", icon: Wallet, path: "/product/investments/ppf" },
-      { name: "Demat & Securities", icon: Briefcase, path: "/product/investments/demat" }
-    ],
-    links: [
-      { name: "Manage Mutual Fund", path: "/investments" },
-      { name: "Manage NPS Account", path: "/investments" },
-      { name: "Manage PPF", path: "/investments" }
-    ]
-  },
-  Insurance: {
-    products: [
-      { name: "Life", icon: Umbrella, path: "/product/insurance/life-insurance" },
-      { name: "Health", icon: HeartPulse, path: "/product/insurance/health-insurance" },
-      { name: "Accident", icon: Info, path: "/product/insurance/accident-cover" },
-      { name: "Motor", icon: Car, path: "/product/insurance/motor-insurance" }
-    ],
-    links: [
-      { name: "Renew Insurance", path: "/insurance" },
-      { name: "View Certificates", path: "/insurance" },
-      { name: "Claim Status", path: "/insurance" }
-    ]
-  },
-  Services: {
-    products: [
-      { name: "Account Related", icon: Settings, path: "/product/services/account-services" },
-      { name: "Tax Related", icon: Percent, path: "/product/services/tax-services" },
-      { name: "Cheque Services", icon: FileText, path: "/product/services/cheque-services" },
-      { name: "e-Secure Lock", icon: Lock, path: "/product/services/e-secure-lock" }
-    ],
-    links: [
-      { name: "Form 15G/15H", path: "/product/services/tax-services" },
-      { name: "Order Certificate", path: "/product/services/account-services" },
-      { name: "Track Service Status", path: "/services" }
     ]
   }
 };
@@ -189,10 +135,7 @@ const Header = () => {
     { name: "Payments", path: "/payments" },
     { name: "Deposits", path: "Deposits", hasMegaMenu: true },
     { name: "Loans", path: "Loans", hasMegaMenu: true },
-    { name: "Cards", path: "Cards", hasMegaMenu: true },
-    { name: "Investments", path: "Investments", hasMegaMenu: true },
-    { name: "Insurance", path: "Insurance", hasMegaMenu: true },
-    { name: "Services", path: "Services", hasMegaMenu: true }
+    { name: "Services", path: "/services" }
   ];
 
   return (
@@ -202,11 +145,12 @@ const Header = () => {
           {/* Logo Section */}
           <div className="flex-shrink-0 flex items-center gap-3 cursor-pointer group" onClick={() => navigate('/dashboard')}>
              <img src="/logo.jpeg" alt="Sharanam Logo" className="h-10 w-auto" />
-             <div className="hidden sm:block">
-                <h1 className="text-lg font-black text-[#1a1f36] tracking-tighter leading-none">
-                  Sharanam <span className="text-[#6b21a8] text-[10px] block tracking-widest font-bold opacity-60">NET-BANKING</span>
-                </h1>
-             </div>
+              <div className="hidden sm:block">
+                 <h1 className="text-[11px] md:text-[12px] font-extrabold text-[#1a1f36] tracking-tight leading-none uppercase">
+                   Sri Roja Shabarish Guruji Souharada Sahakara Niyamitha
+                 </h1>
+                  <span className="text-[#6b21a8] text-[10px] block tracking-widest font-black opacity-80 uppercase mt-0.5">Sharanam</span>
+              </div>
           </div>
 
           {/* Desktop Navigation */}
@@ -242,7 +186,7 @@ const Header = () => {
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       transition={{ duration: 0.2 }}
                       className={`absolute top-[64px] w-[620px] bg-white rounded-[32px] shadow-2xl border border-gray-100 overflow-hidden ${
-                        item.name === 'Insurance' || item.name === 'Services' || item.name === 'Investments' ? 'right-0' : 'left-0'
+                        item.name === 'Services' ? 'right-0' : 'left-0'
                       }`}
                     >
                       <div className="grid grid-cols-2 divide-x divide-gray-50">

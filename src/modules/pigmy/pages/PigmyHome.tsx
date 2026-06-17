@@ -6,6 +6,7 @@ import {
   Search, Smartphone, PhoneCall, HelpCircle, Info
 } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
+import hl1 from "@/Highlights-Images/HL-1.jpeg";
 
 const PigmyHome = () => {
   const navigate = useNavigate();
@@ -19,34 +20,29 @@ const PigmyHome = () => {
             <div className="bg-blue-600 p-1.5 rounded-lg">
               <PiggyBank className="h-6 w-6 text-white" />
             </div>
-            <span className="text-xl font-black text-blue-900 tracking-tighter">PigmyPro</span>
+            <span className="text-xl font-black text-slate-900 tracking-tight">Pigmy Portal</span>
           </div>
-          <div className="hidden md:flex items-center gap-6">
-            <Link to="/about-pigmy" className="text-sm font-bold text-slate-600 hover:text-blue-600">View Schemes</Link>
-            <Link to="/contact" className="text-sm font-bold text-slate-600 hover:text-blue-600">Contact Us</Link>
-          </div>
-          <div className="flex gap-3">
-             <Button variant="ghost" className="font-bold" onClick={() => navigate('/login')}>Login</Button>
-             <Button className="bg-blue-600 hover:bg-blue-700 font-bold" onClick={() => navigate('/signup')}>Register</Button>
-          </div>
+          <Button onClick={() => navigate('/agent/login')} className="h-10 px-4 bg-slate-900 font-bold hover:bg-black rounded-xl">
+             Agent Access
+          </Button>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="py-20 px-4 bg-gradient-to-b from-blue-50 to-white">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 bg-blue-100 px-4 py-1 rounded-full text-blue-700 text-xs font-black uppercase tracking-widest">
-               <TrendingUp className="h-3 w-3" /> Growth Every Day
-            </div>
-            <h1 className="text-5xl lg:text-6xl font-black text-slate-900 leading-[1.1]">
-              Daily Savings for a <span className="text-blue-600">Brighter Future.</span>
+      {/* Hero */}
+      <section className="py-20 px-4 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div>
+            <span className="inline-block px-3.5 py-1.5 bg-blue-50 text-blue-600 text-[11px] font-black uppercase tracking-widest rounded-full mb-6">
+               3% Guaranteed Payout
+            </span>
+            <h1 className="text-5xl lg:text-6xl font-black text-slate-900 leading-tight mb-6">
+               Systematic daily savings made <span className="text-blue-600">effortless</span>.
             </h1>
-            <p className="text-lg text-slate-600 max-w-xl mx-auto lg:mx-0">
-              Start your Pigmy deposit journey today. Save as little as ₹100 daily and earn up to 6% annual interest with our 3% semi-annual payouts.
+            <p className="text-slate-400 text-lg mb-8 max-w-lg leading-relaxed">
+               Secure your daily cash collections digitally. Pigmy Deposit management system built with real-time agent verification networks.
             </p>
-            <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-               <Button className="h-14 px-8 bg-blue-600 hover:bg-blue-700 text-lg font-bold rounded-2xl gap-2 shadow-xl shadow-blue-200">
+            <div className="flex gap-4 flex-wrap">
+               <Button onClick={() => navigate('/agent/login')} className="h-14 px-8 bg-blue-600 font-bold hover:bg-blue-700 rounded-2xl gap-2 shadow-xl shadow-blue-500/10">
                   Get Started Now <ArrowRight className="h-5 w-5" />
                </Button>
                <Button variant="outline" className="h-14 px-8 border-slate-200 text-lg font-bold rounded-2xl gap-2">
@@ -56,7 +52,7 @@ const PigmyHome = () => {
           </div>
           <div className="relative">
              <img 
-               src="https://images.unsplash.com/photo-1554224155-1696413565d3?q=80&w=1770&auto=format&fit=crop" 
+               src={hl1} 
                alt="Financial Growth" 
                className="rounded-[40px] shadow-2xl border-8 border-white"
              />

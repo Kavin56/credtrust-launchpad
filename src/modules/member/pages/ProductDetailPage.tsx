@@ -83,7 +83,15 @@ const ProductDetailPage = () => {
                     </div>
                     <div className="flex gap-4 pt-4">
                        <Button 
-                          onClick={() => navigate('/loan-apply', { state: { loanType: product.title } })}
+                          onClick={() => {
+                            if (product.category === 'Deposits') {
+                              navigate('/deposit-apply', { state: { schemeName: product.title } });
+                            } else if (product.category === 'Loans') {
+                              navigate('/loan-apply', { state: { loanType: product.title } });
+                            } else {
+                              navigate(product.ctaPath);
+                            }
+                          }}
                           className="h-14 px-10 bg-[#c9a84c] text-[#1a1f36] rounded-2xl font-black hover:bg-white hover:shadow-2xl transition-all"
                        >
                           {product.cta}
@@ -159,9 +167,20 @@ const ProductDetailPage = () => {
                     <p className="text-[13px] text-white/60 leading-relaxed font-medium">
                        Apply for {product.title} today and get **Zero Processing Fees** and an additional cashback of ₹500 on your first use.
                     </p>
-                    <Button className="w-full h-12 bg-[#c9a84c] text-[#1a1f36] rounded-xl font-black hover:bg-white transition-all shadow-xl shadow-black/20">
-                       Claim Offer Now
-                    </Button>
+                    <Button 
+                        onClick={() => {
+                          if (product.category === 'Deposits') {
+                            navigate('/deposit-apply', { state: { schemeName: product.title } });
+                          } else if (product.category === 'Loans') {
+                            navigate('/loan-apply', { state: { loanType: product.title } });
+                          } else {
+                            navigate(product.ctaPath);
+                          }
+                        }}
+                        className="w-full h-12 bg-[#c9a84c] text-[#1a1f36] rounded-xl font-black hover:bg-white transition-all shadow-xl shadow-black/20"
+                     >
+                        Claim Offer Now
+                     </Button>
                  </div>
               </div>
 

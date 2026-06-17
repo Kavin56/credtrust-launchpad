@@ -56,11 +56,12 @@ const AdminNavbar = () => {
                <div className="bg-[#c9a84c] p-1.5 rounded-lg shadow-lg shadow-yellow-900/20 group-hover:scale-110 transition-transform">
                   <ShieldCheck className="h-6 w-6 text-[#1a1f36]" />
                </div>
-               <div className="hidden md:block">
-                  <h1 className="text-lg font-black text-white tracking-tighter leading-none">
-                    Sharanam <span className="text-[#c9a84c] text-[10px] block tracking-widest font-bold opacity-80 uppercase">Management</span>
-                  </h1>
-               </div>
+                <div className="hidden md:block">
+                   <h1 className="text-[11px] md:text-[12px] font-extrabold text-white tracking-tight leading-none uppercase">
+                     Sri Roja Shabarish Guruji Souharada Sahakara Niyamitha
+                   </h1>
+                   <span className="text-[#c9a84c] text-[10px] block tracking-widest font-black opacity-80 uppercase mt-0.5">Sharanam Management</span>
+                </div>
             </div>
 
             {/* Desktop Nav */}

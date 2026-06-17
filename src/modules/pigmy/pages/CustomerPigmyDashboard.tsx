@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { PayNowDialog } from '../components/PayNowDialog';
+import { EnrollPigmyModal } from '../components/EnrollPigmyModal';
 import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -20,6 +21,7 @@ import Footer from "@/components/Footer";
 const CustomerPigmyDashboard = () => {
   const queryClient = useQueryClient();
   const [enrollLoading, setEnrollLoading] = React.useState(false);
+  const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   // 1. Fetch Profile to get Member ID
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ['member-profile'],
@@ -112,29 +114,11 @@ const CustomerPigmyDashboard = () => {
              />
            ) : (
              <Button 
-               onClick={async () => {
-                 setEnrollLoading(true);
-                 try {
-                   const { data: schemes } = await api.get('/pigmy/schemes');
-                   if (schemes.length === 0) {
-                     toast.error("No savings plans available. Please contact support.");
-                     return;
-                   }
-                   await api.post('/pigmy/self-enroll', { schemeId: schemes[0].id });
-                   toast.success("Account Activated!", { description: "Your standard Pigmy savings account is ready." });
-                   await queryClient.invalidateQueries({ queryKey: ['member-profile'] });
-                   refetchAccount();
-                 } catch (e: any) {
-                   toast.error(e.response?.data?.message || "Activation failed");
-                 } finally {
-                   setEnrollLoading(false);
-                 }
-               }}
-               disabled={enrollLoading}
+               onClick={() => setIsEnrollModalOpen(true)}
                className="bg-[#fcd34d] hover:bg-[#fbbf24] text-[#1a1f36] font-black gap-2 rounded-2xl h-11 px-8 shadow-lg shadow-[#fcd34d]/20 transition-all"
              >
-                {enrollLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                {enrollLoading ? "Activating..." : "Start Saving Now"}
+                <Sparkles className="h-4 w-4" />
+                Start Saving Now
              </Button>
            )}
 
@@ -304,6 +288,15 @@ const CustomerPigmyDashboard = () => {
       </div>
       </main>
       <Footer />
+      <EnrollPigmyModal 
+        open={isEnrollModalOpen}
+        onOpenChange={setIsEnrollModalOpen}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['member-profile'] });
+          refetchAccount();
+        }}
+        profile={profile}
+      />
     </div>
 
   );
