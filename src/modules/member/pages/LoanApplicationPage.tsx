@@ -884,15 +884,40 @@ const LoanApplicationPage = () => {
                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
                          <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Estimated Monthly EMI</span>
                          <h3 className="text-4xl font-black">₹{Math.round(calculateEMI()).toLocaleString()}</h3>
-                         
-                         <div className="pt-4 border-t border-white/10 flex justify-between text-[11px] font-bold text-white/60 uppercase">
-                            <span>Rate of Interest</span>
-                            <span className="text-white">{selectedLoan.rate}% p.a.</span>
-                         </div>
-                         <div className="flex justify-between text-[11px] font-bold text-white/60 uppercase">
-                            <span>Interest Payable</span>
-                            <span className="text-white">₹{Math.round(calculateEMI() * tenure - amount).toLocaleString()}</span>
-                         </div>
+                         <div className="pt-4 border-t border-white/10 flex flex-col gap-3 text-[11px] font-bold text-white/60 uppercase">
+                             <div className="flex justify-between">
+                                <span>Rate of Interest</span>
+                                <span className="text-white">{selectedLoan.rate}% p.a.</span>
+                             </div>
+                             <div className="flex justify-between">
+                                <span>Total Tenure</span>
+                                <span className="text-white">{tenure} Months</span>
+                             </div>
+                             <div className="flex justify-between">
+                                <span>Initial Processing Fee</span>
+                                <span className="text-emerald-400">₹0 (Zero Fee Offer)</span>
+                             </div>
+                             <div className="flex justify-between">
+                                <span>Total Repayable Amount</span>
+                                <span className="text-white">₹{Math.round(calculateEMI() * tenure).toLocaleString()}</span>
+                             </div>
+                             <div className="flex justify-between">
+                                <span>Interest Payable</span>
+                                <span className="text-white">₹{Math.round(calculateEMI() * tenure - amount).toLocaleString()}</span>
+                             </div>
+                             {selectedLoan.id === 'surety' && (
+                                <div className="flex justify-between text-left border-t border-white/5 pt-2 text-[10px] text-amber-300 font-bold normal-case">
+                                   <span>Surety Required</span>
+                                   <span>{amount >= 50000 ? "2 Sureties (1 Compulsory, 1 Choice)" : "1 Compulsory Surety"}</span>
+                                </div>
+                             )}
+                             {(selectedLoan.id === 'unsecured' || selectedLoan.id === 'vehicle') && (
+                                <div className="flex justify-between text-left border-t border-white/5 pt-2 text-[10px] text-amber-300 font-bold normal-case">
+                                   <span>Guarantor Policy</span>
+                                   <span>2 Sureties (1 Compulsory, 1 Choice)</span>
+                                </div>
+                             )}
+                          </div>
                       </div>
                    </div>
                 </motion.div>

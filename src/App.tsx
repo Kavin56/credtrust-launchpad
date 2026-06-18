@@ -34,6 +34,7 @@ import MaturityProcess from "./modules/pigmy/pages/MaturityProcess";
 import SignUpFlowPage from "./modules/member/pages/SignUpFlowPage";
 import AgentLoginPage from "./modules/pigmy/pages/AgentLoginPage";
 import RoleRoute from "./components/RoleRoute";
+import GoogleTranslate from "./components/GoogleTranslate";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,6 +65,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <GoogleTranslate />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />

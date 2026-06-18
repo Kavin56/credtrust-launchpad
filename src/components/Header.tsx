@@ -108,6 +108,20 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const getActiveLang = () => {
+    const match = document.cookie.match(/googtrans=\/en\/([a-z]{2})/);
+    const code = match ? match[1] : 'en';
+    if (code === 'kn') return 'Kannada (kn)';
+    if (code === 'ta') return 'Tamil (ta)';
+    return 'English (en)';
+  };
+
+  const handleLanguageChange = (langCode: string) => {
+    document.cookie = `googtrans=/en/${langCode}; path=/`;
+    document.cookie = `googtrans=/en/${langCode}; domain=${window.location.hostname}; path=/`;
+    window.location.reload();
+  };
+
   const { data: notifications } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
@@ -248,6 +262,26 @@ const Header = () => {
                 </span>
               )}
             </button>
+
+            {/* Language Switcher */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1.5 px-3.5 h-10 border border-gray-200 hover:border-[#6b21a8] hover:text-[#6b21a8] text-gray-700 bg-white rounded-full font-bold text-[12px] transition-all focus:outline-none active:scale-95">
+                <Globe2 className="w-4 h-4 text-[#6b21a8]" />
+                <span>{getActiveLang()}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="z-[200] bg-white border border-gray-100 rounded-xl p-1 shadow-xl">
+                <DropdownMenuItem onClick={() => handleLanguageChange('en')} className="font-bold text-xs cursor-pointer px-3 py-2 hover:bg-gray-55 rounded-lg">
+                  English (en) 🇬🇧
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleLanguageChange('kn')} className="font-bold text-xs cursor-pointer px-3 py-2 hover:bg-gray-55 rounded-lg">
+                  ಕನ್ನಡ (kn) 🇮🇳
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleLanguageChange('ta')} className="font-bold text-xs cursor-pointer px-3 py-2 hover:bg-gray-55 rounded-lg">
+                  Tamil (ta) 🇮🇳
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -2,8 +2,9 @@ import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { Landmark, CreditCard, PiggyBank, ShieldCheck, Smartphone, TrendingUp } from "lucide-react";
 
+
 const services = [
-  { icon: PiggyBank, title: "Fixed Deposits", desc: "Secure deposits with up to 7.5% p.a. interest rates" },
+  { icon: PiggyBank, title: "Fixed Deposits", desc: "Secure deposits with up to 8.0% p.a. interest rates" },
   { icon: Smartphone, title: "Digital Banking", desc: "Bank anytime, anywhere with our mobile-first platform" },
 ];
 

@@ -30,6 +30,7 @@ import api from "@/lib/api";
 import { useAuth } from "@/modules/login/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 
+
 const schemes = [
   { 
     id: 'fd-6m', 
@@ -39,7 +40,7 @@ const schemes = [
     min: 1000, 
     max: 10000000,
     type: 'Fixed',
-    tenure: 6,
+    tenures: [6, 12, 60],
     desc: 'Short-term secure deposit with guaranteed 6.2% p.a. returns.',
     color: 'border-purple-200 bg-purple-50/30 text-purple-600'
   },
@@ -51,7 +52,7 @@ const schemes = [
     min: 1000, 
     max: 10000000,
     type: 'Fixed',
-    tenure: 12,
+    tenures: [6, 12, 60],
     desc: 'Standard 1-year secure fixed deposit with 6.5% p.a. returns.',
     color: 'border-blue-200 bg-blue-50/30 text-blue-600'
   },
@@ -63,7 +64,7 @@ const schemes = [
     min: 1000, 
     max: 10000000,
     type: 'Fixed',
-    tenure: 60,
+    tenures: [6, 12, 60],
     desc: 'Long-term wealth builder with 7.5% p.a. returns over 5 years.',
     color: 'border-indigo-200 bg-indigo-50/30 text-indigo-600'
   },
@@ -75,33 +76,21 @@ const schemes = [
     min: 1000, 
     max: 10000000,
     type: 'Fixed',
-    tenure: 12,
+    tenures: [6, 12, 24, 36, 60],
     desc: 'Exclusive high-yield FD for senior citizens with 8.0% p.a. returns.',
     color: 'border-amber-200 bg-amber-50/30 text-amber-600'
   },
   { 
-    id: 'rd-1y', 
-    name: 'Recurring Deposit (1 Year)', 
+    id: 'rd-generic', 
+    name: 'Recurring Deposit', 
     short: 'RD',
     rate: 7.0, 
     min: 500, 
     max: 1000000,
     type: 'Recurring',
-    tenure: 12,
-    desc: 'Save monthly and earn 7.0% p.a. interest over a 1-year period.',
+    tenures: [12, 60],
+    desc: 'Systematic monthly savings. 1 Year: 7.0%, 5 Years: 8.0%. Aged (Senior Citizen): 8.0%.',
     color: 'border-emerald-200 bg-emerald-50/30 text-emerald-600'
-  },
-  { 
-    id: 'rd-5y', 
-    name: 'Recurring Deposit (5 Years)', 
-    short: 'RD',
-    rate: 8.0, 
-    min: 500, 
-    max: 1000000,
-    type: 'Recurring',
-    tenure: 60,
-    desc: 'Build systematic savings with 8.0% p.a. returns over 5 years.',
-    color: 'border-teal-200 bg-teal-50/30 text-teal-600'
   },
   { 
     id: 'rd-sr', 
@@ -111,8 +100,8 @@ const schemes = [
     min: 500, 
     max: 1000000,
     type: 'Recurring',
-    tenure: 12,
-    desc: 'Special high-interest monthly recurring plan for senior citizens.',
+    tenures: [6, 12, 24, 36, 60],
+    desc: 'Special high-interest monthly recurring plan for senior citizens with 8.0% p.a. returns.',
     color: 'border-orange-200 bg-orange-50/30 text-orange-600'
   },
   { 
@@ -123,8 +112,8 @@ const schemes = [
     min: 100, 
     max: 50000,
     type: 'Pigmy',
-    tenure: 6,
-    desc: 'Daily/monthly small savings scheme with 3.0% interest rate.',
+    tenures: [6, 12, 24, 36, 60],
+    desc: 'Daily/monthly small savings scheme with 3.0% interest rate. (Min 6 Months, Max 5 Years)',
     color: 'border-rose-200 bg-rose-50/30 text-rose-600'
   }
 ];
@@ -212,13 +201,48 @@ const DepositApplicationPage = () => {
   }, [profile, user]);
 
   useEffect(() => {
-    setTenure(selectedScheme.tenure || 12);
+    if (selectedScheme.tenures && selectedScheme.tenures.length > 0) {
+      setTenure(selectedScheme.tenures[0]);
+    } else {
+      setTenure(12);
+    }
     setAmount(selectedScheme.min);
     setErrors({});
   }, [selectedScheme]);
 
+  const getDynamicRate = () => {
+    let isAged = false;
+    if (formData.dob) {
+      const birthDate = new Date(formData.dob);
+      const ageDiff = Date.now() - birthDate.getTime();
+      const ageDate = new Date(ageDiff);
+      const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+      if (age >= 60) {
+        isAged = true;
+      }
+    }
+
+    if (selectedScheme.id.startsWith('fd') || selectedScheme.type === 'Fixed') {
+      if (isAged) return 8.0;
+      if (tenure === 6) return 6.2;
+      if (tenure === 12) return 6.5;
+      if (tenure === 60) return 7.5;
+      return selectedScheme.rate;
+    }
+
+    if (selectedScheme.id.startsWith('rd') || selectedScheme.type === 'Recurring') {
+      if (isAged) return 8.0;
+      if (tenure === 12) return 7.0;
+      if (tenure === 60) return 8.0;
+      return selectedScheme.rate;
+    }
+
+    return selectedScheme.rate;
+  };
+
   const calculateMaturity = () => {
-    const rate = selectedScheme.rate / 100;
+    const currentRate = getDynamicRate();
+    const rate = currentRate / 100;
     const time = tenure / 12;
     if (selectedScheme.type === 'Recurring') {
        // RD Maturity calculation
@@ -227,7 +251,7 @@ const DepositApplicationPage = () => {
        return amount * tenure + (amount * tenure * (tenure + 1) * rate) / (2 * 12);
     }
     // FD Compound Interest Formula (Quarterly compounding standard)
-    return amount * Math.pow(1 + (selectedScheme.rate / 400), 4 * time);
+    return amount * Math.pow(1 + (currentRate / 400), 4 * time);
   };
 
   const getRequiredDocuments = () => {
@@ -399,7 +423,7 @@ const DepositApplicationPage = () => {
       const payload = new FormData();
       payload.append('kind', selectedScheme.type === "Recurring" ? "RD" : selectedScheme.type === "Pigmy" ? "PIGMY" : "FD");
       payload.append('principal', amount.toString());
-      payload.append('rate', selectedScheme.rate.toString());
+      payload.append('rate', getDynamicRate().toString());
       payload.append('tenureMonths', tenure.toString());
       payload.append('payoutMode', formData.payoutPreference);
       payload.append('status', 'PENDING');
@@ -630,6 +654,19 @@ const DepositApplicationPage = () => {
                          <h3 className="font-bold text-slate-800 text-[14px]">Deposit Scheme details</h3>
                       </div>
 
+                      {selectedScheme.type === 'Pigmy' && (
+                         <div className="md:col-span-2 p-5 bg-rose-50/40 border border-rose-100 rounded-3xl flex items-start gap-4 text-xs leading-relaxed text-slate-600">
+                            <Info className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                            <div className="space-y-1">
+                               <h4 className="font-bold text-slate-800">Pigmy Savings Scheme Info</h4>
+                               <p>• <strong>Interest Rate:</strong> 3.0% per annum.</p>
+                               <p>• <strong>Tenure Range:</strong> Minimum 6 Months (180 days) up to Maximum 5 Years (60 months).</p>
+                               <p>• <strong>Deposit Frequency:</strong> Daily/monthly small savings collectors or self-pay.</p>
+                               <p>• <strong>Minimum Deposit:</strong> ₹100. <strong>Maximum Deposit:</strong> ₹50,000.</p>
+                            </div>
+                         </div>
+                      )}
+
                       <div className="space-y-2">
                          <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Deposit Amount (₹) <span className="text-red-500 font-black">*</span></Label>
                          <Input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="h-12 rounded-xl text-lg font-bold" />
@@ -639,10 +676,30 @@ const DepositApplicationPage = () => {
                       <div className="space-y-2">
                          <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Tenure (Months) <span className="text-red-500 font-black">*</span></Label>
                          <select value={tenure} onChange={(e) => setTenure(Number(e.target.value))} className="w-full border rounded-xl h-12 px-3 text-sm">
-                            {[6, 12, 24, 36, 60].map(m => (
+                            {(selectedScheme.type === 'Pigmy' ? [6, 12, 24, 36, 48, 60] : selectedScheme.tenures || [6, 12, 24, 36, 60]).map(m => (
                                <option key={m} value={m}>{m} Months</option>
                             ))}
                          </select>
+                         <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                           <span className="text-[10px] font-bold text-gray-400">Applicable Interest Rate:</span>
+                           <span className="text-[10px] font-black text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-100">
+                             {getDynamicRate()}% p.a.
+                           </span>
+                           {formData.dob && (() => {
+                             const birthDate = new Date(formData.dob);
+                             const ageDiff = Date.now() - birthDate.getTime();
+                             const ageDate = new Date(ageDiff);
+                             const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+                             if (age >= 60 && selectedScheme.type !== 'Pigmy') {
+                               return (
+                                 <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-100">
+                                   Senior Citizen Bonus Applied
+                                 </span>
+                               );
+                             }
+                             return null;
+                           })()}
+                         </div>
                       </div>
 
                       {selectedScheme.type === 'Fixed' ? (
@@ -883,14 +940,27 @@ const DepositApplicationPage = () => {
                          <div className="bg-[#1a1f36] rounded-[32px] p-8 text-white flex flex-col justify-center space-y-5 shadow-xl relative overflow-hidden">
                             <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Expected Maturity Amount</span>
                             <h3 className="text-4xl font-black">₹{Math.round(calculateMaturity()).toLocaleString()}</h3>
-                            
-                            <div className="pt-4 border-t border-white/10 flex justify-between text-[11px] font-bold text-white/60 uppercase">
-                               <span>Deposit Rate</span>
-                               <span className="text-white">{selectedScheme.rate}% p.a.</span>
-                            </div>
-                            <div className="flex justify-between text-[11px] font-bold text-white/60 uppercase">
-                               <span>Expected Interest</span>
-                               <span className="text-white">₹{Math.round(calculateMaturity() - (['Recurring', 'Pigmy'].includes(selectedScheme.type) ? amount * tenure : amount)).toLocaleString()}</span>
+                            <div className="pt-4 border-t border-white/10 flex flex-col gap-3 text-[11px] font-bold text-white/60 uppercase">
+                               <div className="flex justify-between">
+                                  <span>Deposit Rate</span>
+                                  <span className="text-white">{getDynamicRate()}% p.a.</span>
+                               </div>
+                               <div className="flex justify-between">
+                                  <span>Total Tenure</span>
+                                  <span className="text-white">{tenure} Months</span>
+                               </div>
+                               <div className="flex justify-between">
+                                  <span>{['Recurring', 'Pigmy'].includes(selectedScheme.type) ? 'Monthly Installment' : 'Initial Investment'}</span>
+                                  <span className="text-white">₹{amount.toLocaleString()}</span>
+                               </div>
+                               <div className="flex justify-between">
+                                  <span>Total Principal Paid</span>
+                                  <span className="text-white">₹{(['Recurring', 'Pigmy'].includes(selectedScheme.type) ? amount * tenure : amount).toLocaleString()}</span>
+                               </div>
+                               <div className="flex justify-between">
+                                  <span>Expected Interest</span>
+                                  <span className="text-white">₹{Math.round(calculateMaturity() - (['Recurring', 'Pigmy'].includes(selectedScheme.type) ? amount * tenure : amount)).toLocaleString()}</span>
+                               </div>
                             </div>
                          </div>
                       </div>

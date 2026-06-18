@@ -126,22 +126,60 @@ export const products: Record<string, Product> = {
   },
 
   // LOANS
-  'personal-loan': {
-    id: 'loan-1',
+  'surety-loan': {
+    id: 'loan-7',
     category: 'Loans',
-    title: 'Personal Loan',
-    icon: User,
-    slug: 'personal-loan',
-    desc: 'Instant funds for your personal needs with minimal documentation.',
+    title: 'Surety Loan',
+    icon: ShieldCheck,
+    slug: 'surety-loan',
+    desc: 'Affordable credit backed by trusted sureties at 13% interest rate. Requirements scale dynamically with loan amount.',
     theme: 'bg-[#1a1f36]',
     accent: 'text-[#1a1f36]',
     benefits: [
-      'Instant approval up to ₹25 Lakhs',
-      'Flexible tenure up to 60 months',
-      'Competitive interest rates',
-      'No collateral required'
+      '13% annual interest rate',
+      '₹10,000 to ₹50,000: Only 1 surety required',
+      'Above ₹50,000: 2 sureties required',
+      'Flexible tenure from 12 to 60 months'
     ],
-    eligibility: ['Min. Salary: ₹25,000', 'Stability: 1 year in job', 'CIBIL Score: 750+'],
+    eligibility: ['₹10,000 to ₹50,000: 1 surety compulsory', 'Above ₹50,000: 2 sureties (1 compulsory, other choice)', 'Active member registration'],
+    cta: 'Apply Now',
+    ctaPath: '/loan-apply'
+  },
+  'business-loan': {
+    id: 'loan-8',
+    category: 'Loans',
+    title: 'Business Loan',
+    icon: Briefcase,
+    slug: 'business-loan',
+    desc: 'Grow your enterprise or registered NGO with 14% interest rate and flexible repayment options.',
+    theme: 'bg-purple-600',
+    accent: 'text-purple-600',
+    benefits: [
+      '14% annual interest rate',
+      'Supports NGO/Darpan registered institutions',
+      'No personal collateral required',
+      'Direct business bank transfer'
+    ],
+    eligibility: ['Valid business registration documents', 'Darpan registration number for NGO applicants', '6 months business bank statements'],
+    cta: 'Apply Now',
+    ctaPath: '/loan-apply'
+  },
+  'personal-loan': {
+    id: 'loan-1',
+    category: 'Loans',
+    title: 'Loan on Salary / Personal Loan',
+    icon: User,
+    slug: 'personal-loan',
+    desc: 'Instant personal loan matching your monthly salary slips and credit score at 13% interest rate.',
+    theme: 'bg-[#1a1f36]',
+    accent: 'text-[#1a1f36]',
+    benefits: [
+      '13% annual interest rate',
+      'Zero physical collateral required',
+      'Tenure up to 60 months',
+      'Quick salary verification'
+    ],
+    eligibility: ['Valid credit score history', '3 months latest salary slips', 'Active bank statement copy'],
     cta: 'Apply Now',
     ctaPath: '/loan-apply'
   },
@@ -151,16 +189,16 @@ export const products: Record<string, Product> = {
     title: 'Unsecured Loan',
     icon: User,
     slug: 'unsecured-loan',
-    desc: 'Instant personal loan matching your monthly salary slips and credit score with 2 security guarantors.',
+    desc: 'Standard personal credit at 13% interest rate backed by security guarantors.',
     theme: 'bg-purple-600',
     accent: 'text-purple-600',
     benefits: [
+      '13% annual interest rate',
       'Flexible tenure up to 60 months',
-      'Competitive interest rates',
-      'No collateral required, backed by 2 sureties',
-      'Submit guarantor details manually'
+      'At least 1 security guarantor compulsory, other choice',
+      'Manual security verification options'
     ],
-    eligibility: ['Min. Salary: ₹25,000', '2 Guarantors with valid Aadhaar', 'CIBIL Score: 750+'],
+    eligibility: ['1 Guarantor compulsory, 2nd Guarantor choice', 'Valid Aadhaar for guarantors', 'Good credit standing'],
     cta: 'Apply Now',
     ctaPath: '/loan-apply'
   },
@@ -170,16 +208,16 @@ export const products: Record<string, Product> = {
     title: 'Vehicle Loan',
     icon: Car,
     slug: 'vehicle-loan',
-    desc: 'Fulfill your transit needs. Competitive rates on cars, commercial, or two-wheelers with manual uploading.',
+    desc: 'Fulfill your transit needs at 14% interest rate. Get quick funding by submitting showroom documents.',
     theme: 'bg-amber-500',
     accent: 'text-amber-500',
     benefits: [
-      'Up to 90% vehicle invoice funding',
-      'Flexible tenure up to 60 months',
-      'Manual document uploading option',
-      'Simple process with 2 security guarantors'
+      '14% annual interest rate',
+      'Funding for cars, two-wheelers, and commercial vehicles',
+      'At least 1 security guarantor compulsory, other choice',
+      'Fast processing on showroom documents'
     ],
-    eligibility: ['Min. Salary: ₹20,000', '2 Guarantors with valid Aadhaar', 'Vehicle details required'],
+    eligibility: ['Showroom vehicle quotation/invoice documents', 'At least 1 security guarantor compulsory', 'Income proof / bank statement'],
     cta: 'Apply Now',
     ctaPath: '/loan-apply'
   },
@@ -189,17 +227,17 @@ export const products: Record<string, Product> = {
     title: 'Home Loan',
     icon: Landmark,
     slug: 'home-loan',
-    desc: 'Step into your dream home with our affordable home finance.',
+    desc: 'Affordable housing finance at 9.5% interest rate for a maximum 5 years tenure.',
     theme: 'bg-indigo-600',
     accent: 'text-indigo-600',
     benefits: [
-      'Tenure up to 30 years',
-      'PMAY subsidy benefits',
-      'Digital document processing',
-      'No hidden charges'
+      '9.5% annual interest rate',
+      'Fixed 5 years tenure (60 months)',
+      'Clear property ownership and site documentation support',
+      'Flexible valuation margins'
     ],
-    eligibility: ['Regular Income source', 'Age: 21-65 years', 'Property verification'],
-    cta: 'Check Eligibility',
+    eligibility: ['Property site documents (Khata, Sale Deed, Tax Receipts)', 'Strict maximum tenure of 5 years', 'ITR returns or income proof'],
+    cta: 'Apply Now',
     ctaPath: '/loan-apply'
   },
   'gold-loan': {
@@ -208,7 +246,7 @@ export const products: Record<string, Product> = {
     title: 'Gold Loan',
     icon: Gem,
     slug: 'gold-loan',
-    desc: 'Unlock the value of your gold for instant cash needs.',
+    desc: 'Unlock the value of your gold for instant cash needs at competitive rates.',
     theme: 'bg-amber-500',
     accent: 'text-amber-500',
     benefits: [
@@ -229,16 +267,16 @@ export const products: Record<string, Product> = {
     title: 'Fixed Deposit',
     icon: ShieldCheck,
     slug: 'fixed-deposit',
-    desc: 'Highest safety and guaranteed returns for your savings.',
+    desc: 'Highest safety and guaranteed returns for your savings with special rates for senior citizens.',
     theme: 'bg-rose-600',
     accent: 'text-rose-600',
     benefits: [
-      'High interest rates',
-      'Senior Citizen benefits (+0.50%)',
-      'Monthly/Quarterly payout options',
-      'Loan against FD available'
+      'FD 6 Months: 6.2% annual interest rate',
+      'FD 1 Year: 6.5% annual interest rate',
+      'FD 5 Years: 7.5% annual interest rate',
+      'FD for Aged (Senior Citizens): 8% annual interest rate'
     ],
-    eligibility: ['Min. Deposit: ₹1,000', 'Tenure: 7 days to 10 years', 'KYC Compliance'],
+    eligibility: ['Min. Deposit: ₹1,000', 'Tenure choices: 6 Months, 1 Year, 5 Years', 'KYC Compliance documents'],
     cta: 'Open FD',
     ctaPath: '/deposit-apply'
   },
@@ -248,17 +286,35 @@ export const products: Record<string, Product> = {
     title: 'Recurring Deposit',
     icon: Calendar,
     slug: 'recurring-deposit',
-    desc: 'Build your savings habit with regular monthly deposits.',
+    desc: 'Build your savings habit with systematic monthly recurring deposits.',
     theme: 'bg-violet-600',
     accent: 'text-violet-600',
     benefits: [
-      'Disciplined savings',
-      'Interest same as FD',
-      'Instalments from ₹100',
-      'Standing instruction facility'
+      'RD 1 Year: 7% annual interest rate',
+      'RD 5 Years: 8% annual interest rate',
+      'RD for Aged (Senior Citizens): 8% annual interest rate'
     ],
-    eligibility: ['Active Savings Account', 'Regular monthly income', 'Min. 6 months tenure'],
+    eligibility: ['Min. Deposit: ₹500 monthly', 'Tenure choices: 1 Year or 5 Years', 'Active savings account link'],
     cta: 'Start RD',
+    ctaPath: '/deposit-apply'
+  },
+  'pigmy-deposit': {
+    id: 'dep-3',
+    category: 'Deposits',
+    title: 'Pigmy Savings Scheme',
+    icon: HandCoins,
+    slug: 'pigmy-deposit',
+    desc: 'Micro-savings plan offering 3% interest rate. Save daily or monthly with doorstep collection agent access.',
+    theme: 'bg-emerald-600',
+    accent: 'text-emerald-600',
+    benefits: [
+      '3% guaranteed interest rate',
+      'Min tenure 6 Months, Max tenure 5 Years',
+      'Minimum deposit of ₹100',
+      'Doorstep agent collection network'
+    ],
+    eligibility: ['Tenure between 6 Months and 5 Years', 'Daily/monthly small savings target', 'Aadhaar Card copy'],
+    cta: 'Start Pigmy',
     ctaPath: '/deposit-apply'
   },
 

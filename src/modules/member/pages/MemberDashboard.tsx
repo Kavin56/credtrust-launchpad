@@ -446,7 +446,9 @@ const MemberDashboard = () => {
             <SidebarGroup 
               title="Loans" 
               items={[
-                { label: "Personal Loan", icon: UserCheck, path: "/product/loans/personal-loan" },
+                { label: "Surety Loan", icon: ShieldCheck, path: "/product/loans/surety-loan" },
+                { label: "Business Loan", icon: Briefcase, path: "/product/loans/business-loan" },
+                { label: "Salary / Personal Loan", icon: UserCheck, path: "/product/loans/personal-loan" },
                 { label: "Unsecured Loan", icon: User, path: "/product/loans/unsecured-loan" },
                 { label: "Vehicle Loan", icon: Car, path: "/product/loans/vehicle-loan" },
                 { label: "Home Loan", icon: Landmark, path: "/product/loans/home-loan" },
@@ -458,10 +460,11 @@ const MemberDashboard = () => {
               title="Deposits" 
               items={[
                 { label: "Fixed Deposit", icon: ShieldCheck, path: "/product/deposits/fixed-deposit" },
-                { label: "Recurring Deposit", icon: Calendar, path: "/product/deposits/recurring-deposit" }
+                { label: "Recurring Deposit", icon: Calendar, path: "/product/deposits/recurring-deposit" },
+                { label: "Pigmy Savings Scheme", icon: HandCoins, path: "/product/deposits/pigmy-deposit" }
               ]} 
             />
-             <div className="h-px bg-gray-50 my-8" />
+            <div className="h-px bg-gray-50 my-8" />
             <SidebarGroup 
               title="Services" 
               items={[

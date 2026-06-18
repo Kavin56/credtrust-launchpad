@@ -111,7 +111,28 @@ const LandingHeader = () => {
               <Bell className="w-5 h-5 group-hover:rotate-[12deg] transition-transform" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
             </button>
-            
+            {/* Desktop Language Switcher */}
+            <div className="hidden sm:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-1.5 px-4.5 h-10 border border-gray-200 hover:border-[#6b21a8] hover:text-[#6b21a8] text-gray-700 bg-white rounded-full font-bold text-[12px] sm:text-[13px] transition-all focus:outline-none active:scale-95">
+                  <Globe2 className="w-4 h-4 text-[#6b21a8]" />
+                  <span>{getActiveLang()}</span>
+                  <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="z-[200]">
+                  <DropdownMenuItem onClick={() => handleLanguageChange('en')} className="font-bold text-xs cursor-pointer">
+                    English (en) 🇬🇧
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleLanguageChange('kn')} className="font-bold text-xs cursor-pointer">
+                    ಕನ್ನಡ (kn) 🇮🇳
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleLanguageChange('ta')} className="font-bold text-xs cursor-pointer">
+                    Tamil (ta) 🇮🇳
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
             <div className="relative">
               <Button 
                 onClick={() => setIsLoginOpen(!isLoginOpen)}
