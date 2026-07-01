@@ -135,7 +135,7 @@ export default function TeamSection() {
                 Sri Roja Shabarish Guruji Souharada Sahakara Niyamitha
               </p>
               <p className="text-[#c9a84c] text-xs font-bold mt-1 tracking-widest">
-                BOARD OF DIRECTORS · EST. 2026
+                BOARD OF DIRECTORS · EST. 2025
               </p>
             </div>
           </div>

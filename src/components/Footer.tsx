@@ -25,10 +25,9 @@ const Footer = () => {
              />
              <span className="font-heading text-lg font-bold text-navy-foreground">Sri Roja Shabarish Guruji</span>
            </div>
-          <div className="flex items-center gap-6 text-navy-foreground text-sm">
-            <span className="text-navy-foreground/70">Toll free numbers</span>
-            <span className="flex items-center gap-1.5 font-semibold"><Phone className="w-4 h-4" /> 1800 425 1444</span>
-            <span className="font-semibold">| 1800 572 8031</span>
+          <div className="flex items-center gap-6 text-navy-foreground text-sm flex-wrap">
+            <span className="flex items-center gap-1.5 font-semibold"><Phone className="w-4 h-4" /> Contact Number: 9845457250</span>
+            <span className="font-semibold">| Email Support: srirojashabharishguruji@gmail.com</span>
           </div>
           <div className="flex items-center gap-3 text-navy-foreground text-xs">
             <span className="text-navy-foreground/70">Download the Sri Roja Shabarish Guruji app</span>
@@ -56,7 +55,7 @@ const Footer = () => {
         </div>
 
         <div className="container pb-8 flex flex-col md:flex-row items-center justify-between gap-4 border-t border-background/10 pt-6">
-          <p className="text-xs text-background/50">© 2024 Sri Roja Shabarish Guruji Ltd. All rights reserved.</p>
+          <p className="text-xs text-background/50">© 2025 Sri Roja Shabarish Guruji Ltd. All rights reserved.</p>
           <div className="flex items-center gap-4">
             {[Facebook, Linkedin, Twitter, Youtube, Instagram].map((Icon, i) => (
               <a key={i} href="#" className="text-background/50 hover:text-secondary transition-colors">

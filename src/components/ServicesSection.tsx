@@ -5,7 +5,7 @@ import { Landmark, CreditCard, PiggyBank, ShieldCheck, Smartphone, TrendingUp } 
 
 const services = [
   { icon: PiggyBank, title: "Fixed Deposits", desc: "Secure deposits with up to 8.0% p.a. interest rates" },
-  { icon: Smartphone, title: "Digital Banking", desc: "Bank anytime, anywhere with our mobile-first platform" },
+  { icon: Smartphone, title: "Digital Services", desc: "Serve anytime, anywhere with our mobile-first platform" },
 ];
 
 const ServicesSection = () => {
@@ -16,8 +16,8 @@ const ServicesSection = () => {
     <section ref={ref} className="py-16 md:py-24" id="services">
       <div className="container text-center mb-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5 }}>
-          <p className="section-label mb-2">BANKING WITH ✦ EXCELLENCE</p>
-          <h2 className="section-title">Complete banking solutions</h2>
+          <p className="section-label mb-2">SOCIETY WITH ✦ EXCELLENCE</p>
+          <h2 className="section-title">Complete society solutions</h2>
         </motion.div>
       </div>
       <div className="container grid sm:grid-cols-2 lg:grid-cols-3 gap-6">

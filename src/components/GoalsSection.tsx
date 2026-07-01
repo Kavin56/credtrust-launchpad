@@ -32,7 +32,7 @@ const GoalsSection = () => {
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
         >
-          <p className="section-label mb-2">BANKING WITH ✦ PURPOSE</p>
+          <p className="section-label mb-2">SOCIETY WITH ✦ PURPOSE</p>
           <h2 className="section-title mb-10">Your goals, our priority</h2>
         </motion.div>
 
@@ -68,7 +68,10 @@ const GoalsSection = () => {
               </Select>
             </div>
             <div className="flex items-center gap-4">
-              <Button className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold">
+              <Button 
+                onClick={() => document.querySelector('footer')?.scrollIntoView({ behavior: 'smooth' })}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-semibold"
+              >
                 Show solutions
               </Button>
               <span className="text-sm text-muted-foreground">2.5k+ people found it useful</span>

@@ -5,7 +5,7 @@ export const SYSTEM_PROMPT = `You are Sharanam Assistant, a helpful and friendly
 About Sharanam:
 - A Credit Cooperative Society offering savings accounts, fixed deposits, recurring deposits, loans, and financial services
 - Services include: Member Management, Deposit Management (RD, FD, Savings), Loan Management, Accounting & Finance, Dividend Distribution
-- Toll-free numbers: 1800 425 1444, 1800 572 8031
+- Contact: 9845457250, Email: srirojashabharishguruji@gmail.com
 - Member portal for account access
 
 Guidelines:
@@ -17,28 +17,28 @@ Guidelines:
 - If unsure, recommend contacting customer support`;
 
 const chatHistories = new Map<string, Array<{ role: string; content: string }>>();
-const SUPPORT_LINE = "For exact assistance, call 1800 425 1444 or 1800 572 8031.";
+const SUPPORT_LINE = "For exact assistance, call 9845457250 or email srirojashabharishguruji@gmail.com.";
 
 const FAQ_FALLBACKS: Array<{ pattern: RegExp; response: string }> = [
   {
     pattern: /\b(open|create|start).*(savings account)|\bsavings account\b/i,
     response:
-      "To open a savings account with Sharanam Multi State Cooperative Credit Society, you need to complete member onboarding, submit your KYC details, and provide basic documents such as ID proof, address proof, PAN, photo, and contact details. Once verification is completed, your savings account can be activated. For branch-specific requirements, call 1800 425 1444 or 1800 572 8031.",
+      "To open a savings account with Sharanam Multi State Cooperative Credit Society, you need to complete member onboarding, submit your KYC details, and provide basic documents such as ID proof, address proof, PAN, photo, and contact details. Once verification is completed, your savings account can be activated. For branch-specific requirements, call 9845457250 or email srirojashabharishguruji@gmail.com.",
   },
   {
     pattern: /\bloan\b.*\binterest\b|\binterest\b.*\bloan\b/i,
     response:
-      "Loan interest rates at Sharanam depend on the loan product, requested amount, tenure, and your eligibility profile. The exact rate is usually confirmed during the application and approval process. For the latest applicable rate on your loan type, please check with the loan desk or call 1800 425 1444 or 1800 572 8031.",
+      "Loan interest rates at Sharanam depend on the loan product, requested amount, tenure, and your eligibility profile. The exact rate is usually confirmed during the application and approval process. For the latest applicable rate on your loan type, please check with the loan desk or call 9845457250 or email srirojashabharishguruji@gmail.com.",
   },
   {
     pattern: /\bdeposit\b.*\bmaturity\b|\bmaturity\b.*\bdeposit\b/i,
     response:
-      "You can check your deposit maturity details from your member account dashboard after signing in. Look for the deposit section to view maturity amount, maturity date, and scheme details. If you need help locating it or confirming a maturity value, call 1800 425 1444 or 1800 572 8031.",
+      "You can check your deposit maturity details from your member account dashboard after signing in. Look for the deposit section to view maturity amount, maturity date, and scheme details. If you need help locating it or confirming a maturity value, call 9845457250 or email srirojashabharishguruji@gmail.com.",
   },
   {
     pattern: /\bdocuments?\b.*\bmembership\b|\bmembership\b.*\bdocuments?\b/i,
     response:
-      "Membership usually requires identity proof, address proof, PAN, a passport-size photo, and basic contact details. Additional documents may be requested depending on the membership category or compliance checks. For the exact list applicable to your case, call 1800 425 1444 or 1800 572 8031.",
+      "Membership usually requires identity proof, address proof, PAN, a passport-size photo, and basic contact details. Additional documents may be requested depending on the membership category or compliance checks. For the exact list applicable to your case, call 9845457250 or email srirojashabharishguruji@gmail.com.",
   },
 ];
 

@@ -63,12 +63,9 @@ import { useState } from "react";
 
 const quickActions = [
   { label: "Welcome to Yono", icon: Sparkles, bg: "bg-purple-100", color: "text-purple-600" },
-  { label: "Security", icon: ShieldCheck, bg: "bg-blue-100", color: "text-blue-600" },
   { label: "Explore", icon: Compass, bg: "bg-orange-100", color: "text-orange-600" },
   { label: "Offers", icon: Gift, bg: "bg-pink-100", color: "text-pink-600" },
-  { label: "Discover", icon: Smartphone, bg: "bg-indigo-100", color: "text-indigo-600" },
   { label: "Coming Soon", icon: Hourglass, bg: "bg-slate-100", color: "text-slate-600" },
-  { label: "Invest Now", icon: GraduationCap, bg: "bg-rose-100", color: "text-rose-600" },
 ];
 
 const SidebarGroup = ({ title, items }: { title: string, items: any[] }) => {
@@ -330,8 +327,8 @@ const MemberDashboard = () => {
             </div>
 
             {/* PROMOTIONAL BANNERS (High-Fidelity) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-gradient-to-br from-[#1a1f36] via-[#2d3356] to-[#1a1f36] p-10 rounded-[40px] text-white flex flex-col md:flex-row items-center justify-between group cursor-pointer overflow-hidden relative shadow-xl shadow-indigo-900/10 min-h-[220px]">
+            <div className="flex justify-center w-full">
+              <div className="bg-gradient-to-br from-[#1a1f36] via-[#2d3356] to-[#1a1f36] p-10 rounded-[40px] text-white flex flex-col md:flex-row items-center justify-between group cursor-pointer overflow-hidden relative shadow-xl shadow-indigo-900/10 min-h-[220px] w-full max-w-2xl">
                 <div className="relative z-10 space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-[#c9a84c]/20 flex items-center justify-center">
@@ -397,45 +394,8 @@ const MemberDashboard = () => {
                   <Activity size={200} />
                 </div>
               </div>
-              <div className="bg-[#c9a84c] p-10 rounded-[40px] text-[#1a1f36] flex items-center justify-between group cursor-pointer overflow-hidden relative shadow-xl shadow-[#c9a84c]/20">
-                <div className="relative z-10">
-                  <div className="w-10 h-10 rounded-xl bg-[#1a1f36]/10 flex items-center justify-center mb-4">
-                    <TrendingUp className="w-5 h-5 text-[#1a1f36]" />
-                  </div>
-                  <p className="text-[10px] font-bold text-[#1a1f36]/40 mb-1 uppercase tracking-widest">Personal Finance</p>
-                  <h4 className="text-xl font-bold flex items-center gap-2">Money Manager <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" /></h4>
-                </div>
-                <div className="absolute right-0 bottom-0 opacity-10 -translate-x-4 translate-y-4">
-                  <TrendingUp size={160} />
-                </div>
-              </div>
             </div>
 
-            <div className="bg-white p-12 rounded-[40px] flex flex-col md:flex-row items-center border border-gray-100 shadow-xl shadow-black/[0.02] group cursor-pointer overflow-hidden relative">
-               <div className="relative z-10 flex-grow text-center md:text-left">
-                 <span className="bg-[#c9a84c]/10 text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest text-[#c9a84c] mb-6 inline-block">MORTGAGE SOLUTIONS</span>
-                 <h4 className="font-serif text-4xl font-bold text-[#1a1f36] leading-tight mb-6 max-w-sm">
-                   From renting to <br /> <span className="text-[#c9a84c]">owning your home.</span>
-                 </h4>
-                 <p className="text-sm font-medium text-gray-400 mb-10">Instant eligibility check | Quick digital approvals</p>
-                  <button 
-                    onClick={() => navigate('/loan-apply')}
-                    className="rounded-2xl px-12 py-4 bg-[#1a1f36] hover:bg-black text-[#c9a84c] font-bold transition-all shadow-xl shadow-indigo-900/20 active:scale-95"
-                  >
-                    Apply for Home Loan
-                  </button>
-               </div>
-               <div className="w-full md:w-1/3 flex justify-center mt-12 md:mt-0 md:translate-x-12">
-                 <div className="relative">
-                   <div className="w-64 h-64 bg-gray-50 rounded-full border border-gray-100 flex items-center justify-center animate-pulse">
-                     <Landmark size={80} className="text-[#c9a84c]/20" />
-                   </div>
-                   <div className="absolute -top-4 -right-4 w-20 h-20 bg-[#c9a84c] rounded-3xl flex items-center justify-center text-white shadow-2xl shadow-[#c9a84c]/40 rotate-12 group-hover:rotate-0 transition-transform duration-700">
-                     <TrendingUp size={32} />
-                   </div>
-                 </div>
-               </div>
-            </div>
             
           </div>
           

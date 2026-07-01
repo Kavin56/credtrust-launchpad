@@ -13,14 +13,14 @@ import hl7 from "@/Highlights-Images/HL-7.jpeg";
 import hl8 from "@/Highlights-Images/HL-8.jpeg";
 
 const highlights = [
-  { id: 1, title: "Grand Inauguration", date: "Jan 2026", image: hl1 },
-  { id: 2, title: "Community Outreach", date: "Feb 2026", image: hl2 },
-  { id: 3, title: "Annual General Meet", date: "Mar 2026", image: hl3 },
-  { id: 4, title: "Financial Literacy", date: "Mar 2026", image: hl4 },
-  { id: 5, title: "Award Ceremony", date: "Apr 2026", image: hl5 },
-  { id: 6, title: "Tech Integration", date: "Apr 2026", image: hl6 },
-  { id: 7, title: "Strategic Planning", date: "May 2026", image: hl7 },
-  { id: 8, title: "Member Milestone", date: "Jun 2026", image: hl8 },
+  { id: 1, title: "Grand Inauguration", date: "Jan 2025", image: hl1 },
+  { id: 2, title: "Community Outreach", date: "Feb 2025", image: hl2 },
+  { id: 3, title: "Annual General Meet", date: "Mar 2025", image: hl3 },
+  { id: 4, title: "Financial Literacy", date: "Mar 2025", image: hl4 },
+  { id: 5, title: "Award Ceremony", date: "Apr 2025", image: hl5 },
+  { id: 6, title: "Tech Integration", date: "Apr 2025", image: hl6 },
+  { id: 7, title: "Strategic Planning", date: "May 2025", image: hl7 },
+  { id: 8, title: "Member Milestone", date: "Jun 2025", image: hl8 },
 ];
 
 export default function HighlightsSection() {

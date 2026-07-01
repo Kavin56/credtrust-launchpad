@@ -20,7 +20,7 @@ const offers = [
   {
     id: 2,
     title: "Fixed Deposit Booster",
-    subtitle: "Earn up to 9.5% p.a. returns",
+    subtitle: "Earn up to 7.5% p.a. returns",
     description: "Highest safety rating with attractive interest rates for senior citizens and long-term savers.",
     image: hl4,
     icon: TrendingUp,
@@ -28,8 +28,8 @@ const offers = [
   },
   {
     id: 3,
-    title: "Lifestyle Flexi-Loans",
-    subtitle: "Zero processing fee on first loan",
+    title: "Lifestyle Loans",
+    subtitle: "Zero processing loan for lucky customers",
     description: "Finance your dreams with our flexible repayment terms and lightning-fast digital approvals.",
     image: hl7,
     icon: ShieldCheck,

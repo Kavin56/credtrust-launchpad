@@ -17,9 +17,9 @@ const testimonials = [
   },
   {
     image: testimonial2,
-    quote: "Sharanam's digital banking has completely changed how I manage my finances. The app is intuitive, fast, and I can do everything from my phone. Truly impressed by the experience.",
+    quote: "Sharanam's digital services have completely changed how I manage my finances. The app is intuitive, fast, and I can do everything from my phone. Truly impressed by the experience.",
     name: "Priya Mehra",
-    product: "Digital Banking",
+    product: "Digital Services",
     date: "15 Jan, 2024",
   },
 ];
@@ -34,8 +34,8 @@ const TestimonialsSection = () => {
     <section ref={ref} className="py-16 md:py-24 bg-muted/30">
       <div className="container text-center mb-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5 }}>
-          <p className="section-label mb-2">BANKING WITH ✦ RELIABILITY</p>
-          <h2 className="section-title mb-3">Banking with trust, expertise and care</h2>
+          <p className="section-label mb-2">SOCIETY WITH ✦ RELIABILITY</p>
+          <h2 className="section-title mb-3">Serving with trust, expertise and care</h2>
           <p className="section-subtitle mx-auto">Expanding the Sharanam family everyday</p>
         </motion.div>
       </div>

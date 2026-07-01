@@ -118,7 +118,7 @@ const PigmyHome = () => {
           </div>
         </div>
         <div className="max-w-7xl mx-auto text-center text-xs text-slate-500">
-           © 2026 Sharanam Pigmy Deposit Manager. All rights reserved.
+           © 2025 Sharanam Pigmy Deposit Manager. All rights reserved.
         </div>
       </footer>
     </div>

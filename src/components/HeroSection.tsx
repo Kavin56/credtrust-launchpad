@@ -106,7 +106,7 @@ const HeroSection = () => {
                 <div className="absolute -inset-4 rounded-full border-2 border-secondary/50 hidden lg:block" style={{ borderRadius: "40% 60% 55% 45% / 55% 45% 60% 40%" }} />
                 <img
                   src={slide.image}
-                  alt="Banking"
+                  alt="Society"
                   className="rounded-2xl w-full max-w-md lg:max-w-lg shadow-2xl object-cover aspect-[4/3]"
                   width={640}
                   height={480}
@@ -133,9 +133,9 @@ const HeroSection = () => {
       {/* Marquee remains at the very bottom */}
       <div className="marquee-strip -mt-6 relative z-30">
         <div className="animate-scroll inline-flex gap-12 py-3">
-          {Array.from({ length: 4 }).map((_, i) => (
+          {Array.from({ length: 8 }).map((_, i) => (
             <span key={i} className="flex items-center gap-3 text-xs md:text-sm font-bold whitespace-nowrap">
-              ✦ 1floor, Gowri Complex, D. V. G park opposite, Kashipura, shimoga ✦ Celebrating 100+ Years of Legacy ✦ Awarded Best Cooperative Society 2025 ✦ Over 1 Lakh+ Satisfied Members ✦
+              ✦ 1floor, Gowri Complex, D. V. G park opposite, Kashipura, shimoga ✦
             </span>
           ))}
         </div>

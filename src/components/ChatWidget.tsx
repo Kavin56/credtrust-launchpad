@@ -306,7 +306,7 @@ const ChatWidget = () => {
         {
           id: `error-${Date.now()}`,
           role: "assistant",
-          content: "Sorry, something went wrong. Please try again or call 1800 425 1444.",
+          content: "Sorry, something went wrong. Please try again or call 9845457250.",
         },
       ]);
     } finally {
@@ -533,7 +533,7 @@ const ChatWidget = () => {
                 </Button>
               </div>
               <p className="text-[10px] text-gray-400 text-center mt-2">
-                For urgent help, call 1800 425 1444
+                For urgent help, call 9845457250
               </p>
             </div>
           </motion.div>

@@ -23,7 +23,7 @@ const ProductsSection = () => {
     <section ref={ref} className="py-16 md:py-24 bg-muted/50" id="loans">
       <div className="container text-center mb-12">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={inView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.5 }}>
-          <p className="section-label mb-2">BANKING WITH ✦ EASE</p>
+          <p className="section-label mb-2">SOCIETY WITH ✦ EASE</p>
           <h2 className="section-title">Catering to all your needs</h2>
         </motion.div>
       </div>

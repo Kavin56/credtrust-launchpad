@@ -4,8 +4,8 @@ const cardsStack = "https://www.visa.co.in/dam/VCOM/regional/ap/images/debit-car
 import { Globe, Smartphone, MapPin } from "lucide-react";
 
 const channels = [
-  { icon: Globe, label: "Internet Banking", name: "Sharanam MoneyClick" },
-  { icon: Smartphone, label: "Digital Banking", name: "WhatsApp Banking" },
+  { icon: Globe, label: "Internet Services", name: "Sharanam MoneyClick" },
+  { icon: Smartphone, label: "Digital Services", name: "WhatsApp Services" },
   { icon: MapPin, label: "Service Branches", name: "Locate Us" },
 ];
 
@@ -24,7 +24,7 @@ const DigitalBankingSection = () => {
           className="bg-muted rounded-3xl p-8 md:p-12 grid lg:grid-cols-2 gap-8 items-center"
         >
           <div>
-            <p className="section-label mb-2">BANKING WITH ✦ SIMPLICITY</p>
+            <p className="section-label mb-2">SOCIETY WITH ✦ SIMPLICITY</p>
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-heading font-bold text-foreground leading-tight mb-4">
               Live in the now with simplified payments
             </h2>
@@ -54,11 +54,11 @@ const DigitalBankingSection = () => {
           id="contact"
         >
           <div className="lg:col-span-3">
-            <p className="section-label mb-2">BANKING WITH ✦ YOU</p>
+            <p className="section-label mb-2">SOCIETY WITH ✦ YOU</p>
             <h2 className="text-2xl md:text-3xl lg:text-4xl font-heading font-bold text-foreground leading-tight mb-3">
               Here for you, always
             </h2>
-            <p className="text-muted-foreground mb-6">24/7 support for your banking needs</p>
+            <p className="text-muted-foreground mb-6">24/7 support for your society needs</p>
             <div className="flex flex-wrap gap-3">
               <a href="#" className="btn-primary-banking text-sm">Get a callback</a>
               <a href="#" className="btn-outline-banking text-sm">Raise your concerns</a>

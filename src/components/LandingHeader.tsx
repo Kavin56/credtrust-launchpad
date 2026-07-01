@@ -53,16 +53,16 @@ const LandingHeader = () => {
   const topMenuItems = [
     { name: "PERSONAL", active: true },
     { name: "BUSINESS & MSME", active: false },
-    { name: "AGRIBANKING", active: false },
-    { name: "NRI PRIORITY BANKING", active: false },
+    { name: "AGRI SERVICES", active: false },
+    { name: "NRI PRIORITY SERVICES", active: false },
   ];
 
   const topUtilityItems = [
-    { name: "Ways to Bank", icon: ChevronDown },
+    { name: "Ways to Connect", icon: ChevronDown },
     { name: "About Us", icon: ChevronDown },
     { name: "Support", icon: ChevronDown },
     { name: "Blog", icon: null },
-    { name: "1800 425 1444", icon: Phone }
+    { name: "9845457250", icon: Phone }
   ];
 
   const mainNavItems = [
@@ -155,9 +155,9 @@ const LandingHeader = () => {
                     <div className="absolute -top-1.5 right-8 w-3 h-3 bg-white border-t border-l border-gray-100 rotate-45" />
 
                     <div className="space-y-4 relative bg-white">
-                       {/* Internet Banking */}
-                       <div className="space-y-2.5">
-                          <h4 className="text-[#a21caf] font-semibold text-[13px] tracking-tight">Internet Banking</h4>
+                        {/* Internet Banking */}
+                        <div className="space-y-2.5">
+                           <h4 className="text-[#a21caf] font-semibold text-[13px] tracking-tight">Internet Portal</h4>
                           <div className="space-y-2 pl-4">
                              <Link to="/login" className="block text-[12px] text-gray-500 hover:text-[#6b21a8] font-medium transition-colors">Personal</Link>
                              <Link to="/admin/login" className="block text-[12px] text-gray-500 hover:text-[#6b21a8] font-medium transition-colors">Admin</Link>
