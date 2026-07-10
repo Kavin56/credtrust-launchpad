@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
-const professionalBanking = "https://static.vecteezy.com/system/resources/thumbnails/034/598/907/small_2x/ai-generative-happy-business-man-in-a-suit-white-background-free-photo.jpg";
+import professionalBanking from "@/assets/calculator-man.png";
 
 const tabs = ["EMI Calculator", "Home Loan", "Car Loan", "FD Calculator"];
 

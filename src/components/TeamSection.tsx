@@ -13,18 +13,20 @@ import yuvarajImg from "@/Team_photos/Mr. Yuvaraj.jpeg";
 import purshotamImg from "@/Team_photos/Mr. Purshotam.jpeg";
 import sendilImg from "@/Team_photos/Mr. Sendil.jpeg";
 import venkateshImg from "@/Team_photos/Mr. Venkatesh K.jpeg";
+import jayashreeImg from "@/Team_photos/Mrs. Jayashree S.jpeg";
 
 const teamMembers = [
-  { name: "Mr. Sandesh Shanmugam", role: "Vice president", image: sandeshImg },
+  { name: "Mr. Sandesh Shanmugam", role: "Vice President", image: sandeshImg },
   { name: "Mrs. Malar", role: "Margadarshi", image: malarImg },
   { name: "Mr. Payani", role: "Director", image: payaniImg },
+  { name: "Mrs. Jayashree S", role: "Director", image: jayashreeImg },
   { name: "Mr. Vishwa", role: "Director", image: vishwaImg },
   { name: "Mrs. Suma", role: "Director", image: sumaImg },
   { name: "Mr. Manjunath", role: "Director", image: manjunathImg },
   { name: "Mr. Yuvaraj", role: "Director", image: yuvarajImg },
   { name: "Mr. Purshotam", role: "Director", image: purshotamImg },
-  { name: "Mr. Sendil", role: "Director", image: sendilImg },
-  { name: "Mr. Venkatesh K", role: "Director", image: venkateshImg },
+  { name: "Mr. Sendil Kumar M", role: "Director", image: sendilImg },
+  { name: "Mr. K. Venkatesh", role: "President", image: venkateshImg },
 ];
 
 export default function TeamSection() {
@@ -106,14 +108,14 @@ export default function TeamSection() {
                     src={member.image}
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   
-                  <div className="absolute bottom-0 w-full p-6 translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                    <div className="bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/50">
-                      <h3 className="font-bold text-[#1a1f36] text-lg leading-tight">
+                  <div className="absolute bottom-0 w-full p-4">
+                    <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3.5 shadow-xl border border-white text-center">
+                      <h3 className="font-bold text-[#1a1f36] text-base leading-tight">
                         {member.name}
                       </h3>
-                      <p className="text-primary font-bold text-xs uppercase tracking-widest mt-1">
+                      <p className="text-[#c9a84c] font-extrabold text-[10px] uppercase tracking-wider mt-1">
                         {member.role}
                       </p>
                     </div>

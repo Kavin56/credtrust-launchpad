@@ -39,7 +39,7 @@ const loanTypes = [
     desc: 'Affordable credit backed by trusted sureties. Dynamic verification depending on amount.',
     icon: ShieldCheck,
     color: 'border-blue-200 bg-blue-50/30 text-blue-600',
-    eligibility: '₹10,000 – ₹50,000: One Surety Required. Above ₹50,000: Additional Surety Verification Required.'
+    eligibility: '₹5,000 – ₹20,000: One Surety Required. Above ₹20,000: Additional Surety Verification Required.'
   },
   { 
     id: 'unsecured', 
@@ -217,11 +217,13 @@ const LoanApplicationPage = () => {
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Reset tenure and amount constraints when loan type changes
   useEffect(() => {
     if (selectedLoan.id === 'home') {
       setTenure(60); // Max 5 Years
       setAmount(100000);
+    } else if (selectedLoan.id === 'surety') {
+      setTenure(12);
+      setAmount(5000);
     } else {
       setTenure(12);
       setAmount(50000);
@@ -270,7 +272,7 @@ const LoanApplicationPage = () => {
           { name: 'suretyPhone', label: 'Surety 1: Mobile Number', type: 'text', placeholder: 'First Guarantor Mobile Number' },
           { name: 'suretyAddress', label: 'Surety 1: Complete Address', type: 'text', placeholder: 'First Guarantor Residential Address' }
         ];
-        if (amount >= 50000) {
+        if (amount > 20000) {
           specificFields.push(
             { name: 'surety2Name', label: 'Surety 2: Full Name', type: 'text', placeholder: 'Second Guarantor Full Name' },
             { name: 'surety2Aadhaar', label: 'Surety 2: Aadhaar Number', type: 'text', placeholder: 'Second Guarantor 12-digit Aadhaar' },
@@ -358,7 +360,7 @@ const LoanApplicationPage = () => {
           { id: 'applicantPhoto', name: 'Applicant Photograph' },
           { id: 'suretyPhoto', name: 'Surety 1 Photograph' }
         ];
-        if (amount >= 50000) {
+        if (amount > 20000) {
           baseDocs.push(
             { id: 'surety2AadhaarDoc', name: 'Surety 2 Aadhaar Card' },
             { id: 'surety2Photo', name: 'Surety 2 Photograph' }
@@ -452,7 +454,7 @@ const LoanApplicationPage = () => {
         if (formData.suretyAadhaar && !aadhaarRegex.test(formData.suretyAadhaar)) {
           newErrors.suretyAadhaar = "Surety Aadhaar must be a valid 12-digit number";
         }
-        if (amount >= 50000) {
+        if (amount > 20000) {
           if (formData.surety2Phone && !phoneRegex.test(formData.surety2Phone)) {
             newErrors.surety2Phone = "Surety 2 phone must be a valid 10-digit number";
           }
@@ -749,11 +751,11 @@ const LoanApplicationPage = () => {
                         </div>
                       ))}
 
-                      {selectedLoan.id === 'surety' && amount > 50000 && (
+                      {selectedLoan.id === 'surety' && amount > 20000 && (
                          <div className="col-span-1 md:col-span-2 p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-2.5">
                             <Info className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
                             <p className="text-xs text-amber-800 font-medium">
-                               <strong>Warning:</strong> Since the requested loan amount exceeds ₹50,000, additional surety verification will be triggered automatically.
+                               <strong>Warning:</strong> Since the requested loan amount exceeds ₹20,000, additional surety verification will be triggered automatically.
                             </p>
                          </div>
                       )}
@@ -861,7 +863,7 @@ const LoanApplicationPage = () => {
                          <div className="space-y-2">
                             <Label className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Repayment Period (Months)</Label>
                             <div className="grid grid-cols-4 gap-2">
-                               {(selectedLoan.id === 'home' ? [12, 24, 36, 60] : [12, 24, 36, 48]).map((m) => (
+                               {(selectedLoan.id === 'surety' ? [12, 24, 36] : selectedLoan.id === 'home' ? [12, 24, 36, 60] : [12, 24, 36, 48]).map((m) => (
                                   <button
                                      type="button"
                                      key={m}
@@ -876,6 +878,9 @@ const LoanApplicationPage = () => {
                             </div>
                             {selectedLoan.id === 'home' && (
                                <p className="text-[10px] text-amber-600 font-bold mt-1">Home Loan tenure is restricted to 5 years (60 months) maximum.</p>
+                            )}
+                            {selectedLoan.id === 'surety' && (
+                               <p className="text-[10px] text-amber-600 font-bold mt-1">Surety Loan tenure is restricted to 3 years (36 months) maximum.</p>
                             )}
                          </div>
                       </div>
@@ -908,7 +913,7 @@ const LoanApplicationPage = () => {
                              {selectedLoan.id === 'surety' && (
                                 <div className="flex justify-between text-left border-t border-white/5 pt-2 text-[10px] text-amber-300 font-bold normal-case">
                                    <span>Surety Required</span>
-                                   <span>{amount >= 50000 ? "2 Sureties (1 Compulsory, 1 Choice)" : "1 Compulsory Surety"}</span>
+                                   <span>{amount > 20000 ? "2 Sureties (1 Compulsory, 1 Choice)" : "1 Compulsory Surety"}</span>
                                 </div>
                              )}
                              {(selectedLoan.id === 'unsecured' || selectedLoan.id === 'vehicle') && (

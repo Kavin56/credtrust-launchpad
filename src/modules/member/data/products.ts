@@ -137,11 +137,11 @@ export const products: Record<string, Product> = {
     accent: 'text-[#1a1f36]',
     benefits: [
       '13% annual interest rate',
-      '₹10,000 to ₹50,000: Only 1 surety required',
-      'Above ₹50,000: 2 sureties required',
-      'Flexible tenure from 12 to 60 months'
+      '₹5,000 to ₹20,000: Only 1 surety required',
+      'Above ₹20,000: 2 sureties required',
+      'Flexible tenure from 12 to 36 months'
     ],
-    eligibility: ['₹10,000 to ₹50,000: 1 surety compulsory', 'Above ₹50,000: 2 sureties (1 compulsory, other choice)', 'Active member registration'],
+    eligibility: ['₹5,000 to ₹20,000: 1 surety compulsory', 'Above ₹20,000: 2 sureties (1 compulsory, other choice)', 'Active member registration'],
     cta: 'Apply Now',
     ctaPath: '/loan-apply'
   },
