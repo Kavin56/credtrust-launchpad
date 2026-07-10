@@ -224,9 +224,14 @@ const CalculatorSection = () => {
             initial={{ opacity: 0, x: 30 }}
             animate={inView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="lg:col-span-2 hidden lg:block"
+            className="lg:col-span-2 hidden lg:block relative group overflow-hidden rounded-2xl"
           >
-            <img src={professionalBanking} alt="Professional society" className="rounded-2xl w-full h-full object-cover" loading="lazy" />
+            <img src={professionalBanking} alt="Dr Joy Quadras (C. E. O)" className="rounded-2xl w-full h-full object-cover" loading="lazy" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md rounded-xl p-3 border border-white text-center shadow-lg">
+              <h4 className="font-bold text-[#1a1f36] text-sm">Dr. Joy Quadras</h4>
+              <p className="text-[#c9a84c] font-extrabold text-[10px] uppercase tracking-wider mt-0.5">C.E.O</p>
+            </div>
           </motion.div>
         </div>
       </div>

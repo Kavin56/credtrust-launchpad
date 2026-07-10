@@ -14,19 +14,23 @@ import purshotamImg from "@/Team_photos/Mr. Purshotam.jpeg";
 import sendilImg from "@/Team_photos/Mr. Sendil.jpeg";
 import venkateshImg from "@/Team_photos/Mr. Venkatesh K.jpeg";
 import jayashreeImg from "@/Team_photos/Mrs. Jayashree S.jpeg";
+import sureshImg from "@/Team_photos/Mr. K M Suresh.png";
+import kalyaniImg from "@/Team_photos/Mrs. Kalyani L.png";
 
 const teamMembers = [
+  { name: "Mr. K. Venkatesh", role: "President", image: venkateshImg },
   { name: "Mr. Sandesh Shanmugam", role: "Vice President", image: sandeshImg },
   { name: "Mrs. Malar", role: "Margadarshi", image: malarImg },
   { name: "Mr. Payani", role: "Director", image: payaniImg },
   { name: "Mrs. Jayashree S", role: "Director", image: jayashreeImg },
+  { name: "Mr. K M Suresh", role: "Director", image: sureshImg },
+  { name: "Mrs. Kalyani L", role: "Director", image: kalyaniImg },
   { name: "Mr. Vishwa", role: "Director", image: vishwaImg },
   { name: "Mrs. Suma", role: "Director", image: sumaImg },
   { name: "Mr. Manjunath", role: "Director", image: manjunathImg },
   { name: "Mr. Yuvaraj", role: "Director", image: yuvarajImg },
   { name: "Mr. Purshotam", role: "Director", image: purshotamImg },
   { name: "Mr. Sendil Kumar M", role: "Director", image: sendilImg },
-  { name: "Mr. K. Venkatesh", role: "President", image: venkateshImg },
 ];
 
 export default function TeamSection() {
