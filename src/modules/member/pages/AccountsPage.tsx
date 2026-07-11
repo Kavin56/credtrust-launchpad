@@ -2,13 +2,18 @@ import { Search, ChevronRight, Eye, Home, Smartphone, Info, CreditCard, ChevronD
 import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
+import { QRCodeSVG } from 'qrcode.react';
+import { toast } from 'sonner';
+
+import { useAuth } from '@/modules/login/AuthContext';
 
 const AccountsPage = () => {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') === 'deposits' ? 1 : 0;
   const [activeTabIndex, setActiveTabIndex] = useState(initialTab);
@@ -33,6 +38,63 @@ const AccountsPage = () => {
       return data;
     },
   });
+  const { data: profile, refetch: refetchProfile } = useQuery({
+    queryKey: ["member-profile"],
+    queryFn: async () => {
+      const { data } = await api.get("/members/me");
+      return data;
+    },
+  });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select a valid image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image file size should be less than 5MB.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      await api.post('/members/me/photo', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      toast.success("Profile picture updated successfully!");
+      refetchProfile();
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast.error("Failed to upload profile picture. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const getCardName = () => {
+    if (profile?.fullName) return profile.fullName;
+    if (user?.email) {
+      const prefix = user.email.split('@')[0];
+      return prefix
+        .replace(/[\._-]/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+    return "MEMBER CANDIDATE";
+  };
   
   // Update tab if URL param changes
   useEffect(() => {
@@ -175,22 +237,217 @@ const AccountsPage = () => {
                           </div>
                         </div>
 
-                        {/* Debit Card */}
+                        {/* Government ID Card */}
                         <div className="pt-8 border-t border-gray-100">
-                          <h4 className="text-[13px] font-bold text-[#1a1f36] mb-6">Associated Debit Card</h4>
-                          <div className="w-full max-w-[340px] h-[210px] bg-gradient-to-br from-[#4c1d95] via-[#2d0a4e] to-[#4c1d95] rounded-3xl p-6 text-white relative overflow-hidden group shadow-2xl shadow-purple-950/20">
-                              <div className="relative z-10 flex flex-col h-full">
-                                <div className="flex justify-between items-start mb-10">
-                                    <span className="text-[10px] uppercase font-bold tracking-tighter opacity-50">CREDTRUST</span>
-                                    <span className="text-[14px] font-bold text-white/90">VISA</span>
-                                </div>
-                                <p className="text-[18px] font-bold tracking-[0.2em] font-mono mb-auto">XXXX XXXX XXXX 7615</p>
-                                <p className="text-[14px] font-bold uppercase tracking-wide">KAVINKUMAR V S</p>
+                          <h4 className="text-[14px] font-bold text-[#1a1f36] mb-6">Society ID card</h4>
+                          
+                          <div className="flex flex-col lg:flex-row gap-8 items-start">
+                            {/* FRONT SIDE */}
+                            <div className="w-[480px] h-[300px] bg-white border-2 border-[#1E3A8A] rounded-lg p-4 flex flex-col justify-between font-sans relative shadow-md select-none text-[#1E3A8A] shrink-0">
+                              {/* Header */}
+                              <div className="text-center border-b border-[#1E3A8A] pb-2 mb-2">
+                                <h5 className="font-extrabold text-[9.5px] uppercase tracking-wide leading-tight text-[#1E3A8A]">
+                                  SRI ROJA SHABARISH GURUJI SOUHARADA SAHAKARA NIYAMITHA
+                                </h5>
                               </div>
-                              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+                              
+                              {/* Content area */}
+                              <div className="flex gap-4 flex-1 my-1">
+                                {/* Photo & QR Code Placeholder */}
+                                <div className="flex flex-col gap-2 shrink-0 items-center justify-between py-0.5">
+                                  <div 
+                                    onClick={handlePhotoClick}
+                                    className="w-[85px] h-[100px] border-2 border-[#1E3A8A] flex flex-col items-center justify-center bg-gray-50 rounded shrink-0 overflow-hidden cursor-pointer hover:bg-gray-100/80 transition-all relative group"
+                                  >
+                                    <input 
+                                      type="file" 
+                                      ref={fileInputRef} 
+                                      onChange={handleFileChange} 
+                                      accept="image/*" 
+                                      className="hidden" 
+                                    />
+                                    {uploading && (
+                                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
+                                        <div className="w-5 h-5 border-2 border-[#1E3A8A] border-t-transparent rounded-full animate-spin"></div>
+                                      </div>
+                                    )}
+                                    {profile?.photoUrl ? (
+                                      <img src={profile.photoUrl} alt="Photo" className="w-full h-full object-cover" />
+                                    ) : (
+                                      <div className="text-center p-0.5">
+                                        <span className="text-[7px] font-bold text-gray-400 block mb-0.5 leading-none">PHOTO</span>
+                                        <span className="text-[9px] font-bold text-[#1E3A8A] leading-none">PHOTO</span>
+                                      </div>
+                                    )}
+                                    <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[7px] font-bold py-0.5 text-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                      Upload Photo
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Verification QR Code */}
+                                  <div className="border border-[#1E3A8A] p-0.5 bg-white rounded flex items-center justify-center">
+                                    <QRCodeSVG value={profile?.memberId || "UID-NOT-VERIFIED"} size={42} fgColor="#1E3A8A" />
+                                  </div>
+                                </div>
+                                
+                                {/* Form fields */}
+                                <div className="flex-1 flex flex-col justify-between text-[8.5px] space-y-0.5 py-0.5">
+                                  <div className="flex items-end">
+                                    <span className="font-bold shrink-0">Name:&nbsp;</span>
+                                    <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
+                                      {getCardName()}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-end">
+                                    <span className="font-bold shrink-0">Role/Designation:&nbsp;</span>
+                                    <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
+                                      {profile?.designation || "......................................................."}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-end">
+                                    <span className="font-bold shrink-0">Dept/Organization:&nbsp;</span>
+                                    <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
+                                      {profile?.department || "......................................................."}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-end">
+                                    <span className="font-bold shrink-0">Contact Number:&nbsp;</span>
+                                    <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
+                                      {profile?.contact || "......................................................."}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-end">
+                                    <span className="font-bold shrink-0">Other Details:&nbsp;</span>
+                                    <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
+                                      {profile?.course || "......................................................."}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-end">
+                                    <span className="font-bold shrink-0">Unique ID:&nbsp;</span>
+                                    <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
+                                      {profile?.seatBookingNumber || "......................................."}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Bottom Section */}
+                              <div className="flex justify-between items-end text-[8.5px] pt-1.5 border-t border-[#1E3A8A]/50">
+                                <div>
+                                  <span className="font-bold">Year: </span>
+                                  <span className="font-semibold text-black">{new Date().getFullYear()}</span>
+                                </div>
+                                <div className="text-center flex flex-col items-center">
+                                  <div className="w-24 border-b border-dotted border-[#1E3A8A] h-3 mb-0.5"></div>
+                                  <span className="text-[7.5px] font-bold">Authorized Officer's Signature</span>
+                                </div>
+                                <div className="text-center flex flex-col items-center">
+                                  <div className="w-24 border-b border-dotted border-[#1E3A8A] h-3 mb-0.5"></div>
+                                  <span className="text-[7.5px] font-bold">Candidate's Signature</span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* BACK SIDE */}
+                            <div className="w-[480px] h-[300px] bg-white border-2 border-[#1E3A8A] rounded-lg p-4 flex flex-col justify-between font-sans relative shadow-md select-none text-[#1E3A8A] shrink-0">
+                              <div className="flex gap-4 flex-1">
+                                {/* Left Section: Terms */}
+                                <div className="w-[180px] border-r border-[#1E3A8A] pr-3 flex flex-col">
+                                  <div className="bg-[#1E3A8A] text-white text-[9px] font-bold py-1 px-2 rounded mb-2 text-center uppercase tracking-wide">
+                                    Terms & Conditions
+                                  </div>
+                                  <ol className="list-decimal pl-4 text-[7.5px] leading-tight space-y-1.5 font-medium text-gray-700">
+                                    <li>This card is the property of the Society and must be returned upon cessation of membership.</li>
+                                    <li>Members must produce this card for all transactions, meetings, and availing of benefits.</li>
+                                    <li>Loss of this card should be reported immediately to the society administration.</li>
+                                    <li>This card is non-transferable and any unauthorized use is subject to disciplinary action.</li>
+                                  </ol>
+                                </div>
+                                
+                                {/* Right Section: Details */}
+                                <div className="flex-1 pl-1 flex flex-col justify-between">
+                                  {/* Ref & Handshake */}
+                                  <div className="flex justify-between items-start">
+                                    <div className="text-[8px] font-medium">
+                                      Reference No.: <span className="font-bold text-black">{profile?.memberId || "........................"}</span>
+                                    </div>
+                                    {/* Handshake Icon */}
+                                    <div className="w-6 h-6 text-[#1E3A8A] flex items-center justify-center opacity-85">
+                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                                        <path d="M11 12H3a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h8" />
+                                        <path d="M18 8H10a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h8" />
+                                        <path d="m16 4 4 4-4 4" />
+                                        <path d="m8 20-4-4 4-4" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Center Headers */}
+                                  <div className="text-center space-y-0.5 my-0.5">
+                                    <h6 className="font-extrabold text-[8.5px] uppercase tracking-tight leading-tight text-[#1E3A8A]">
+                                      SRI ROJA SHABARISH GURUJI SOUHARADA SAHAKARA NIYAMITHA
+                                    </h6>
+                                    <p className="font-semibold text-[8px] text-[#c9a84c] uppercase tracking-wide">
+                                      Identity Card Details
+                                    </p>
+                                  </div>
+                                  
+                                  {/* Two-Column Details Grid */}
+                                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[7.5px] py-1 text-gray-700 font-medium">
+                                    <div className="truncate">
+                                      <span className="font-bold text-[#1E3A8A]">DOB:</span>{" "}
+                                      <span className="text-black">{profile?.dob ? new Date(profile.dob).toLocaleDateString("en-IN") : "—"}</span>
+                                    </div>
+                                    <div className="truncate">
+                                      <span className="font-bold text-[#1E3A8A]">Gender:</span>{" "}
+                                      <span className="text-black">{profile?.gender || "—"}</span>
+                                    </div>
+                                    <div className="truncate">
+                                      <span className="font-bold text-[#1E3A8A]">Blood Group:</span>{" "}
+                                      <span className="text-black">{profile?.bloodGroup || "—"}</span>
+                                    </div>
+                                    <div className="truncate">
+                                      <span className="font-bold text-[#1E3A8A]">Emergency:</span>{" "}
+                                      <span className="text-black">{profile?.emergencyContact || "—"}</span>
+                                    </div>
+                                    <div className="col-span-2 truncate">
+                                      <span className="font-bold text-[#1E3A8A]">Email:</span>{" "}
+                                      <span className="text-black">{profile?.user?.email || user?.email || "—"}</span>
+                                    </div>
+                                    <div className="truncate">
+                                      <span className="font-bold text-[#1E3A8A]">Issue Date:</span>{" "}
+                                      <span className="text-black">
+                                        {profile?.issueDate ? new Date(profile.issueDate).toLocaleDateString("en-IN") : new Date().toLocaleDateString("en-IN")}
+                                      </span>
+                                    </div>
+                                    <div className="truncate">
+                                      <span className="font-bold text-[#1E3A8A]">Expiry Date:</span>{" "}
+                                      <span className="text-black">
+                                        {profile?.expiryDate ? new Date(profile.expiryDate).toLocaleDateString("en-IN") : "Permanent"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Bottom Section */}
+                                  <div className="flex justify-end items-end mt-auto pt-1">
+                                    {/* Society Logo Emblem */}
+                                    <div className="flex flex-col items-center">
+                                      <img 
+                                        src="/logo.jpeg" 
+                                        alt="Society Logo" 
+                                        className="w-12 h-12 object-contain rounded-full border border-[#1E3A8A]/20 bg-white" 
+                                      />
+                                      <span className="text-[5.5px] uppercase font-bold tracking-tighter text-[#1E3A8A] mt-1">
+                                        SHARANAM SOCIETY
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                    </div>
+                      </div>
 
                     <div className="bg-[#f1f5f9] rounded-[32px] p-8 space-y-6 self-start border border-gray-100 h-fit w-full">
                         <div className="flex justify-between items-center py-2 border-b border-gray-200/50">

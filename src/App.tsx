@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -47,6 +47,7 @@ const queryClient = new QueryClient({
 
 const ProtectedRoute = ({ children, requireAdmin = false }: { children: React.ReactNode, requireAdmin?: boolean }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) return null;
   if (!user) {
@@ -55,6 +56,10 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children: React.Re
 
   if (requireAdmin && !["ADMIN", "CEO"].includes(user.role)) {
     return <Navigate to={user.role === "AGENT" ? "/agent" : "/dashboard"} />;
+  }
+
+  if (!requireAdmin && user.role === "MEMBER" && !user.hasMemberProfile && location.pathname !== "/signup-flow") {
+    return <Navigate to="/signup-flow" replace />;
   }
 
   return <>{children}</>;

@@ -35,3 +35,10 @@ nul
 # Opencode
 opencode.jsonc
 .opencode
+
+# Prisma generated clients
+apps/api/src/generated/
+
+# Databases
+*.db
+*.db-journal

@@ -36,6 +36,14 @@ const ProfilePage = () => {
     fullName: "",
     contact: "",
     address: "",
+    course: "",
+    seatBookingNumber: "",
+    dob: "",
+    designation: "",
+    department: "",
+    gender: "",
+    bloodGroup: "",
+    emergencyContact: "",
   });
   const queryClient = useQueryClient();
 
@@ -49,10 +57,24 @@ const ProfilePage = () => {
 
   useEffect(() => {
     if (!profile) return;
+    let dobString = "";
+    if (profile.dob) {
+      try {
+        dobString = new Date(profile.dob).toISOString().split('T')[0];
+      } catch (e) {}
+    }
     setFormState({
       fullName: profile.fullName || "",
       contact: profile.contact || "",
       address: profile.address || "",
+      course: profile.course || "",
+      seatBookingNumber: profile.seatBookingNumber || "",
+      dob: dobString,
+      designation: profile.designation || "",
+      department: profile.department || "",
+      gender: profile.gender || "",
+      bloodGroup: profile.bloodGroup || "",
+      emergencyContact: profile.emergencyContact || "",
     });
   }, [profile]);
 
@@ -62,6 +84,14 @@ const ProfilePage = () => {
         fullName: formState.fullName.trim(),
         contact: formState.contact.trim(),
         address: formState.address.trim(),
+        course: formState.course.trim(),
+        seatBookingNumber: formState.seatBookingNumber.trim(),
+        dob: formState.dob ? new Date(formState.dob).toISOString() : undefined,
+        designation: formState.designation.trim(),
+        department: formState.department.trim(),
+        gender: formState.gender.trim(),
+        bloodGroup: formState.bloodGroup.trim(),
+        emergencyContact: formState.emergencyContact.trim(),
       });
       return data;
     },
@@ -93,11 +123,20 @@ const ProfilePage = () => {
       email: profile?.user?.email || "",
       contact: profile?.contact || "",
       address: profile?.address || "",
+      course: profile?.course || "",
+      seatBookingNumber: profile?.seatBookingNumber || "",
       dob: dob ? dob.toLocaleDateString("en-IN") : "",
       joined: joinedAt
         ? joinedAt.toLocaleDateString("en-IN", { month: "short", year: "numeric" })
         : "--",
       status: profile?.kycStatus || profile?.status || "PENDING",
+      designation: profile?.designation || "",
+      department: profile?.department || "",
+      gender: profile?.gender || "",
+      bloodGroup: profile?.bloodGroup || "",
+      emergencyContact: profile?.emergencyContact || "",
+      issueDate: profile?.issueDate ? new Date(profile.issueDate).toLocaleDateString("en-IN") : new Date().toLocaleDateString("en-IN"),
+      expiryDate: profile?.expiryDate ? new Date(profile.expiryDate).toLocaleDateString("en-IN") : "Permanent",
     };
   }, [profile]);
 
@@ -218,10 +257,24 @@ const ProfilePage = () => {
                         <Button 
                            onClick={() => {
                               if (isEditing && profile) {
+                                let dobString = "";
+                                if (profile.dob) {
+                                  try {
+                                    dobString = new Date(profile.dob).toISOString().split('T')[0];
+                                  } catch (e) {}
+                                }
                                 setFormState({
                                   fullName: profile.fullName || "",
                                   contact: profile.contact || "",
                                   address: profile.address || "",
+                                  course: profile.course || "",
+                                  seatBookingNumber: profile.seatBookingNumber || "",
+                                  dob: dobString,
+                                  designation: profile.designation || "",
+                                  department: profile.department || "",
+                                  gender: profile.gender || "",
+                                  bloodGroup: profile.bloodGroup || "",
+                                  emergencyContact: profile.emergencyContact || "",
                                 });
                               }
                               setIsEditing(!isEditing);
@@ -247,7 +300,13 @@ const ProfilePage = () => {
                         </div>
                         <div className="space-y-4">
                            <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Date of Birth</Label>
-                           <Input value={profileView.dob} disabled className="h-14 rounded-2xl border-gray-100 bg-gray-50/50" />
+                           <Input 
+                             type="date"
+                             value={isEditing ? formState.dob : formState.dob} 
+                             onChange={(e) => setFormState((current) => ({ ...current, dob: e.target.value }))}
+                             disabled={!isEditing || updateProfileMutation.isPending} 
+                             className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`}
+                           />
                         </div>
                         <div className="space-y-4">
                            <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Email Address</Label>
@@ -270,6 +329,82 @@ const ProfilePage = () => {
                              disabled={!isEditing || updateProfileMutation.isPending}
                              className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`}
                            />
+                        </div>
+                        <div className="space-y-4">
+                           <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Other Details (if applicable)</Label>
+                           <Input
+                             value={isEditing ? formState.course : profileView.course}
+                             onChange={(e) => setFormState((current) => ({ ...current, course: e.target.value }))}
+                             disabled={!isEditing || updateProfileMutation.isPending}
+                             placeholder="e.g. Additional details/membership references"
+                             className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`}
+                           />
+                        </div>
+                        <div className="space-y-4">
+                           <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Unique ID</Label>
+                           <Input
+                             value={profileView.seatBookingNumber}
+                             disabled
+                             className="h-14 rounded-2xl border-gray-100 bg-gray-50/50"
+                           />
+                        </div>
+                        <div className="space-y-4">
+                           <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Role / Designation</Label>
+                           <Input
+                             value={isEditing ? formState.designation : profileView.designation}
+                             onChange={(e) => setFormState((current) => ({ ...current, designation: e.target.value }))}
+                             disabled={!isEditing || updateProfileMutation.isPending}
+                             placeholder="e.g. Student, Officer"
+                             className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`}
+                           />
+                        </div>
+                        <div className="space-y-4">
+                           <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Department / Organization</Label>
+                           <Input
+                             value={isEditing ? formState.department : profileView.department}
+                             onChange={(e) => setFormState((current) => ({ ...current, department: e.target.value }))}
+                             disabled={!isEditing || updateProfileMutation.isPending}
+                             placeholder="e.g. Science Dept, IT"
+                             className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`}
+                           />
+                        </div>
+                        <div className="space-y-4">
+                           <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Gender (Optional)</Label>
+                           <Input
+                             value={isEditing ? formState.gender : profileView.gender}
+                             onChange={(e) => setFormState((current) => ({ ...current, gender: e.target.value }))}
+                             disabled={!isEditing || updateProfileMutation.isPending}
+                             placeholder="e.g. Male, Female, Other"
+                             className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`}
+                           />
+                        </div>
+                        <div className="space-y-4">
+                           <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Blood Group (Optional)</Label>
+                           <Input
+                             value={isEditing ? formState.bloodGroup : profileView.bloodGroup}
+                             onChange={(e) => setFormState((current) => ({ ...current, bloodGroup: e.target.value }))}
+                             disabled={!isEditing || updateProfileMutation.isPending}
+                             placeholder="e.g. O+, A-, B+"
+                             className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`}
+                           />
+                        </div>
+                        <div className="space-y-4">
+                           <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Emergency Contact (Optional)</Label>
+                           <Input
+                             value={isEditing ? formState.emergencyContact : profileView.emergencyContact}
+                             onChange={(e) => setFormState((current) => ({ ...current, emergencyContact: e.target.value }))}
+                             disabled={!isEditing || updateProfileMutation.isPending}
+                             placeholder="e.g. +91 98765 43210"
+                             className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`}
+                           />
+                        </div>
+                        <div className="space-y-4">
+                           <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Issue Date (Fixed by Society)</Label>
+                           <Input value={profileView.issueDate} disabled className="h-14 rounded-2xl border-gray-100 bg-gray-50/50" />
+                        </div>
+                        <div className="space-y-4">
+                           <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Expiry Date (Fixed by Society)</Label>
+                           <Input value={profileView.expiryDate} disabled className="h-14 rounded-2xl border-gray-100 bg-gray-50/50" />
                         </div>
 
                         {isEditing && (

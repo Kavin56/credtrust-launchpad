@@ -4,6 +4,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { FirebaseAuthGuard } from './firebase-auth.guard';
+import { JwtAuthGuard } from './jwt.guard';
 import { FirebaseRegisterDto } from './dto/firebase-register.dto';
 import { FirebaseAdminAccessDto } from './dto/firebase-admin-access.dto';
 
@@ -43,5 +44,17 @@ export class AuthController {
   @Post('firebase/admin-access')
   firebaseAdminAccess(@Req() req: any, @Body() dto: FirebaseAdminAccessDto) {
     return this.authService.grantFirebaseAdminAccess(req.user, dto.secretKey);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('status')
+  async getStatus(@Req() req: any) {
+    const member = await this.authService.checkMemberProfile(req.user.userId);
+    return {
+      userId: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+      hasMemberProfile: !!member || req.user.role !== 'MEMBER',
+    };
   }
 }

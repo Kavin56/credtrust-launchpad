@@ -49,7 +49,16 @@ export class AuthService {
 
   async login(dto: any) {
     const user = await this.validateUser(dto.email, dto.password);
-    return this.buildTokens(user.id, user.email, user.role);
+    const member = await this.prisma.member.findUnique({
+      where: { userId: user.id },
+    });
+    const tokens = this.buildTokens(user.id, user.email, user.role);
+    return {
+      ...tokens,
+      userId: user.id,
+      email: user.email,
+      hasMemberProfile: !!member || user.role !== 'MEMBER',
+    };
   }
 
   async register(dto: any) {
@@ -68,7 +77,13 @@ export class AuthService {
     });
 
     // Member profile will be created via the multi-step signup flow
-    return this.buildTokens(user.id, user.email, user.role);
+    const tokens = this.buildTokens(user.id, user.email, user.role);
+    return {
+      ...tokens,
+      userId: user.id,
+      email: user.email,
+      hasMemberProfile: false,
+    };
   }
 
   async refresh(refreshToken: string) {
@@ -280,5 +295,11 @@ export class AuthService {
       expiresIn: '7d',
     });
     return { accessToken, refreshToken, role };
+  }
+
+  async checkMemberProfile(userId: string) {
+    return this.prisma.member.findUnique({
+      where: { userId },
+    });
   }
 }

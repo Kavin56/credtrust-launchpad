@@ -37,6 +37,14 @@ model Member {
   pincode           String
   aadhaarNumber     String       @unique // Encrypted
   panNumber         String       @unique // Encrypted
+  course            String?
+  seatBookingNumber String?
+  designation       String?
+  department        String?
+  bloodGroup        String?
+  emergencyContact  String?
+  issueDate         DateTime     @default(now())
+  expiryDate        DateTime?
   aadhaarDocUrl     String?
   panDocUrl         String?
   photoUrl          String?

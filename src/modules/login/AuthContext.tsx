@@ -147,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const refreshProfileStatus = async () => {
     try {
-      const { data } = await api.post("/auth/firebase/session");
+      const { data } = await api.post("/auth/status");
       localStorage.setItem("hasMemberProfile", String(data.hasMemberProfile));
       localStorage.setItem("role", data.role);
       localStorage.setItem("userId", data.userId);
@@ -185,7 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       role: data.role,
       email,
       userId: payload.sub,
-      hasMemberProfile: true,
+      hasMemberProfile: !!data.hasMemberProfile,
     });
   };
 

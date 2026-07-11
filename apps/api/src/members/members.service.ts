@@ -16,6 +16,7 @@ export class MembersService {
       // 2. Generate Member ID if it doesn't exist
       if (!member) {
         const memberId = await this.generateMemberId(data.district);
+        const seatBookingNumber = await this.generateUniqueId(userId);
         member = await this.prisma.member.create({
           data: {
             userId,
@@ -30,6 +31,7 @@ export class MembersService {
             pincode: data.pincode,
             aadhaarNumber: data.aadhaarNumber,
             panNumber: data.panNumber,
+            seatBookingNumber,
           }
         });
       }
@@ -136,7 +138,51 @@ export class MembersService {
       include: { user: true, depositAccounts: true, loans: true, shareAccounts: true, pigmyAccounts: true },
     });
     if (!member) throw new NotFoundException('Member not found');
+    
+    if (!member.seatBookingNumber) {
+      const seatBookingNumber = await this.generateUniqueId(member.userId);
+      return this.prisma.member.update({
+        where: { id: member.id },
+        data: { seatBookingNumber },
+        include: { user: true, depositAccounts: true, loans: true, shareAccounts: true, pigmyAccounts: true },
+      });
+    }
+    
     return member;
+  }
+
+  private async generateUniqueId(userId: string): Promise<string> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (user?.email === 'jayanthragavanmylsamy@gmail.com' || user?.email === 'jayanthragavnmylsamy@gmail.com') {
+      return 'S-1001';
+    }
+
+    const members = await this.prisma.member.findMany({
+      where: {
+        seatBookingNumber: {
+          startsWith: 'S-',
+        },
+      },
+      select: {
+        seatBookingNumber: true,
+      },
+    });
+
+    let maxNum = 1001;
+    for (const m of members) {
+      if (m.seatBookingNumber) {
+        const parts = m.seatBookingNumber.split('-');
+        const num = parseInt(parts[parts.length - 1]);
+        if (!isNaN(num) && num > maxNum) {
+          maxNum = num;
+        }
+      }
+    }
+
+    return `S-${maxNum + 1}`;
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
@@ -151,6 +197,14 @@ export class MembersService {
         fullName: dto.fullName ?? member.fullName,
         contact: dto.contact ?? member.contact,
         address: dto.address ?? member.address,
+        course: dto.course ?? member.course,
+        seatBookingNumber: member.seatBookingNumber || dto.seatBookingNumber,
+        dob: dto.dob ? new Date(dto.dob) : member.dob,
+        designation: dto.designation ?? member.designation,
+        department: dto.department ?? member.department,
+        gender: dto.gender ?? member.gender,
+        bloodGroup: dto.bloodGroup ?? member.bloodGroup,
+        emergencyContact: dto.emergencyContact ?? member.emergencyContact,
       },
       include: { user: true, depositAccounts: true, loans: true, shareAccounts: true },
     });
@@ -223,8 +277,41 @@ export class MembersService {
   }
 
   async uploadPhoto(userId: string, file: any) {
-    // Photo storage not wired yet; return a stable placeholder until storage is connected.
-    return { photoUrl: null };
+    if (!file) {
+      throw new BadRequestException('No image file uploaded.');
+    }
+
+    // Verify member exists first
+    const member = await this.prisma.member.findUnique({
+      where: { userId },
+    });
+    if (!member) {
+      throw new NotFoundException('Member profile not found.');
+    }
+
+    try {
+      const uploadDir = path.join(process.cwd(), 'uploads', 'profile');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const fileName = `${userId}-profile-${Date.now()}${path.extname(file.filename)}`;
+      const filePath = path.join(uploadDir, fileName);
+      const buffer = await file.toBuffer();
+      await fs.promises.writeFile(filePath, buffer);
+
+      const photoUrl = `/uploads/profile/${fileName}`;
+
+      await this.prisma.member.update({
+        where: { userId },
+        data: { photoUrl },
+      });
+
+      return { photoUrl };
+    } catch (error) {
+      console.error('UPLOAD PHOTO ERROR:', error);
+      throw new BadRequestException('Failed to upload profile picture.');
+    }
   }
   
   async deactivate(id: string, reason: string) {
