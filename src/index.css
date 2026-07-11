@@ -148,9 +148,11 @@
 
   .animate-marquee {
     animation: marquee var(--duration) linear infinite;
+    animation-play-state: var(--play-state, running);
   }
 
   .animate-marquee-vertical {
     animation: marquee-vertical var(--duration) linear infinite;
+    animation-play-state: var(--play-state, running);
   }
 }

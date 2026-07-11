@@ -230,7 +230,7 @@ const CalculatorSection = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
             <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md rounded-xl p-3 border border-white text-center shadow-lg">
               <h4 className="font-bold text-[#1a1f36] text-sm">Dr. Joy Quadras</h4>
-              <p className="text-[#c9a84c] font-extrabold text-[10px] uppercase tracking-wider mt-0.5">C.E.O</p>
+              <p className="text-red-600 font-extrabold text-[10px] uppercase tracking-wider mt-0.5">C.E.O</p>
             </div>
           </motion.div>
         </div>

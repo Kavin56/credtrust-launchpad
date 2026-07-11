@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Marquee } from "./ui/marquee";
 import { UserCheck } from "lucide-react";
 
@@ -10,7 +10,7 @@ import vishwaImg from "@/Team_photos/Mr. Vishwa.jpeg";
 import sumaImg from "@/Team_photos/Mrs. Suma.jpeg";
 import manjunathImg from "@/Team_photos/Mr. Manjunath.jpeg";
 import yuvarajImg from "@/Team_photos/Mr. Yuvaraj.jpeg";
-import purshotamImg from "@/Team_photos/Mr. Purshotam.jpeg";
+import purshotamImg from "@/Team_photos/Mr. S. Purshotam.png";
 import sendilImg from "@/Team_photos/Mr. Sendil.jpeg";
 import venkateshImg from "@/Team_photos/Mr. Venkatesh K.jpeg";
 import jayashreeImg from "@/Team_photos/Mrs. Jayashree S.jpeg";
@@ -20,20 +20,35 @@ import kalyaniImg from "@/Team_photos/Mrs. Kalyani L.png";
 const teamMembers = [
   { name: "Mr. K. Venkatesh", role: "President", image: venkateshImg },
   { name: "Mr. Sandesh Shanmugam", role: "Vice President", image: sandeshImg },
-  { name: "Mrs. Malar", role: "Margadarshi", image: malarImg },
   { name: "Mr. Payani", role: "Director", image: payaniImg },
+  { name: "Mr. Vishwanath R", role: "Director", image: vishwaImg },
   { name: "Mrs. Jayashree S", role: "Director", image: jayashreeImg },
-  { name: "Mr. K M Suresh", role: "Director", image: sureshImg },
   { name: "Mrs. Kalyani L", role: "Director", image: kalyaniImg },
-  { name: "Mr. Vishwa", role: "Director", image: vishwaImg },
+  { name: "Mr. S. Purshotam", role: "Director", image: purshotamImg },
   { name: "Mrs. Suma", role: "Director", image: sumaImg },
-  { name: "Mr. Manjunath", role: "Director", image: manjunathImg },
-  { name: "Mr. Yuvaraj", role: "Director", image: yuvarajImg },
-  { name: "Mr. Purshotam", role: "Director", image: purshotamImg },
   { name: "Mr. Sendil Kumar M", role: "Director", image: sendilImg },
+  { name: "Mr. K. M. Suresh", role: "Director", image: sureshImg },
+  { name: "Mr. Manjunath", role: "Director", image: manjunathImg },
 ];
 
 export default function TeamSection() {
+  const [isPaused, setIsPaused] = useState(true);
+  const [resetKey, setResetKey] = useState(0);
+
+  useEffect(() => {
+    if (isPaused) {
+      const timer = setTimeout(() => {
+        setIsPaused(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isPaused]);
+
+  const handleMouseEnter = () => {
+    setResetKey((prev) => prev + 1);
+    setIsPaused(true);
+  };
+
   return (
     <section className="relative w-full overflow-hidden bg-white py-20 md:py-32 dark:bg-background border-y border-gray-100">
       {/* Decorative SVG Background */}
@@ -94,12 +109,21 @@ export default function TeamSection() {
           </p>
         </div>
 
-        <div className="relative w-full py-10">
+        <div 
+          className="relative w-full py-10"
+          onMouseEnter={handleMouseEnter}
+        >
           {/* Fading side masks */}
           <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-40 bg-gradient-to-r from-white via-white/40 to-transparent dark:from-background" />
           <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-40 bg-gradient-to-l from-white via-white/40 to-transparent dark:from-background" />
 
-          <Marquee className="[--gap:3rem] [--duration:60s]" pauseOnHover repeat={4}>
+          <Marquee 
+            key={resetKey}
+            className="[--gap:3rem] [--duration:60s]" 
+            pauseOnHover={false}
+            repeat={4}
+            style={{ '--play-state': isPaused ? 'paused' : 'running' } as React.CSSProperties}
+          >
             {teamMembers.map((member) => (
               <div
                 className="group flex w-72 shrink-0 flex-col px-4"
@@ -119,7 +143,7 @@ export default function TeamSection() {
                       <h3 className="font-bold text-[#1a1f36] text-base leading-tight">
                         {member.name}
                       </h3>
-                      <p className="text-[#c9a84c] font-extrabold text-[10px] uppercase tracking-wider mt-1">
+                      <p className="text-red-600 font-extrabold text-[10px] uppercase tracking-wider mt-1">
                         {member.role}
                       </p>
                     </div>
