@@ -2,9 +2,10 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FirebaseRegisterDto } from './dto/firebase-register.dto';
+import { initializeFirebaseAdmin } from '../common/utils/firebase';
 
 type FirebaseIdentity = {
   firebaseUid: string;
@@ -259,24 +260,7 @@ export class AuthService {
   }
 
   private getFirebaseAuth() {
-    if (!getApps().length) {
-      const projectId = process.env.FIREBASE_PROJECT_ID;
-      const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-      const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-
-      if (!projectId || !clientEmail || !privateKey) {
-        throw new UnauthorizedException('Firebase admin credentials are missing.');
-      }
-
-      initializeApp({
-        credential: cert({
-          projectId,
-          clientEmail,
-          privateKey,
-        }),
-      });
-    }
-
+    initializeFirebaseAdmin();
     return getAuth();
   }
 

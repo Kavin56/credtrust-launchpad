@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePigmySchemeDto, EnrollPigmyAccountDto, AddCollectionDto, UpdateCollectionStatusDto, InitiatePaymentDto } from './dto/pigmy.dto';
-import { nanoid } from 'nanoid';
+import { randomBytes } from 'crypto';
+
+function nanoid(size = 21): string {
+  return randomBytes(Math.ceil(size / 2)).toString('hex').slice(0, size);
+}
 
 import { AgentPrismaService } from '../prisma/agent-prisma.service';
 

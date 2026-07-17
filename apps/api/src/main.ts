@@ -18,12 +18,14 @@ import { existsSync } from 'fs';
 import { cp, mkdir } from 'fs/promises';
 import { resolve } from 'path';
 import * as Sentry from '@sentry/node';
+import { initializeFirebaseAdmin } from './common/utils/firebase';
 
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 const DEFAULT_UPLOAD_ROOT = resolve(process.cwd(), 'uploads');
 const LEGACY_UPLOAD_ROOT = resolve(process.cwd(), 'uploads');
 
 async function bootstrap() {
+  initializeFirebaseAdmin();
   if (process.env.SENTRY_DSN) {
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
