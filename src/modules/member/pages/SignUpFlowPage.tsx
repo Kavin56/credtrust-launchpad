@@ -141,16 +141,17 @@ const SignUpFlowPage = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gender" className="text-xs font-bold uppercase text-gray-500">Gender</Label>
-                    <Select onValueChange={(v) => handleSelectChange('gender', v)}>
-                      <SelectTrigger className="bg-amber-100 border-amber-200 font-medium">
-                        <SelectValue placeholder="Select Gender" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border-amber-200 text-gray-900">
-                        <SelectItem value="Male">Male</SelectItem>
-                        <SelectItem value="Female">Female</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <select
+                      id="gender"
+                      value={formData.gender}
+                      onChange={(e) => handleSelectChange('gender', e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-amber-200 bg-amber-100 px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-medium text-gray-900 focus:border-amber-500 transition-all"
+                    >
+                      <option value="" disabled>Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="contact" className="text-xs font-bold uppercase text-gray-500">Contact Number</Label>
