@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "postinstall": "npm run prisma:generate --prefix apps/api"
+    "postinstall": "node -e \"if (!process.env.VERCEL) { try { require('child_process').execSync('npm run prisma:generate --prefix apps/api', { stdio: 'inherit' }); } catch (e) { process.exit(0); } }\""
   },
   "dependencies": {
     "@google/genai": "^1.47.0",
