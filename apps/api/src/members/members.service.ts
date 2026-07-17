@@ -2,14 +2,16 @@ import { Injectable, NotFoundException, BadRequestException, HttpException, Http
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import * as fs from 'fs';
-import * as path from 'path';
+import { StorageService } from '../storage/storage.service';
+import { EncryptionService } from '../common/utils/encryption.util';
 
 @Injectable()
 export class MembersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly storage: StorageService,
+    private readonly encryption: EncryptionService,
   ) {}
 
   /**
@@ -45,17 +47,14 @@ export class MembersService {
       const seatBookingNumber = await this.generateUniqueId(userId);
 
       // 4. Upload KYC documents
-      const uploadDir = path.join(process.cwd(), 'uploads', 'signup');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
       const filePaths: any = {};
       for (const file of files) {
-        const fileName = `${memberId}-${file.fieldname}-${Date.now()}${path.extname(file.filename)}`;
-        const filePath = path.join(uploadDir, fileName);
-        fs.writeFileSync(filePath, file.buffer);
-        filePaths[file.fieldname] = `/uploads/signup/${fileName}`;
+        filePaths[file.fieldname] = await this.storage.upload(
+          file.buffer,
+          `${memberId}-${file.fieldname}-${file.filename}`,
+          file.mimetype || 'application/octet-stream',
+          'kyc',
+        );
       }
 
       // 5. Create member record (atomically - only after docs are saved)
@@ -71,8 +70,10 @@ export class MembersService {
           state: data.state,
           district: data.district,
           pincode: data.pincode,
-          aadhaarNumber: data.aadhaarNumber,
-          panNumber: data.panNumber,
+          aadhaarNumber: this.encryption.encrypt(data.aadhaarNumber),
+          aadhaarHash: this.encryption.lookupHash(data.aadhaarNumber),
+          panNumber: this.encryption.encrypt(data.panNumber),
+          panHash: this.encryption.lookupHash(data.panNumber),
           seatBookingNumber,
           aadhaarDocUrl: filePaths['aadhaarDoc'],
           panDocUrl: filePaths['panDoc'],
@@ -180,14 +181,15 @@ export class MembersService {
     
     if (!member.seatBookingNumber) {
       const seatBookingNumber = await this.generateUniqueId(member.userId);
-      return this.prisma.member.update({
+      const updated = await this.prisma.member.update({
         where: { id: member.id },
         data: { seatBookingNumber },
         include: { user: true, depositAccounts: true, loans: true, shareAccounts: true, pigmyAccounts: true },
       });
+      return this.withSignedPhoto(updated);
     }
     
-    return member;
+    return this.withSignedPhoto(member);
   }
 
   private async generateUniqueId(userId: string): Promise<string> {
@@ -329,24 +331,20 @@ export class MembersService {
     }
 
     try {
-      const uploadDir = path.join(process.cwd(), 'uploads', 'profile');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
-      const fileName = `${userId}-profile-${Date.now()}${path.extname(file.filename)}`;
-      const filePath = path.join(uploadDir, fileName);
       const buffer = await file.toBuffer();
-      await fs.promises.writeFile(filePath, buffer);
-
-      const photoUrl = `/uploads/profile/${fileName}`;
+      const photoUrl = await this.storage.upload(
+        buffer,
+        `${userId}-profile-${file.filename}`,
+        file.mimetype || 'application/octet-stream',
+        'profile',
+      );
 
       await this.prisma.member.update({
         where: { userId },
         data: { photoUrl },
       });
 
-      return { photoUrl };
+      return { photoUrl: await this.storage.signedUrl(photoUrl) };
     } catch (error) {
       console.error('UPLOAD PHOTO ERROR:', error);
       throw new BadRequestException('Failed to upload profile picture.');
@@ -359,5 +357,12 @@ export class MembersService {
       data: { status: 'INACTIVE', exitReason: reason, deactivatedAt: new Date() },
     });
     return { success: true };
+  }
+
+  private async withSignedPhoto<T extends { photoUrl?: string | null }>(member: T): Promise<T> {
+    if (member.photoUrl?.startsWith('gs://')) {
+      return { ...member, photoUrl: await this.storage.signedUrl(member.photoUrl) };
+    }
+    return member;
   }
 }

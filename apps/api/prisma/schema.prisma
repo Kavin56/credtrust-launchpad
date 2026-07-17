@@ -35,8 +35,10 @@ model Member {
   district          String
   country           String       @default("India")
   pincode           String
-  aadhaarNumber     String       @unique // Encrypted
-  panNumber         String       @unique // Encrypted
+  aadhaarNumber     String       // encrypted application value
+  aadhaarHash       String       @unique // HMAC lookup value
+  panNumber         String       // encrypted application value
+  panHash           String       @unique // HMAC lookup value
   course            String?
   seatBookingNumber String?
   designation       String?
@@ -255,4 +257,28 @@ model PigmyCollection {
   description     String?
 
   createdAt       DateTime @default(now())
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  fullName     String?
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastLoginAt  DateTime?
+}
+
+model Agent {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  fullName     String
+  phone        String?
+  agentCode    String   @unique
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastLoginAt  DateTime?
 }

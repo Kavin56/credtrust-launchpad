@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class EncryptionService {
-  private readonly algorithm = 'aes-256-cbc';
+  private readonly algorithm = 'aes-256-gcm';
   private readonly key: Buffer;
 
   constructor(private configService: ConfigService) {
@@ -20,25 +20,27 @@ export class EncryptionService {
     try {
       const iv = crypto.randomBytes(16);
       const cipher = crypto.createCipheriv(this.algorithm, this.key, iv);
-      let encrypted = cipher.update(text, 'utf8', 'hex');
-      encrypted += cipher.final('hex');
-      return `${iv.toString('hex')}:${encrypted}`;
+      const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+      return `v1:${iv.toString('hex')}:${cipher.getAuthTag().toString('hex')}:${encrypted.toString('hex')}`;
     } catch (error) {
       throw new InternalServerErrorException('Encryption failed');
     }
   }
 
   decrypt(hash: string): string {
-    if (!hash || !hash.includes(':')) return hash;
+    if (!hash || !hash.startsWith('v1:')) return hash;
     try {
-      const [ivHex, encryptedText] = hash.split(':');
+      const [, ivHex, tagHex, encryptedText] = hash.split(':');
       const iv = Buffer.from(ivHex, 'hex');
       const decipher = crypto.createDecipheriv(this.algorithm, this.key, iv);
-      let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-      decrypted += decipher.final('utf8');
-      return decrypted;
+      decipher.setAuthTag(Buffer.from(tagHex, 'hex'));
+      return Buffer.concat([decipher.update(Buffer.from(encryptedText, 'hex')), decipher.final()]).toString('utf8');
     } catch (error) {
       throw new InternalServerErrorException('Decryption failed');
     }
+  }
+
+  lookupHash(text: string): string {
+    return crypto.createHmac('sha256', this.key).update(text.trim().toUpperCase()).digest('hex');
   }
 }

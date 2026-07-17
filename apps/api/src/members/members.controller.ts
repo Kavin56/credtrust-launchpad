@@ -17,10 +17,11 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { Roles, RolesGuard } from '../common/guards/roles.guard';
 
 @ApiTags('members')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('members')
 export class MembersController {
   constructor(
@@ -29,21 +30,25 @@ export class MembersController {
   ) {}
 
   @Get()
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
   findAll(@Query() query: any) {
     return this.membersService.findAll(query);
   }
 
   @Get('stats')
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
   getStats() {
     return this.membersService.getStats();
   }
 
   @Get('me')
+  @Roles('MEMBER')
   getMe(@Req() req: any) {
     return this.membersService.getProfile(req.user.userId);
   }
 
   @Patch('me')
+  @Roles('MEMBER')
   updateMe(@Req() req: any, @Body() dto: UpdateProfileDto) {
     return this.membersService.updateProfile(req.user.userId, dto);
   }
@@ -102,27 +107,32 @@ export class MembersController {
   }
 
   @Get('me/overview')
+  @Roles('MEMBER')
   overview(@Req() req: any) {
     return this.membersService.dashboardOverview(req.user.userId);
   }
 
   @Patch(':memberId/kyc')
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
   updateKyc(@Param('memberId') memberId: string, @Body() dto: any) {
     return this.membersService.updateKyc(memberId, dto);
   }
 
   @Post('me/photo')
+  @Roles('MEMBER')
   async uploadPhoto(@Req() req: any) {
     const file = await req.file();
     return this.membersService.uploadPhoto(req.user.userId, file);
   }
 
   @Get(':userId')
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
   getMember(@Param('userId') userId: string) {
     return this.membersService.getProfile(userId);
   }
 
   @Patch(':id/deactivate')
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
   deactivate(@Param('id') id: string, @Body('reason') reason: string) {
     return this.membersService.deactivate(id, reason);
   }

@@ -1,7 +1,20 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 
 const prisma = new PrismaClient();
+const encryptionKey = process.env.ENCRYPTION_KEY;
+if (!encryptionKey || !/^[a-f0-9]{64}$/i.test(encryptionKey)) {
+  throw new Error('ENCRYPTION_KEY must be a 64-character hex string before seeding.');
+}
+const key = Buffer.from(encryptionKey, 'hex');
+const encrypt = (value: string) => {
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  return `v1:${iv.toString('hex')}:${cipher.getAuthTag().toString('hex')}:${encrypted.toString('hex')}`;
+};
+const lookupHash = (value: string) => crypto.createHmac('sha256', key).update(value.trim().toUpperCase()).digest('hex');
 
 async function main() {
   const adminEmail = 'admin@sharanam.local';
@@ -33,8 +46,10 @@ async function main() {
       state: 'Tamil Nadu',
       district: 'Salem',
       pincode: '636001',
-      aadhaarNumber: '123456789012',
-      panNumber: 'ABCDE1234F',
+      aadhaarNumber: encrypt('123456789012'),
+      aadhaarHash: lookupHash('123456789012'),
+      panNumber: encrypt('ABCDE1234F'),
+      panHash: lookupHash('ABCDE1234F'),
     }
   });
 
@@ -65,8 +80,10 @@ async function main() {
       state: 'Tamil Nadu',
       district: 'Salem',
       pincode: '636001',
-      aadhaarNumber: '999988887777',
-      panNumber: 'PQRSX1234Z',
+      aadhaarNumber: encrypt('999988887777'),
+      aadhaarHash: lookupHash('999988887777'),
+      panNumber: encrypt('PQRSX1234Z'),
+      panHash: lookupHash('PQRSX1234Z'),
     },
   });
 

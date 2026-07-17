@@ -8,10 +8,6 @@ export default () => ({
   },
   database: {
     url: process.env.DATABASE_URL,
-    adminUrl:
-      process.env.ADMIN_DATABASE_URL || 'file:./prisma/admin.db',
-    agentUrl:
-      process.env.AGENT_DATABASE_URL || 'file:./prisma/agents.db',
   },
   admin: {
     accessKey: process.env.ADMIN_ACCESS_KEY || process.env.ADMIN_SIGNUP_SECRET,

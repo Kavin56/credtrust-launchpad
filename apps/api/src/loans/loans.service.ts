@@ -5,8 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import * as fs from 'fs';
-import { resolve } from 'path';
+import { StorageService } from '../storage/storage.service';
 
 const LOAN_STATUSES = [
   'PENDING',
@@ -28,20 +27,11 @@ type UploadedLoanFile = {
 
 @Injectable()
 export class LoansService {
-  private readonly uploadDir = resolve(
-    process.cwd(),
-    process.env.LOCAL_UPLOAD_DIR || '../../uploads',
-    'loans',
-  );
-
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notificationsService: NotificationsService
-  ) {
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
-    }
-  }
+    private readonly notificationsService: NotificationsService,
+    private readonly storage: StorageService,
+  ) {}
 
   async apply(dto: any, files: UploadedLoanFile[]) {
     const loanCount = await this.prisma.loan.count();
@@ -76,13 +66,13 @@ export class LoansService {
 
     // Handle file uploads
     for (const file of files) {
-      const filename = `${Date.now()}-${file.filename}`;
-      const filePath = resolve(this.uploadDir, filename);
-      await fs.promises.writeFile(filePath, file.buffer);
-      
-      // Store relative path for frontend
       const fieldName = file.fieldname === 'idProof' ? 'idProof' : 'incomeProof';
-      documentPaths[fieldName] = `/uploads/loans/${filename}`;
+      documentPaths[fieldName] = await this.storage.upload(
+        file.buffer,
+        file.filename,
+        file.mimetype || 'application/octet-stream',
+        'loan-documents',
+      );
     }
 
     const newLoan = await this.prisma.loan.create({
