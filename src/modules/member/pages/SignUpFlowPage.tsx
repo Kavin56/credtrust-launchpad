@@ -6,10 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileUp, Loader2, User, FileText, Sparkles } from 'lucide-react';
+import { FileUp, Loader2, User, FileText, Sparkles, CheckCircle2 } from 'lucide-react';
 
 const SignUpFlowPage = () => {
   const { user, refreshProfileStatus } = useAuth();
@@ -77,21 +76,58 @@ const SignUpFlowPage = () => {
   };
 
   const handleSubmit = async () => {
+    // Enforce KYC docs before submitting
+    if (!files.aadhaarDoc || !files.panDoc) {
+      toast.error('Both Aadhaar and PAN documents are required to complete registration.');
+      return;
+    }
+    if (!formData.aadhaarNumber || !formData.panNumber) {
+      toast.error('Please enter both Aadhaar and PAN card numbers.');
+      return;
+    }
+
     setLoading(true);
     try {
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => data.append(key, value));
-      if (files.aadhaarDoc) data.append('aadhaarDoc', files.aadhaarDoc);
-      if (files.panDoc) data.append('panDoc', files.panDoc);
+      data.append('aadhaarDoc', files.aadhaarDoc);
+      data.append('panDoc', files.panDoc);
 
-      await api.post('/members/complete-profile', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      // Use the Firebase ID token (not a JWT) for the complete-profile call.
+      // The backend will create the DB user + member atomically and return a real JWT.
+      const firebaseToken = localStorage.getItem('firebaseIdToken');
+      if (!firebaseToken) {
+        toast.error('Session expired. Please sign in with Google again.');
+        navigate('/signup');
+        return;
+      }
+
+      const response = await api.post('/members/complete-profile', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${firebaseToken}`,
+        },
       });
+
+      const result = response.data;
+
+      // Apply the JWT session returned by the backend so the user is logged in.
+      if (result.accessToken) {
+        localStorage.setItem('accessToken', result.accessToken);
+        if (result.refreshToken) localStorage.setItem('refreshToken', result.refreshToken);
+        localStorage.setItem('email', result.email);
+        localStorage.setItem('role', result.role);
+        localStorage.setItem('userId', result.userId);
+        localStorage.setItem('hasMemberProfile', 'true');
+        localStorage.removeItem('firebaseIdToken');
+        api.defaults.headers.common.Authorization = `Bearer ${result.accessToken}`;
+      }
 
       await refreshProfileStatus();
       setStep(3);
-    } catch (error) {
-      toast.error('Failed to save profile. Please try again.');
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || 'Failed to save profile. Please try again.';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -244,9 +280,23 @@ const SignUpFlowPage = () => {
                   </div>
                 </div>
 
+                {/* Document upload status indicators */}
+                <div className="flex gap-3 text-sm">
+                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold ${files.aadhaarDoc ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-500'}`}>
+                    {files.aadhaarDoc ? '✓ Aadhaar' : '⚠ Aadhaar required'}
+                  </div>
+                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-semibold ${files.panDoc ? 'bg-green-100 text-green-700' : 'bg-red-50 text-red-500'}`}>
+                    {files.panDoc ? '✓ PAN' : '⚠ PAN required'}
+                  </div>
+                </div>
+
                 <div className="flex gap-4">
                   <Button variant="ghost" onClick={() => setStep(1)} className="flex-1 border border-amber-200 hover:bg-amber-100 font-bold h-12 rounded-xl">BACK</Button>
-                  <Button onClick={handleSubmit} disabled={loading} className="flex-[2] bg-amber-500 hover:bg-amber-600 text-white font-black h-12 text-lg rounded-xl shadow-lg shadow-amber-500/20">
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={loading || !files.aadhaarDoc || !files.panDoc}
+                    className="flex-[2] bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-black h-12 text-lg rounded-xl shadow-lg shadow-amber-500/20 transition-all"
+                  >
                     {loading ? <Loader2 className="animate-spin h-5 w-5" /> : 'COMPLETE REGISTRATION'}
                   </Button>
                 </div>

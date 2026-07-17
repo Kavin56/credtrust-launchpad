@@ -84,22 +84,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       };
 
       const syncFirebaseSession = async (fbUser: User) => {
-        const token = await fbUser.getIdToken(false);
-        api.defaults.headers.common.Authorization = `Bearer ${token}`;
+        const firebaseToken = await fbUser.getIdToken(false);
+        api.defaults.headers.common.Authorization = `Bearer ${firebaseToken}`;
         const session = await getFirebaseSession(fbUser);
         
-        localStorage.setItem("accessToken", token);
-        localStorage.setItem("email", session.email);
-        localStorage.setItem("role", session.role);
-        localStorage.setItem("userId", session.userId);
-        localStorage.setItem("hasMemberProfile", String(session.hasMemberProfile));
-        
-        setUser({ 
-          id: session.userId, 
-          email: session.email, 
-          role: session.role,
-          hasMemberProfile: session.hasMemberProfile
-        });
+        if (session.pendingRegistration) {
+          // User exists in Firebase but has NOT completed registration (no KYC).
+          // Store the Firebase token temporarily so the signup flow can use it.
+          // Do NOT store it as the app accessToken (that's reserved for JWT).
+          localStorage.setItem("firebaseIdToken", firebaseToken);
+          localStorage.setItem("email", session.email || fbUser.email || "");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("userId");
+          localStorage.setItem("hasMemberProfile", "false");
+          localStorage.setItem("role", "MEMBER");
+          setUser({
+            id: "",
+            email: session.email || fbUser.email || "",
+            role: "MEMBER",
+            hasMemberProfile: false,
+          });
+        } else {
+          // Fully registered user - apply the JWT session returned by backend.
+          localStorage.removeItem("firebaseIdToken");
+          localStorage.setItem("accessToken", session.accessToken || firebaseToken);
+          if (session.refreshToken) localStorage.setItem("refreshToken", session.refreshToken);
+          localStorage.setItem("email", session.email);
+          localStorage.setItem("role", session.role || "MEMBER");
+          localStorage.setItem("userId", session.userId || "");
+          localStorage.setItem("hasMemberProfile", String(session.hasMemberProfile));
+          // Use the JWT as the Authorization header
+          if (session.accessToken) {
+            api.defaults.headers.common.Authorization = `Bearer ${session.accessToken}`;
+          }
+          setUser({
+            id: session.userId || "",
+            email: session.email,
+            role: session.role || "MEMBER",
+            hasMemberProfile: session.hasMemberProfile,
+          });
+        }
       };
 
       const unsub = onAuthStateChanged(auth, async (fbUser) => {

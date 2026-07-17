@@ -12,8 +12,10 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { MembersService } from './members.service';
+import { AuthService } from '../auth/auth.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
 @ApiTags('members')
@@ -21,7 +23,10 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 @UseGuards(JwtAuthGuard)
 @Controller('members')
 export class MembersController {
-  constructor(private readonly membersService: MembersService) {}
+  constructor(
+    private readonly membersService: MembersService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Get()
   findAll(@Query() query: any) {
@@ -43,13 +48,22 @@ export class MembersController {
     return this.membersService.updateProfile(req.user.userId, dto);
   }
 
+  /**
+   * Complete member registration with KYC documents.
+   * Uses FirebaseAuthGuard so the client sends a raw Firebase ID token
+   * (not a JWT). A DB User + Member record is only created here, AFTER
+   * both KYC documents have been successfully uploaded.
+   */
+  @UseGuards(FirebaseAuthGuard)
   @Post('complete-profile')
   async completeProfile(@Req() req: any) {
     try {
+      const firebaseIdentity = req.user; // set by FirebaseAuthGuard
+
       const parts = req.parts();
       const data: any = {};
       const uploadedFiles: any[] = [];
-      
+
       for await (const part of parts) {
         if (part.type === 'file') {
           const buffer = await part.toBuffer();
@@ -57,17 +71,33 @@ export class MembersController {
             fieldname: part.fieldname,
             filename: part.filename,
             mimetype: part.mimetype,
-            buffer: buffer
+            buffer: buffer,
           });
         } else {
           data[part.fieldname] = part.value;
         }
       }
-      
-      return await this.membersService.completeProfile(req.user.userId, data, uploadedFiles);
+
+      // Enforce: both KYC documents MUST be present
+      const hasAadhaar = uploadedFiles.some((f) => f.fieldname === 'aadhaarDoc');
+      const hasPan = uploadedFiles.some((f) => f.fieldname === 'panDoc');
+      if (!hasAadhaar || !hasPan) {
+        throw new HttpException(
+          'Both Aadhaar and PAN documents are required to complete registration.',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Create DB user (if not already exists) then create member + upload docs
+      const dbUser = await this.authService.createMemberUser(firebaseIdentity);
+      return await this.membersService.completeProfile(dbUser.id, data, uploadedFiles, firebaseIdentity);
     } catch (error: any) {
       console.error('COMPLETE PROFILE ERROR:', error);
-      throw new HttpException(error.message || 'Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
+      if (error instanceof HttpException) throw error;
+      throw new HttpException(
+        error.message || 'Internal Server Error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
