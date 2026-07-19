@@ -48,6 +48,7 @@ const AccountsPage = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
 
   const handlePhotoClick = () => {
     fileInputRef.current?.click();
@@ -83,6 +84,14 @@ const AccountsPage = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const getPhotoUrl = (url: string | null | undefined) => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
+    const domain = base.replace(/\/api\/v1\/?$/, '');
+    return `${domain}${url}`;
   };
 
   const getCardName = () => {
