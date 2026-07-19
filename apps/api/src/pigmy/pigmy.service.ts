@@ -111,7 +111,9 @@ export class PigmyService {
             district: 'Chennai',
             pincode: '600001',
             aadhaarNumber: `TEMP-${Date.now()}-${nanoid(4)}`,
+            aadhaarHash: `TEMP-HASH-${Date.now()}-${nanoid(4)}`,
             panNumber: `TEMP-PAN-${Date.now()}-${nanoid(4)}`,
+            panHash: `TEMP-PAN-HASH-${Date.now()}-${nanoid(4)}`,
             kycStatus: 'PENDING',
           }
         });
