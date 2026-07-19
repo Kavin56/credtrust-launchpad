@@ -220,16 +220,6 @@ const AccountsPage = () => {
                   </div>
 
                   {/* Summary Grid */}
-                  <div className="grid lg:grid-cols-[1fr,320px] gap-10">
-                    <div className="space-y-8">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                          <div className="space-y-1.5">
-                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Account Description</p>
-                              <p className="text-[13px] font-bold text-[#1a1f36]">LOTUS SAVINGS SOCIETY-ADHAAR- CHQ</p>
-                          </div>
-                          <div className="space-y-1.5">
-                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Currency</p>
-                              <p className="text-[13px] font-bold text-[#1a1f36]">Rupees</p>
                   <div className="space-y-8">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
                       <div className="space-y-1.5">
@@ -468,8 +458,7 @@ const AccountsPage = () => {
                         </div>
                       </div>
                     </div>
-                  </div>
-                </>
+                  </>
              ) : activeTabIndex === 1 ? (
                 <div className="space-y-8">
                    <div className="flex items-center justify-between">
