@@ -91,7 +91,8 @@ const AccountsPage = () => {
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
     const domain = base.replace(/\/api\/v1\/?$/, '');
-    return `${domain}${url}`;
+    const separator = url.startsWith('/') ? '' : '/';
+    return `${domain}${separator}${url}`;
   };
 
   const getCardName = () => {
@@ -290,7 +291,7 @@ const AccountsPage = () => {
                                     </div>
                                   )}
                                   {getPhotoUrl(profile?.photoUrl) ? (
-                                    <img src={getPhotoUrl(profile.photoUrl)!} alt="Photo" className="w-full h-full object-cover" />
+                                    <img src={getPhotoUrl(profile.photoUrl)!} alt="Photo" className="w-full h-full object-cover" crossOrigin="anonymous" />
                                   ) : (
                                     <div className="text-center p-0.5">
                                       <span className="text-[7px] font-bold text-gray-400 block mb-0.5 leading-none">PHOTO</span>
