@@ -99,14 +99,13 @@ export class AuthService {
   }
 
   async authenticateBearerToken(token: string) {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new UnauthorizedException('JWT_SECRET is not configured.');
     try {
-      const secret = process.env.JWT_SECRET;
-      if (!secret) throw new UnauthorizedException('JWT_SECRET is not configured.');
       const decoded: any = this.jwtService.verify(token, { secret });
       return { userId: decoded.sub, role: decoded.role, email: decoded.email };
-    } catch {
-      const firebaseIdentity = await this.verifyFirebaseToken(token);
-      return this.buildFirebaseSession(firebaseIdentity);
+    } catch (err) {
+      throw new UnauthorizedException('Invalid or expired JWT token');
     }
   }
 
@@ -325,6 +324,7 @@ export class AuthService {
   }
 
   async checkMemberProfile(userId: string) {
+    if (!userId) return null;
     return this.prisma.member.findUnique({
       where: { userId },
     });
