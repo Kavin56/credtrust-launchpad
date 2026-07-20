@@ -26,9 +26,13 @@ async function bootstrap() {
       tracesSampleRate: 0.2,
     });
   }
+
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ logger: false }),
+    new FastifyAdapter({
+      logger: false,
+      bodyLimit: 100 * 1024 * 1024, // 100 MB body payload limit
+    }),
     { bufferLogs: true },
   );
 
@@ -59,7 +63,7 @@ async function bootstrap() {
   await app.register(fastifyHelmet);
   await app.register(fastifyRateLimit, { max: 100, timeWindow: '1 minute' });
   await app.register(multipart, {
-    limits: { fileSize: MAX_UPLOAD_BYTES, files: 5 },
+    limits: { fileSize: MAX_UPLOAD_BYTES, files: 100 },
     throwFileSizeLimit: true,
   });
 
