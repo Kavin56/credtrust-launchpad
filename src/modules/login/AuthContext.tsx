@@ -193,8 +193,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       pauseFirebaseSyncRef.current = true;
       setLoading(true);
       try {
-        await signInWithEmailAndPassword(auth, email, password);
-        await refreshProfileStatus();
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        const firebaseToken = await userCred.user.getIdToken(true);
+        api.defaults.headers.common.Authorization = `Bearer ${firebaseToken}`;
+        
+        try {
+          const { data } = await api.post("/auth/firebase/session");
+          if (data.accessToken) {
+            applySession({
+              accessToken: data.accessToken,
+              refreshToken: data.refreshToken,
+              role: data.role,
+              email: data.email || email,
+              userId: data.userId,
+              hasMemberProfile: data.hasMemberProfile,
+            });
+          } else {
+            localStorage.setItem("firebaseIdToken", firebaseToken);
+            localStorage.setItem("email", data.email || email);
+            setUser({
+              id: userCred.user.uid,
+              email: data.email || email,
+              role: "MEMBER",
+              hasMemberProfile: false,
+            });
+          }
+        } catch {
+          localStorage.setItem("firebaseIdToken", firebaseToken);
+          localStorage.setItem("email", email);
+          setUser({
+            id: userCred.user.uid,
+            email,
+            role: "MEMBER",
+            hasMemberProfile: false,
+          });
+        }
       } finally {
         pauseFirebaseSyncRef.current = false;
         setLoading(false);
@@ -265,8 +298,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const loginWithGoogle = async () => {
     if (provider === "firebase") {
       const googleProvider = new GoogleAuthProvider();
-      await signInWithPopup(auth, googleProvider);
-      await refreshProfileStatus();
+      const result = await signInWithPopup(auth, googleProvider);
+      const firebaseToken = await result.user.getIdToken(true);
+      api.defaults.headers.common.Authorization = `Bearer ${firebaseToken}`;
+
+      try {
+        const { data } = await api.post("/auth/firebase/session");
+        if (data.accessToken) {
+          applySession({
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+            role: data.role,
+            email: data.email || result.user.email || "",
+            userId: data.userId,
+            hasMemberProfile: data.hasMemberProfile,
+          });
+        } else {
+          localStorage.setItem("firebaseIdToken", firebaseToken);
+          localStorage.setItem("email", data.email || result.user.email || "");
+          setUser({
+            id: result.user.uid,
+            email: data.email || result.user.email || "",
+            role: "MEMBER",
+            hasMemberProfile: false,
+          });
+        }
+      } catch {
+        localStorage.setItem("firebaseIdToken", firebaseToken);
+        localStorage.setItem("email", result.user.email || "");
+        setUser({
+          id: result.user.uid,
+          email: result.user.email || "",
+          role: "MEMBER",
+          hasMemberProfile: false,
+        });
+      }
     }
   };
 
