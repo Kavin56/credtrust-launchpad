@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "https://credtrust-launchpad-git-176626350005.asia-south1.run.app/api/v1",
   // File uploads + cold-start can exceed 30s; keep UX responsive via UI state instead.
   timeout: 120_000,
 });
