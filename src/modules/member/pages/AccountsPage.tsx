@@ -279,7 +279,7 @@ const AccountsPage = () => {
                               <div className="flex flex-col gap-2 shrink-0 items-center justify-between py-0.5">
                                 <div className="w-[85px] h-[100px] border-2 border-[#1E3A8A] flex flex-col items-center justify-center bg-gray-50 rounded shrink-0 overflow-hidden relative">
                                   {getPhotoUrl(profile?.photoUrl) ? (
-                                    <img src={getPhotoUrl(profile.photoUrl)!} alt="Photo" className="w-full h-full object-cover" crossOrigin="anonymous" />
+                                    <img src={getPhotoUrl(profile.photoUrl)!} alt="Photo" className="w-full h-full object-cover" />
                                   ) : (
                                     <div className="text-center p-0.5">
                                       <User className="w-8 h-8 text-gray-400 mx-auto" />
