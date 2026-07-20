@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileUp, Loader2, User, FileText, Sparkles } from 'lucide-react';
+import { auth } from '@/lib/firebase';
 
 interface SignUpFlowModalProps {
   open: boolean;
@@ -87,11 +88,32 @@ export const SignUpFlowModal = ({ open, onOpenChange, email, password }: SignUpF
   };
 
   const handleSubmit = async () => {
+    if (!files.aadhaarDoc || !files.panDoc) {
+      toast.error('Both Aadhaar and PAN documents are required to complete registration.');
+      return;
+    }
+    if (!formData.aadhaarNumber || !formData.panNumber) {
+      toast.error('Please enter both Aadhaar and PAN card numbers.');
+      return;
+    }
+
     setLoading(true);
     try {
-      if (email && password) {
-        // Register the user first if not already authenticated
+      if (!auth.currentUser && email && password) {
+        // Register or sign in the user first if not already authenticated
         await register({ email, password });
+      }
+
+      const currentUser = auth.currentUser;
+      let firebaseToken = await currentUser?.getIdToken(true);
+
+      if (!firebaseToken) {
+        firebaseToken = localStorage.getItem('firebaseIdToken') || undefined;
+      }
+
+      if (!firebaseToken) {
+        toast.error('Session expired. Please sign in with Google or Email again.');
+        return;
       }
 
       const data = new FormData();
@@ -99,12 +121,32 @@ export const SignUpFlowModal = ({ open, onOpenChange, email, password }: SignUpF
       if (files.aadhaarDoc) data.append('aadhaarDoc', files.aadhaarDoc);
       if (files.panDoc) data.append('panDoc', files.panDoc);
 
-      await api.post('/members/complete-profile', data);
+      const response = await api.post('/members/complete-profile', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${firebaseToken}`,
+        },
+      });
+
+      const result = response.data;
+      if (result.accessToken) {
+        localStorage.setItem('accessToken', result.accessToken);
+        if (result.refreshToken) localStorage.setItem('refreshToken', result.refreshToken);
+        localStorage.setItem('email', result.email);
+        localStorage.setItem('role', result.role);
+        localStorage.setItem('userId', result.userId);
+        localStorage.setItem('hasMemberProfile', 'true');
+        localStorage.removeItem('firebaseIdToken');
+        api.defaults.headers.common.Authorization = `Bearer ${result.accessToken}`;
+      }
 
       await refreshProfileStatus();
       setStep(3);
     } catch (error: any) {
-      const errorMsg = error.response?.data?.message || 'Failed to save profile. Please try again.';
+      const errorMsg =
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to save profile. Please try again.';
       toast.error(errorMsg);
     } finally {
       setLoading(false);
@@ -134,6 +176,8 @@ export const SignUpFlowModal = ({ open, onOpenChange, email, password }: SignUpF
         }
     }}>
       <DialogContent className="max-w-2xl bg-white border-amber-200 text-gray-900 p-0 overflow-hidden hide-close-button shadow-2xl">
+        <DialogTitle className="sr-only">Member Registration</DialogTitle>
+        <DialogDescription className="sr-only">Complete member profile and upload KYC documents</DialogDescription>
         <div className="p-8">
           <AnimatePresence mode="wait">
             {step === 1 && (

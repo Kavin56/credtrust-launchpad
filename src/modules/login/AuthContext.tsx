@@ -296,8 +296,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const register = async (payload: { email: string; password: string }) => {
     if (provider === "firebase") {
-      await createUserWithEmailAndPassword(auth, payload.email, payload.password);
-      // Profile creation will be handled by the new flow
+      try {
+        await createUserWithEmailAndPassword(auth, payload.email, payload.password);
+      } catch (err: any) {
+        if (err?.code === 'auth/email-already-in-use') {
+          await signInWithEmailAndPassword(auth, payload.email, payload.password);
+        } else {
+          throw err;
+        }
+      }
     }
   };
 
