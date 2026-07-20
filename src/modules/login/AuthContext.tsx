@@ -300,7 +300,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         await createUserWithEmailAndPassword(auth, payload.email, payload.password);
       } catch (err: any) {
         if (err?.code === 'auth/email-already-in-use') {
-          await signInWithEmailAndPassword(auth, payload.email, payload.password);
+          try {
+            await signInWithEmailAndPassword(auth, payload.email, payload.password);
+          } catch (signInErr: any) {
+            throw new Error('This email is already registered in Firebase. Please click "Log in" with your password or sign in with Google.');
+          }
         } else {
           throw err;
         }
