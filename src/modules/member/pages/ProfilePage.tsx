@@ -525,7 +525,7 @@ const ProfilePage = () => {
                                </div>
                              </form>
                            </DialogContent>
-                         </Dialog></div>
+                         </Dialog>
 
                         <div className="grid md:grid-cols-2 gap-8">
                            {kycCards.map((doc, i) => (

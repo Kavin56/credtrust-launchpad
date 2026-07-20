@@ -340,8 +340,6 @@ export class MembersService {
       );
 
       await this.prisma.member.update({
-
-      await this.prisma.member.update({
         where: { userId },
         data: { photoUrl },
       });
@@ -393,6 +391,9 @@ export class MembersService {
   }
   
   async deactivate(id: string, reason: string) {
+    await this.prisma.member.update({
+      where: { id },
+      data: { status: 'INACTIVE', exitReason: reason, deactivatedAt: new Date() },
     });
     return { success: true };
   }
