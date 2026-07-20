@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { Marquee } from "./ui/marquee";
-import { UserCheck, LayoutGrid, SlidersHorizontal } from "lucide-react";
+import { UserCheck } from "lucide-react";
 
 // Image imports
 import sandeshImg from "@/Team_photos/Mr. Sandesh Shanmugam.jpeg";
@@ -34,7 +34,6 @@ const teamMembers = [
 ];
 
 export default function TeamSection() {
-  const [viewMode, setViewMode] = useState<"slider" | "grid">("slider");
   const marqueeList = [...teamMembers, ...teamMembers];
 
   return (
@@ -81,69 +80,17 @@ export default function TeamSection() {
           <p className="max-w-2xl text-base text-gray-500 font-medium leading-relaxed">
             Guiding our institution with integrity, vision, and a commitment to serving our community with excellence.
           </p>
-
-          {/* Toggle View Mode */}
-          <div className="mt-8 flex items-center gap-2 p-1.5 bg-gray-100/80 rounded-full border border-gray-200 shadow-inner">
-            <button
-              onClick={() => setViewMode("slider")}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold transition-all ${
-                viewMode === "slider"
-                  ? "bg-[#1a1f36] text-white shadow-md"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" /> Auto Scroll
-            </button>
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold transition-all ${
-                viewMode === "grid"
-                  ? "bg-[#1a1f36] text-white shadow-md"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" /> View All ({teamMembers.length} Directors)
-            </button>
-          </div>
         </div>
 
-        {/* Content Section: Slider Mode vs Grid Mode */}
-        {viewMode === "slider" ? (
-          <div className="relative w-full py-6">
-            <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-24 bg-gradient-to-r from-white to-transparent" />
-            <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-24 bg-gradient-to-l from-white to-transparent" />
+        {/* Pure Auto Scroll Marquee Slider */}
+        <div className="relative w-full py-6">
+          <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-24 bg-gradient-to-r from-white to-transparent" />
+          <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-24 bg-gradient-to-l from-white to-transparent" />
 
-            <Marquee className="[--gap:1.5rem] [--duration:50s]" pauseOnHover={true} repeat={2}>
-              {marqueeList.map((member, idx) => (
-                <div className="group flex w-64 md:w-72 shrink-0 flex-col px-2" key={`${member.name}-${idx}`}>
-                  <div className="relative h-[380px] w-full overflow-hidden rounded-[32px] bg-neutral-50 border border-gray-100 shadow-sm transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-purple-900/10 group-hover:-translate-y-2">
-                    <img
-                      alt={member.name}
-                      className="h-full w-full object-cover transition-all duration-700 group-hover:scale-105"
-                      src={member.image}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                    
-                    <div className="absolute bottom-0 w-full p-4">
-                      <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3.5 shadow-xl border border-white text-center">
-                        <h3 className="font-bold text-[#1a1f36] text-base leading-tight">
-                          {member.name}
-                        </h3>
-                        <p className="text-[#c9a84c] font-black text-[10px] uppercase tracking-wider mt-1">
-                          {member.role}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </Marquee>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-6">
-            {teamMembers.map((member) => (
-              <div className="group flex flex-col" key={member.name}>
-                <div className="relative h-[360px] w-full overflow-hidden rounded-[32px] bg-neutral-50 border border-gray-200 shadow-sm transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-1">
+          <Marquee className="[--gap:1.5rem] [--duration:50s]" pauseOnHover={true} repeat={2}>
+            {marqueeList.map((member, idx) => (
+              <div className="group flex w-64 md:w-72 shrink-0 flex-col px-2" key={`${member.name}-${idx}`}>
+                <div className="relative h-[380px] w-full overflow-hidden rounded-[32px] bg-neutral-50 border border-gray-100 shadow-sm transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-purple-900/10 group-hover:-translate-y-2">
                   <img
                     alt={member.name}
                     className="h-full w-full object-cover transition-all duration-700 group-hover:scale-105"
@@ -164,8 +111,8 @@ export default function TeamSection() {
                 </div>
               </div>
             ))}
-          </div>
-        )}
+          </Marquee>
+        </div>
 
         {/* Footer Quote */}
         <div className="mx-auto mt-20 max-w-4xl px-6 text-center lg:px-0">
