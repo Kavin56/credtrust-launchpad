@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import api, { getApiBaseUrl } from "@/lib/api";
+
+const getDocUrl = (url: string | null) => {
+  if (!url) return '#';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const baseUrl = getApiBaseUrl();
+  if (url.startsWith('gs://') || url.startsWith('/uploads/')) {
+    return `${baseUrl}/storage/view?path=${encodeURIComponent(url)}`;
+  }
+  const origin = baseUrl.replace('/api/v1', '');
+  const cleanPath = url.startsWith('/') ? url : `/${url}`;
+  return `${origin}${cleanPath}`;
+};
 import AdminNavbar from '@/components/AdminNavbar';
 import Footer from "@/components/Footer";
 import { 
@@ -425,8 +437,7 @@ const LoanRequestsPage = () => {
                                     };
                                  }
                                  return docs && Object.entries(docs).map(([key, path]: [string, any]) => {
-                                    const baseUrl = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1").split('/api')[0];
-                                    const fullUrl = `${baseUrl}${path}`;
+                                    const fullUrl = getDocUrl(path);
                                     return (
                                        <a 
                                           key={key} 

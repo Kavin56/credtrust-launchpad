@@ -62,11 +62,14 @@ export class LoansService {
       );
     }
 
-    const documentPaths: any = {};
+    const documentPaths: Record<string, string> = {};
 
-    // Handle file uploads
-    for (const file of files) {
-      const fieldName = file.fieldname === 'idProof' ? 'idProof' : 'incomeProof';
+    // Handle all file uploads independently
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const rawFieldName = file.fieldname || `document_${i + 1}`;
+      const fieldName = documentPaths[rawFieldName] ? `${rawFieldName}_${i + 1}` : rawFieldName;
+
       documentPaths[fieldName] = await this.storage.upload(
         file.buffer,
         file.filename,
