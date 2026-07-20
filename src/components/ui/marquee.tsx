@@ -23,7 +23,7 @@ export function Marquee({
     <div
       {...props}
       className={cn(
-        "group flex overflow-hidden p-2 [--duration:40s] [--gap:1rem] [gap:var(--gap)] select-none",
+        "group flex overflow-hidden p-2 [--duration:40s] [--gap:1.5rem] [gap:var(--gap)] select-none",
         {
           "flex-row": !vertical,
           "flex-col": vertical,
@@ -37,7 +37,7 @@ export function Marquee({
           <div
             key={trackIndex}
             aria-hidden={trackIndex > 0}
-            className={cn("flex shrink-0 [gap:var(--gap)] min-w-full justify-around", {
+            className={cn("flex shrink-0 w-max [gap:var(--gap)]", {
               "animate-marquee flex-row": !vertical,
               "animate-marquee-vertical flex-col": vertical,
               "[animation-direction:reverse]": reverse,
