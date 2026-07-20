@@ -6,7 +6,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('dividends')
 @ApiBearerAuth()
-@UseGuards(FirebaseAuthGuard, JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('dividends')
 export class DividendsController {
   constructor(private readonly dividendsService: DividendsService) {}

@@ -21,7 +21,6 @@ import { Roles, RolesGuard } from '../common/guards/roles.guard';
 
 @ApiTags('members')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('members')
 export class MembersController {
   constructor(
@@ -30,24 +29,28 @@ export class MembersController {
   ) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'CEO', 'DIRECTOR')
   findAll(@Query() query: any) {
     return this.membersService.findAll(query);
   }
 
   @Get('stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'CEO', 'DIRECTOR')
   getStats() {
     return this.membersService.getStats();
   }
 
   @Get('me')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('MEMBER')
   getMe(@Req() req: any) {
     return this.membersService.getProfile(req.user.userId);
   }
 
   @Patch('me')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('MEMBER')
   updateMe(@Req() req: any, @Body() dto: UpdateProfileDto) {
     return this.membersService.updateProfile(req.user.userId, dto);
@@ -107,18 +110,21 @@ export class MembersController {
   }
 
   @Get('me/overview')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('MEMBER')
   overview(@Req() req: any) {
     return this.membersService.dashboardOverview(req.user.userId);
   }
 
   @Patch(':memberId/kyc')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'CEO', 'DIRECTOR')
   updateKyc(@Param('memberId') memberId: string, @Body() dto: any) {
     return this.membersService.updateKyc(memberId, dto);
   }
 
   @Post('me/photo')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('MEMBER')
   async uploadPhoto(@Req() req: any) {
     const file = await req.file();
@@ -126,12 +132,14 @@ export class MembersController {
   }
 
   @Get(':userId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'CEO', 'DIRECTOR')
   getMember(@Param('userId') userId: string) {
     return this.membersService.getProfile(userId);
   }
 
   @Patch(':id/deactivate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'CEO', 'DIRECTOR')
   deactivate(@Param('id') id: string, @Body('reason') reason: string) {
     return this.membersService.deactivate(id, reason);
