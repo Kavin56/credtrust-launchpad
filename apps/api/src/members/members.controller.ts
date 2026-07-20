@@ -131,6 +131,31 @@ export class MembersController {
     return this.membersService.uploadPhoto(req.user.userId, file);
   }
 
+  @Post('me/document')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('MEMBER')
+  async uploadDocument(@Req() req: any) {
+    const parts = req.parts();
+    let docType = 'aadhaarDoc';
+    let fileObj: any = null;
+
+    for await (const part of parts) {
+      if (part.type === 'file') {
+        const buffer = await part.toBuffer();
+        fileObj = {
+          fieldname: part.fieldname,
+          filename: part.filename,
+          mimetype: part.mimetype,
+          buffer,
+        };
+      } else {
+        if (part.fieldname === 'docType') docType = part.value;
+      }
+    }
+
+    return this.membersService.uploadDocument(req.user.userId, docType, fileObj);
+  }
+
   @Get(':userId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'CEO', 'DIRECTOR')

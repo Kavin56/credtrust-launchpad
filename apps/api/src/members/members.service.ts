@@ -340,6 +340,8 @@ export class MembersService {
       );
 
       await this.prisma.member.update({
+
+      await this.prisma.member.update({
         where: { userId },
         data: { photoUrl },
       });
@@ -350,11 +352,47 @@ export class MembersService {
       throw new BadRequestException('Failed to upload profile picture.');
     }
   }
+
+  async uploadDocument(userId: string, docType: string, file: any) {
+    if (!file) {
+      throw new BadRequestException('No document file uploaded.');
+    }
+
+    const member = await this.prisma.member.findFirst({
+      where: { OR: [{ userId }, { id: userId }, { memberId: userId }] },
+    });
+    if (!member) {
+      throw new NotFoundException('Member profile not found.');
+    }
+
+    try {
+      const fileUrl = await this.storage.upload(
+        file.buffer,
+        `${member.memberId}-${docType}-${file.filename}`,
+        file.mimetype || 'application/octet-stream',
+        'kyc',
+      );
+
+      const updateData: any = {};
+      if (docType === 'panDoc' || docType === 'pan') {
+        updateData.panDocUrl = fileUrl;
+      } else {
+        updateData.aadhaarDocUrl = fileUrl;
+      }
+
+      await this.prisma.member.update({
+        where: { id: member.id },
+        data: updateData,
+      });
+
+      return { success: true, url: await this.storage.signedUrl(fileUrl) };
+    } catch (error) {
+      console.error('UPLOAD DOCUMENT ERROR:', error);
+      throw new BadRequestException('Failed to upload document.');
+    }
+  }
   
   async deactivate(id: string, reason: string) {
-    await this.prisma.member.update({
-      where: { id },
-      data: { status: 'INACTIVE', exitReason: reason, deactivatedAt: new Date() },
     });
     return { success: true };
   }

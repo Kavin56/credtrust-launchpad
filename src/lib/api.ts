@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const getApiBaseUrl = () => {
+export const getApiBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
   if (envUrl && !envUrl.includes("credtrust-api-176626350005.us-central1.run.app") && envUrl !== "http://localhost:3000/api/v1") {
     return envUrl;
