@@ -163,10 +163,14 @@ const ProfilePage = () => {
   );
 
   const getDocUrl = (url: string) => {
-    if (!url) return null;
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
+    if (!url) return '#';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://credtrust-launchpad-git-176626350005.asia-south1.run.app/api/v1";
     const origin = baseUrl.replace('/api/v1', '');
-    return `${origin}${url}`;
+    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    return `${origin}${cleanPath}`;
   };
 
   const handleUpdate = (e: React.FormEvent) => {

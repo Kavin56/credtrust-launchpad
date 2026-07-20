@@ -359,10 +359,17 @@ export class MembersService {
     return { success: true };
   }
 
-  private async withSignedPhoto<T extends { photoUrl?: string | null }>(member: T): Promise<T> {
-    if (member.photoUrl?.startsWith('gs://')) {
-      return { ...member, photoUrl: await this.storage.signedUrl(member.photoUrl) };
+  private async withSignedPhoto<T extends { photoUrl?: string | null; aadhaarDocUrl?: string | null; panDocUrl?: string | null }>(member: T): Promise<T> {
+    const updated = { ...member };
+    if (updated.photoUrl?.startsWith('gs://')) {
+      updated.photoUrl = await this.storage.signedUrl(updated.photoUrl);
     }
-    return member;
+    if (updated.aadhaarDocUrl?.startsWith('gs://')) {
+      updated.aadhaarDocUrl = await this.storage.signedUrl(updated.aadhaarDocUrl);
+    }
+    if (updated.panDocUrl?.startsWith('gs://')) {
+      updated.panDocUrl = await this.storage.signedUrl(updated.panDocUrl);
+    }
+    return updated;
   }
 }
