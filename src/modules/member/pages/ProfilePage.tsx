@@ -142,6 +142,7 @@ const ProfilePage = () => {
       emergencyContact: profile?.emergencyContact || "",
       issueDate: profile?.issueDate ? new Date(profile.issueDate).toLocaleDateString("en-IN") : new Date().toLocaleDateString("en-IN"),
       expiryDate: profile?.expiryDate ? new Date(profile.expiryDate).toLocaleDateString("en-IN") : "Permanent",
+      photoUrl: profile?.photoUrl || null,
     };
   }, [profile]);
 
@@ -211,6 +212,32 @@ const ProfilePage = () => {
     }
   };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select a valid image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Profile picture must be under 5MB.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      await api.post("/members/me/photo", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      toast.success("Profile photo updated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["member-profile"] });
+    } catch (err: any) {
+      toast.error(getApiErrorMessage(err, "Failed to upload profile photo."));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans selection:bg-[#c9a84c]/30">
       <Header />
@@ -234,11 +261,16 @@ const ProfilePage = () => {
              <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm p-8 text-center space-y-6 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-full h-24 bg-gradient-to-br from-[#1a1f36] to-[#6b21a8] rounded-t-[40px]" />
                 <div className="relative pt-6">
-                   <div className="w-28 h-28 relative rounded-[32px] border-4 border-white shadow-xl bg-[#c9a84c] mx-auto flex items-center justify-center text-white text-[40px] font-black group-hover:rotate-6 transition-transform duration-500">
-                      {isLoading ? "..." : profileView.initials}
-                      <div className="absolute -bottom-1 -right-1 w-9 h-9 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#1a1f36] shadow-lg cursor-pointer z-10">
+                   <div className="w-28 h-28 relative rounded-[32px] border-4 border-white shadow-xl bg-[#c9a84c] mx-auto flex items-center justify-center text-white text-[40px] font-black group-hover:rotate-6 transition-transform duration-500 overflow-hidden">
+                      {profileView.photoUrl ? (
+                        <img src={getDocUrl(profileView.photoUrl)} alt={profileView.fullName} className="w-full h-full object-cover" />
+                      ) : (
+                        isLoading ? "..." : profileView.initials
+                      )}
+                      <label className="absolute -bottom-1 -right-1 w-9 h-9 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#1a1f36] shadow-lg cursor-pointer z-10">
                          <Camera className="w-4 h-4" />
-                      </div>
+                         <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                      </label>
                    </div>
                 </div>
                 <div>

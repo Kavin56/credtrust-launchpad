@@ -1,11 +1,11 @@
-import { Search, ChevronRight, Eye, Home, Smartphone, Info, CreditCard, ChevronDown, Landmark, PiggyBank, CircleDollarSign, Calculator } from 'lucide-react';
+import { Search, ChevronRight, Eye, Home, Smartphone, Info, CreditCard, ChevronDown, Landmark, PiggyBank, CircleDollarSign, Calculator, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { getApiBaseUrl } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
@@ -89,8 +89,11 @@ const AccountsPage = () => {
   const getPhotoUrl = (url: string | null | undefined) => {
     if (!url) return null;
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    const base = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
-    const domain = base.replace(/\/api\/v1\/?$/, '');
+    const baseUrl = getApiBaseUrl();
+    if (url.startsWith('gs://') || url.startsWith('/uploads/')) {
+      return `${baseUrl}/storage/view?path=${encodeURIComponent(url)}`;
+    }
+    const domain = baseUrl.replace(/\/api\/v1\/?$/, '');
     const separator = url.startsWith('/') ? '' : '/';
     return `${domain}${separator}${url}`;
   };
@@ -274,33 +277,15 @@ const AccountsPage = () => {
                             <div className="flex gap-4 flex-1 my-1">
                               {/* Photo & QR Code Placeholder */}
                               <div className="flex flex-col gap-2 shrink-0 items-center justify-between py-0.5">
-                                <div 
-                                  onClick={handlePhotoClick}
-                                  className="w-[85px] h-[100px] border-2 border-[#1E3A8A] flex flex-col items-center justify-center bg-gray-50 rounded shrink-0 overflow-hidden cursor-pointer hover:bg-gray-100/80 transition-all relative group"
-                                >
-                                  <input 
-                                    type="file" 
-                                    ref={fileInputRef} 
-                                    onChange={handleFileChange} 
-                                    accept="image/*" 
-                                    className="hidden" 
-                                  />
-                                  {uploading && (
-                                    <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
-                                      <div className="w-5 h-5 border-2 border-[#1E3A8A] border-t-transparent rounded-full animate-spin"></div>
-                                    </div>
-                                  )}
+                                <div className="w-[85px] h-[100px] border-2 border-[#1E3A8A] flex flex-col items-center justify-center bg-gray-50 rounded shrink-0 overflow-hidden relative">
                                   {getPhotoUrl(profile?.photoUrl) ? (
                                     <img src={getPhotoUrl(profile.photoUrl)!} alt="Photo" className="w-full h-full object-cover" crossOrigin="anonymous" />
                                   ) : (
                                     <div className="text-center p-0.5">
-                                      <span className="text-[7px] font-bold text-gray-400 block mb-0.5 leading-none">PHOTO</span>
-                                      <span className="text-[9px] font-bold text-[#1E3A8A] leading-none">UPLOAD</span>
+                                      <User className="w-8 h-8 text-gray-400 mx-auto" />
+                                      <span className="text-[7px] font-bold text-gray-400 block mt-1 leading-none">NO PHOTO</span>
                                     </div>
                                   )}
-                                  <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[7px] font-bold py-0.5 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    Upload Photo
-                                  </div>
                                 </div>
                                 
                                 {/* Verification QR Code */}

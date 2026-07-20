@@ -37,12 +37,31 @@ export class StorageService {
     }
   }
 
-  async signedUrl(storagePath: string): Promise<string | null> {
+  async signedUrl(storagePath: string, expiresInMs = 15 * 60 * 1000): Promise<string | null> {
     if (!storagePath) return null;
     if (storagePath.startsWith('http://') || storagePath.startsWith('https://')) {
       return storagePath;
     }
-    // Return relative stream URL that works across all environments
+
+    if (storagePath.startsWith('gs://')) {
+      try {
+        const [, , bucketName, ...keyParts] = storagePath.split('/');
+        const key = keyParts.join('/');
+        const bucket = admin.storage().bucket(bucketName || this.bucket.name);
+        const file = bucket.file(key);
+
+        const [url] = await file.getSignedUrl({
+          version: 'v4',
+          action: 'read',
+          expires: Date.now() + expiresInMs,
+        });
+        return url;
+      } catch (err: any) {
+        console.warn('GCS V4 getSignedUrl fallback to view endpoint:', err?.message || err);
+      }
+    }
+
+    // Fallback relative stream URL for local storage or fallback environments
     return `/api/v1/storage/view?path=${encodeURIComponent(storagePath)}`;
   }
 
