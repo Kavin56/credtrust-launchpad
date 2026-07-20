@@ -37,19 +37,63 @@ export class StorageService {
     }
   }
 
-  async signedUrl(storagePath: string, expiresInMs = 15 * 60 * 1000): Promise<string | null> {
+  async signedUrl(storagePath: string): Promise<string | null> {
     if (!storagePath) return null;
-    if (storagePath.startsWith('/uploads/')) {
+    if (storagePath.startsWith('http://') || storagePath.startsWith('https://')) {
       return storagePath;
     }
-    if (!storagePath.startsWith('gs://')) return storagePath;
-    try {
-      const [, , bucketName, ...keyParts] = storagePath.split('/');
-      const bucket = admin.storage().bucket(bucketName || this.bucket.name);
-      const [url] = await bucket.file(keyParts.join('/')).getSignedUrl({ action: 'read', expires: Date.now() + expiresInMs });
-      return url;
-    } catch {
+    // Return relative stream URL that works across all environments
+    return `/api/v1/storage/view?path=${encodeURIComponent(storagePath)}`;
+  }
+
+  async getFileBuffer(storagePath: string): Promise<{ buffer: Buffer; contentType: string } | null> {
+    if (!storagePath) return null;
+
+    // Handle local disk uploads
+    if (storagePath.startsWith('/uploads/')) {
+      const relativePath = storagePath.substring('/uploads/'.length);
+      const localPath = join(process.cwd(), 'uploads', relativePath);
+      if (existsSync(localPath)) {
+        const buffer = require('fs').readFileSync(localPath);
+        const ext = extname(localPath).toLowerCase();
+        let contentType = 'application/octet-stream';
+        if (ext === '.pdf') contentType = 'application/pdf';
+        else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+        else if (ext === '.png') contentType = 'image/png';
+        return { buffer, contentType };
+      }
       return null;
     }
+
+    // Handle GCS gs:// paths
+    if (storagePath.startsWith('gs://')) {
+      try {
+        const [, , bucketName, ...keyParts] = storagePath.split('/');
+        const key = keyParts.join('/');
+        const bucket = admin.storage().bucket(bucketName || this.bucket.name);
+        const file = bucket.file(key);
+
+        const [exists] = await file.exists();
+        if (!exists) return null;
+
+        const [buffer] = await file.download();
+        const [metadata] = await file.getMetadata();
+
+        let contentType = metadata.contentType || 'application/octet-stream';
+        if (contentType === 'application/octet-stream') {
+          const ext = extname(key).toLowerCase();
+          if (ext === '.pdf') contentType = 'application/pdf';
+          else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+          else if (ext === '.png') contentType = 'image/png';
+        }
+
+        return { buffer, contentType };
+      } catch (error) {
+        console.error('Error reading file from GCS:', error);
+        return null;
+      }
+    }
+
+    return null;
   }
 }

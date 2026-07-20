@@ -168,6 +168,9 @@ const ProfilePage = () => {
       return url;
     }
     const baseUrl = import.meta.env.VITE_API_BASE_URL || "https://credtrust-launchpad-git-176626350005.asia-south1.run.app/api/v1";
+    if (url.startsWith('gs://') || url.startsWith('/uploads/')) {
+      return `${baseUrl}/storage/view?path=${encodeURIComponent(url)}`;
+    }
     const origin = baseUrl.replace('/api/v1', '');
     const cleanPath = url.startsWith('/') ? url : `/${url}`;
     return `${origin}${cleanPath}`;
