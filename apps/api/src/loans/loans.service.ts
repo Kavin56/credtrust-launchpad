@@ -151,6 +151,19 @@ export class LoansService {
     });
   }
 
+  async listForMember(userId: string) {
+    const member = await this.prisma.member.findFirst({
+      where: { OR: [{ userId }, { id: userId }, { memberId: userId }] },
+    });
+    if (!member) return [];
+
+    return this.prisma.loan.findMany({
+      where: { memberId: member.id },
+      include: { member: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async checkEligibility(memberId: string, amount: number) {
     return { eligible: true }; 
   }

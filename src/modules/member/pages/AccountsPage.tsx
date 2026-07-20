@@ -31,13 +31,17 @@ const AccountsPage = () => {
       return data;
     },
   });
-  const { data: loans, isLoading: loanLoading } = useQuery({
+  const { data: rawLoans, isLoading: loanLoading } = useQuery({
     queryKey: ["loans"],
     queryFn: async () => {
-      const { data } = await api.get("/loans");
-      return data;
+      const { data } = await api.get("/loans/my");
+      return Array.isArray(data) ? data : (data?.data || data?.items || []);
     },
   });
+
+  const loans = Array.isArray(rawLoans) ? rawLoans : [];
+  const pendingLoans = loans.filter((l: any) => ['PENDING', 'UNDER_REVIEW', 'SUBMITTED'].includes(String(l.status).toUpperCase()));
+  const activeLoans = loans.filter((l: any) => ['APPROVED', 'DISBURSED', 'ACTIVE'].includes(String(l.status).toUpperCase()));
   const { data: profile, refetch: refetchProfile } = useQuery({
     queryKey: ["member-profile"],
     queryFn: async () => {
@@ -512,60 +516,102 @@ const AccountsPage = () => {
                 </div>
              ) : activeTabIndex === 2 ? (
                 <div className="space-y-8">
-                   <div className="flex items-center justify-between">
-                      <h3 className="text-xl font-bold text-[#1a1f36]">Active Loans</h3>
-                      <Link to="/loan-apply" className="px-6 py-2.5 bg-[#1a1f36] text-white rounded-full text-[13px] font-bold hover:bg-[#2d3356] transition-all">
-                         + New Loan Application
-                      </Link>
-                   </div>
+                    <div className="flex items-center justify-between">
+                       <h3 className="text-xl font-bold text-[#1a1f36]">My Loan Portfolio</h3>
+                       <Link to="/loan-apply" className="px-6 py-2.5 bg-[#1a1f36] text-white rounded-full text-[13px] font-bold hover:bg-[#2d3356] transition-all shadow-sm">
+                          + New Loan Application
+                       </Link>
+                    </div>
 
-                   <div className="grid md:grid-cols-2 gap-8">
-                      {/* Summary Card */}
-                      <div className="bg-gradient-to-br from-[#1a1f36] to-[#2d3356] rounded-[40px] p-8 text-white relative overflow-hidden shadow-xl">
-                          <div className="relative z-10 space-y-6">
-                            <p className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] leading-none">Total Outstanding Balance</p>
-                            <p className="text-4xl font-black">₹{loans?.reduce((s:number,l:any)=>s+Number(l.principal),0).toLocaleString()}</p>
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
-                                <div>
-                                   <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Next EMI Due</p>
-                                   <p className="font-bold text-[#c9a84c]">{loans?.[0]?.nextDueDate ? new Date(loans[0].nextDueDate).toDateString() : "—"}</p>
-                                </div>
-                                <div>
-                                   <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Total EMI Amount</p>
-                                   <p className="font-bold text-emerald-400">₹{loans?.reduce((s:number,l:any)=>s+Number(l.emiAmount||0),0).toLocaleString()}</p>
-                                </div>
-                            </div>
-                          </div>
-                          <Landmark className="absolute -right-8 -bottom-8 w-40 h-40 text-white/5 pointer-events-none" />
-                      </div>
-
+                    {/* Pending Applications Banner */}
+                    {pendingLoans.length > 0 && (
                       <div className="space-y-4">
-                         {loanLoading && <Skeleton className="h-20 w-full" />}
-                         {!loanLoading && loans?.length === 0 && <div className="text-gray-400 text-sm">No loans yet.</div>}
-                         {!loanLoading && loans?.map((loan:any) => (
-                           <div key={loan.id} className="bg-white rounded-[32px] p-6 border border-gray-100 flex items-center justify-between hover:border-[#6b21a8] transition-all cursor-pointer shadow-sm">
+                        <h4 className="text-sm font-bold uppercase text-amber-700 tracking-wider flex items-center gap-2">
+                           <Clock className="w-4 h-4 text-amber-600" /> Pending Loan Applications ({pendingLoans.length})
+                        </h4>
+                        <div className="grid gap-4">
+                          {pendingLoans.map((pLoan: any) => (
+                            <div key={pLoan.id} className="bg-amber-50/70 border border-amber-200 rounded-[28px] p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
                               <div className="flex items-center gap-4">
-                                 <div className={`w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-[#c9a84c]`}>
-                                    <CircleDollarSign className="w-6 h-6" />
-                                 </div>
-                                 <div>
-                                    <h4 className="text-[14px] font-bold text-[#1a1f36]">{loan.product}</h4>
-                                    <p className="text-[11px] text-gray-400">{loan.id.slice(0,8)} | EMI: ₹{Number(loan.emiAmount||0).toLocaleString()}</p>
-                                 </div>
+                                <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-700 shrink-0">
+                                  <FileText className="w-6 h-6" />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="text-[15px] font-bold text-[#1a1f36]">{pLoan.type || pLoan.product || "Loan Application"}</h4>
+                                    <span className="px-3 py-0.5 bg-amber-200 text-amber-900 rounded-full text-[10px] font-black uppercase tracking-wider">
+                                      Under Review
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-amber-800/80 mt-0.5">
+                                    App ID: <span className="font-mono font-bold">{pLoan.loanNumber || pLoan.id.slice(0, 8)}</span> · Submitted on {new Date(pLoan.createdAt || Date.now()).toLocaleDateString()}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="text-right flex flex-col items-end gap-2">
-                                 <div>
-                                    <p className="text-[15px] font-black text-[#1a1f36]">₹{Number(loan.principal).toLocaleString()}</p>
-                                    <p className={`text-[10px] font-bold tracking-tighter uppercase ${loan.status === 'DISBURSED' ? 'text-emerald-600' : 'text-rose-600'}`}>{loan.status}</p>
-                                 </div>
-                                 <Link to="/payments" className="px-3 py-1 bg-[#1a1f36] text-white rounded-lg text-[9px] font-black uppercase hover:bg-black tracking-widest shadow-sm">
-                                    Pay EMI
-                                 </Link>
+                              <div className="text-right flex flex-col items-end">
+                                <p className="text-xs text-amber-700 font-bold uppercase tracking-wider">Requested Principal</p>
+                                <p className="text-xl font-black text-[#1a1f36]">₹{Number(pLoan.amount || pLoan.principal || 0).toLocaleString()}</p>
+                                <p className="text-[11px] text-amber-800 italic mt-0.5">Application under admin review — no duplicate submit needed</p>
                               </div>
-                           </div>
-                         ))}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                   </div>
+                    )}
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                       {/* Summary Card */}
+                       <div className="bg-gradient-to-br from-[#1a1f36] to-[#2d3356] rounded-[40px] p-8 text-white relative overflow-hidden shadow-xl">
+                           <div className="relative z-10 space-y-6">
+                             <p className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] leading-none">Total Active Loan Balance</p>
+                             <p className="text-4xl font-black">₹{activeLoans?.reduce((s:number,l:any)=>s+Number(l.amount || l.principal || 0),0).toLocaleString()}</p>
+                             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                                 <div>
+                                    <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Next EMI Due</p>
+                                    <p className="font-bold text-[#c9a84c]">{activeLoans?.[0]?.nextDueDate ? new Date(activeLoans[0].nextDueDate).toDateString() : "—"}</p>
+                                 </div>
+                                 <div>
+                                    <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Total EMI Amount</p>
+                                    <p className="font-bold text-emerald-400">₹{activeLoans?.reduce((s:number,l:any)=>s+Number(l.emiAmount||0),0).toLocaleString()}</p>
+                                 </div>
+                             </div>
+                           </div>
+                           <Landmark className="absolute -right-8 -bottom-8 w-40 h-40 text-white/5 pointer-events-none" />
+                       </div>
+
+                       <div className="space-y-4">
+                          {loanLoading && <Skeleton className="h-20 w-full" />}
+                          {!loanLoading && loans?.length === 0 && (
+                             <div className="p-8 bg-white rounded-[32px] border border-gray-100 text-center space-y-2">
+                               <Landmark className="w-10 h-10 text-gray-300 mx-auto" />
+                               <p className="text-gray-500 font-bold text-sm">No loans found</p>
+                               <p className="text-xs text-gray-400">You haven't submitted any loan applications yet.</p>
+                             </div>
+                          )}
+                          {!loanLoading && activeLoans?.map((loan:any) => (
+                            <div key={loan.id} className="bg-white rounded-[32px] p-6 border border-gray-100 flex items-center justify-between hover:border-[#6b21a8] transition-all cursor-pointer shadow-sm">
+                               <div className="flex items-center gap-4">
+                                  <div className={`w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-[#c9a84c]`}>
+                                     <CircleDollarSign className="w-6 h-6" />
+                                  </div>
+                                  <div>
+                                     <h4 className="text-[14px] font-bold text-[#1a1f36]">{loan.type || loan.product}</h4>
+                                     <p className="text-[11px] text-gray-400">{loan.loanNumber || loan.id.slice(0,8)} | EMI: ₹{Number(loan.emiAmount||0).toLocaleString()}</p>
+                                  </div>
+                               </div>
+                               <div className="text-right flex flex-col items-end gap-2">
+                                  <div>
+                                     <p className="text-[15px] font-black text-[#1a1f36]">₹{Number(loan.amount || loan.principal || 0).toLocaleString()}</p>
+                                     <p className="text-[10px] font-bold tracking-tighter uppercase text-emerald-600">{loan.status}</p>
+                                  </div>
+                                  <Link to="/payments" className="px-3 py-1 bg-[#1a1f36] text-white rounded-lg text-[9px] font-black uppercase hover:bg-black tracking-widest shadow-sm">
+                                     Pay EMI
+                                  </Link>
+                               </div>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
 
                    {/* Repayment Schedule Link */}
                    <div className="p-8 bg-gray-50 rounded-[40px] border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6">

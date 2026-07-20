@@ -35,12 +35,25 @@ export class LoansController {
   constructor(private readonly loansService: LoansService) {}
 
   // @Roles(Role.ADMIN, Role.CEO)
+  @Get('my')
+  @Roles('MEMBER', 'ADMIN', 'CEO', 'DIRECTOR', 'TELLER')
+  findMyLoans(@Req() req: FastifyRequest) {
+    const userId = (req as any).user?.userId;
+    return this.loansService.listForMember(userId);
+  }
+
   @Get()
-  @Roles('ADMIN', 'CEO', 'DIRECTOR', 'TELLER')
+  @Roles('ADMIN', 'CEO', 'DIRECTOR', 'TELLER', 'MEMBER')
   findAll(
+    @Req() req: FastifyRequest,
     @Query('memberId') memberId?: string,
     @Query('status') status?: string,
   ) {
+    const role = (req as any).user?.role;
+    const userId = (req as any).user?.userId;
+    if (role === 'MEMBER') {
+      return this.loansService.listForMember(userId);
+    }
     return this.loansService.list(memberId, status);
   }
 
