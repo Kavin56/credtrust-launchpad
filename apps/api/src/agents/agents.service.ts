@@ -77,19 +77,68 @@ export class AgentsService {
     const agent = await this.agentPrisma.agent.findUnique({
       where: { id: dto.agentId },
     });
+  async assignCustomers(dto: AssignCustomersDto) {
+    const agent = await this.agentPrisma.agent.findUnique({
+      where: { id: dto.agentId },
+    });
     if (!agent || agent.status !== 'ACTIVE') {
       throw new NotFoundException('Agent not found');
     }
 
-    const result = await this.prisma.pigmyAccount.updateMany({
-      where: { id: { in: dto.accountIds } },
-      data: { agentId: dto.agentId },
-    });
+    let assignedCount = 0;
+    for (const accountId of dto.accountIds) {
+      if (accountId.startsWith('member_')) {
+        const memberId = accountId.replace('member_', '');
+        const existingAcc = await this.prisma.pigmyAccount.findFirst({
+          where: { memberId },
+        });
+        if (existingAcc) {
+          await this.prisma.pigmyAccount.update({
+            where: { id: existingAcc.id },
+            data: { agentId: dto.agentId },
+          });
+        } else {
+          let scheme = await this.prisma.pigmyScheme.findFirst();
+          if (!scheme) {
+            scheme = await this.prisma.pigmyScheme.create({
+              data: {
+                name: 'Daily Pigmy Deposit',
+                code: 'PIGMY-DAILY',
+                minDailyAmount: 10,
+                maxDailyAmount: 50000,
+                durationMonths: 12,
+                interestRate: 6.5,
+              },
+            });
+          }
+          const accNumber = `PG-${Date.now().toString().slice(-6)}`;
+          await this.prisma.pigmyAccount.create({
+            data: {
+              accountNumber: accNumber,
+              memberId,
+              schemeId: scheme.id,
+              agentId: dto.agentId,
+              dailyAmount: 100,
+              balance: 0,
+              totalCollected: 0,
+              status: 'ACTIVE',
+            },
+          });
+        }
+        assignedCount++;
+      } else {
+        await this.prisma.pigmyAccount.updateMany({
+          where: { id: accountId },
+          data: { agentId: dto.agentId },
+        });
+        assignedCount++;
+      }
+    }
 
     return {
       agentId: dto.agentId,
       agentCode: agent.agentCode,
-      assignedCount: result.count,
+      assignedCount,
     };
   }
 
@@ -109,23 +158,52 @@ export class AgentsService {
 
   async listAccountsForAssignment(search?: string) {
     const q = search?.trim();
-    return this.prisma.pigmyAccount.findMany({
+
+    const members = await this.prisma.member.findMany({
       where: q
         ? {
             OR: [
-              { accountNumber: { contains: q } },
-              { member: { fullName: { contains: q } } },
-              { member: { contact: { contains: q } } },
+              { fullName: { contains: q, mode: 'insensitive' } },
+              { memberId: { contains: q, mode: 'insensitive' } },
+              { contact: { contains: q, mode: 'insensitive' } },
             ],
           }
         : undefined,
       include: {
-        member: { select: { fullName: true, contact: true, memberId: true } },
-        scheme: { select: { name: true, type: true } },
+        pigmyAccounts: {
+          include: {
+            scheme: { select: { name: true } },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
+
+    const results: any[] = [];
+    for (const m of members) {
+      if (m.pigmyAccounts && m.pigmyAccounts.length > 0) {
+        for (const acc of m.pigmyAccounts) {
+          results.push({
+            id: acc.id,
+            accountNumber: acc.accountNumber,
+            member: { fullName: m.fullName, contact: m.contact, memberId: m.memberId },
+            scheme: acc.scheme || { name: 'Pigmy Savings' },
+            agentId: acc.agentId,
+          });
+        }
+      } else {
+        results.push({
+          id: `member_${m.id}`,
+          accountNumber: `PIGMY-${m.memberId}`,
+          member: { fullName: m.fullName, contact: m.contact, memberId: m.memberId },
+          scheme: { name: 'Pigmy Account (Pending Setup)' },
+          agentId: null,
+        });
+      }
+    }
+
+    return results;
   }
 
   async deleteAgent(id: string) {
