@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Marquee } from "./ui/marquee";
 import { UserCheck, LayoutGrid, SlidersHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 // Image imports
 import sandeshImg from "@/Team_photos/Mr. Sandesh Shanmugam.jpeg";
@@ -30,10 +29,13 @@ const teamMembers = [
   { name: "Mr. Sendil Kumar M", role: "Director", image: sendilImg },
   { name: "Mr. K. M. Suresh", role: "Director", image: sureshImg },
   { name: "Mr. Manjunath", role: "Director", image: manjunathImg },
+  { name: "Mrs. Malar", role: "Director", image: malarImg },
+  { name: "Mr. Yuvaraj", role: "Director", image: yuvarajImg },
 ];
 
 export default function TeamSection() {
   const [viewMode, setViewMode] = useState<"slider" | "grid">("slider");
+  const marqueeList = [...teamMembers, ...teamMembers];
 
   return (
     <section className="relative w-full overflow-hidden bg-white py-20 md:py-32 dark:bg-background border-y border-gray-100 font-sans">
@@ -111,9 +113,9 @@ export default function TeamSection() {
             <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-24 bg-gradient-to-r from-white to-transparent" />
             <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-24 bg-gradient-to-l from-white to-transparent" />
 
-            <Marquee className="[--gap:2rem] [--duration:45s]" pauseOnHover={true} repeat={4}>
-              {teamMembers.map((member) => (
-                <div className="group flex w-64 md:w-72 shrink-0 flex-col px-2" key={member.name}>
+            <Marquee className="[--gap:1.5rem] [--duration:50s]" pauseOnHover={true} repeat={2}>
+              {marqueeList.map((member, idx) => (
+                <div className="group flex w-64 md:w-72 shrink-0 flex-col px-2" key={`${member.name}-${idx}`}>
                   <div className="relative h-[380px] w-full overflow-hidden rounded-[32px] bg-neutral-50 border border-gray-100 shadow-sm transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-purple-900/10 group-hover:-translate-y-2">
                     <img
                       alt={member.name}
