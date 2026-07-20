@@ -77,10 +77,6 @@ export class AgentsService {
     const agent = await this.agentPrisma.agent.findUnique({
       where: { id: dto.agentId },
     });
-  async assignCustomers(dto: AssignCustomersDto) {
-    const agent = await this.agentPrisma.agent.findUnique({
-      where: { id: dto.agentId },
-    });
     if (!agent || agent.status !== 'ACTIVE') {
       throw new NotFoundException('Agent not found');
     }
@@ -103,24 +99,26 @@ export class AgentsService {
             scheme = await this.prisma.pigmyScheme.create({
               data: {
                 name: 'Daily Pigmy Deposit',
-                code: 'PIGMY-DAILY',
-                minDailyAmount: 10,
-                maxDailyAmount: 50000,
-                durationMonths: 12,
+                type: 'DAILY',
+                minAmount: 10,
+                maxAmount: 50000,
+                maturityPeriod: 12,
                 interestRate: 6.5,
               },
             });
           }
           const accNumber = `PG-${Date.now().toString().slice(-6)}`;
+          const maturityDate = new Date();
+          maturityDate.setFullYear(maturityDate.getFullYear() + 1);
+
           await this.prisma.pigmyAccount.create({
             data: {
               accountNumber: accNumber,
               memberId,
               schemeId: scheme.id,
               agentId: dto.agentId,
-              dailyAmount: 100,
               balance: 0,
-              totalCollected: 0,
+              maturityDate,
               status: 'ACTIVE',
             },
           });
@@ -176,8 +174,8 @@ export class AgentsService {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
+      orderBy: { fullName: 'asc' },
+      take: 100,
     });
 
     const results: any[] = [];
@@ -197,7 +195,7 @@ export class AgentsService {
           id: `member_${m.id}`,
           accountNumber: `PIGMY-${m.memberId}`,
           member: { fullName: m.fullName, contact: m.contact, memberId: m.memberId },
-          scheme: { name: 'Pigmy Account (Pending Setup)' },
+          scheme: { name: 'Unassigned Member Account' },
           agentId: null,
         });
       }
@@ -214,19 +212,16 @@ export class AgentsService {
       throw new NotFoundException('Agent not found');
     }
 
-    // Unassign accounts assigned to this agent
     await this.prisma.pigmyAccount.updateMany({
       where: { agentId: id },
       data: { agentId: null },
     });
 
-    // Unassign collections assigned to this agent
     await this.prisma.pigmyCollection.updateMany({
       where: { agentId: id },
       data: { agentId: null },
     });
 
-    // Delete agent
     return this.agentPrisma.agent.delete({
       where: { id },
     });
