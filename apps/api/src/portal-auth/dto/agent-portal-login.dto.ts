@@ -8,4 +8,8 @@ export class AgentPortalLoginDto {
   @IsString()
   @MinLength(6)
   password: string;
+
+  @IsString()
+  @IsNotEmpty()
+  uniqueAgentKey: string;
 }

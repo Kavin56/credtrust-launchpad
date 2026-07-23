@@ -22,10 +22,14 @@ export class AgentsService {
       select: {
         id: true,
         username: true,
+        email: true,
         fullName: true,
         phone: true,
         agentCode: true,
+        uniqueAgentKey: true,
         status: true,
+        approvedBy: true,
+        approvedDate: true,
         createdAt: true,
         lastLoginAt: true,
       },
@@ -34,11 +38,16 @@ export class AgentsService {
 
   async createAgent(dto: CreateAgentDto) {
     const username = dto.username.trim().toLowerCase();
-    const existing = await this.agentPrisma.agent.findUnique({
-      where: { username },
+    const existing = await this.agentPrisma.agent.findFirst({
+      where: {
+        OR: [
+          { username },
+          dto.email ? { email: dto.email.trim().toLowerCase() } : undefined,
+        ].filter(Boolean) as any,
+      },
     });
     if (existing) {
-      throw new BadRequestException('Username already exists');
+      throw new BadRequestException('Username or email already exists');
     }
 
     const agentCode =
@@ -53,23 +62,104 @@ export class AgentsService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    return this.agentPrisma.agent.create({
+    const uniqueAgentKey =
+      dto.uniqueAgentKey?.trim() ||
+      `KEY-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    const agent = await this.agentPrisma.agent.create({
       data: {
         username,
+        email: dto.email?.trim().toLowerCase() || null,
         passwordHash,
         fullName: dto.fullName.trim(),
-        phone: dto.phone?.trim(),
+        phone: dto.phone?.trim() || null,
         agentCode,
+        uniqueAgentKey,
+        status: 'PENDING_APPROVAL',
       },
       select: {
         id: true,
         username: true,
+        email: true,
         fullName: true,
         phone: true,
         agentCode: true,
+        uniqueAgentKey: true,
         status: true,
         createdAt: true,
       },
+    });
+
+    // Create Admin Notification for New Registration Request
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-GB'); // 18-07-2026
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+    const message = `New Agent Registration Request - Agent Name: ${agent.fullName}, Agent ID: ${agent.agentCode}, Registration Date: ${dateStr}, Time: ${timeStr}, Status: Pending Approval`;
+
+    await this.agentPrisma.adminNotification.create({
+      data: {
+        agentId: agent.id,
+        message,
+        status: 'PENDING',
+      },
+    });
+
+    return agent;
+  }
+
+  async approveAgent(id: string, adminName?: string) {
+    const agent = await this.agentPrisma.agent.findUnique({
+      where: { id },
+    });
+    if (!agent) {
+      throw new NotFoundException('Agent not found');
+    }
+
+    const updated = await this.agentPrisma.agent.update({
+      where: { id },
+      data: {
+        status: 'ACTIVE',
+        approvedBy: adminName || 'Admin',
+        approvedDate: new Date(),
+      },
+    });
+
+    await this.agentPrisma.adminNotification.updateMany({
+      where: { agentId: id, status: 'PENDING' },
+      data: { status: 'ACTIONED' },
+    });
+
+    return updated;
+  }
+
+  async rejectAgent(id: string) {
+    const agent = await this.agentPrisma.agent.findUnique({
+      where: { id },
+    });
+    if (!agent) {
+      throw new NotFoundException('Agent not found');
+    }
+
+    const updated = await this.agentPrisma.agent.update({
+      where: { id },
+      data: {
+        status: 'REJECTED',
+      },
+    });
+
+    await this.agentPrisma.adminNotification.updateMany({
+      where: { agentId: id, status: 'PENDING' },
+      data: { status: 'ACTIONED' },
+    });
+
+    return updated;
+  }
+
+  async getAdminNotifications() {
+    return this.agentPrisma.adminNotification.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 50,
     });
   }
 
@@ -78,7 +168,7 @@ export class AgentsService {
       where: { id: dto.agentId },
     });
     if (!agent || agent.status !== 'ACTIVE') {
-      throw new NotFoundException('Agent not found');
+      throw new NotFoundException('Agent not found or not active');
     }
 
     const result = await this.prisma.pigmyAccount.updateMany({
@@ -146,6 +236,14 @@ export class AgentsService {
     await this.prisma.pigmyCollection.updateMany({
       where: { agentId: id },
       data: { agentId: null },
+    });
+
+    // Delete notifications
+    await this.agentPrisma.agentNotification.deleteMany({
+      where: { agentId: id },
+    });
+    await this.agentPrisma.adminNotification.deleteMany({
+      where: { agentId: id },
     });
 
     // Delete agent

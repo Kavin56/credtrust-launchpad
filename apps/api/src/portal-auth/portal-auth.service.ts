@@ -45,12 +45,33 @@ export class PortalAuthService {
   }
 
   async agentLogin(dto: AgentPortalLoginDto) {
-    const username = dto.username.trim().toLowerCase();
-    const agent = await this.agentPrisma.agent.findUnique({
-      where: { username },
+    const input = dto.username.trim().toLowerCase();
+    // Allow login by username or email
+    const agent = await this.agentPrisma.agent.findFirst({
+      where: {
+        OR: [
+          { username: input },
+          { email: input },
+        ],
+      },
     });
-    if (!agent || agent.status !== 'ACTIVE') {
+
+    if (!agent) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (agent.status === 'PENDING_APPROVAL' || agent.status === 'Pending Approval') {
+      throw new UnauthorizedException('Agent account is pending admin approval.');
+    }
+    if (agent.status === 'REJECTED') {
+      throw new UnauthorizedException('Agent registration request was rejected by admin.');
+    }
+    if (agent.status !== 'ACTIVE') {
+      throw new UnauthorizedException('Agent account is inactive.');
+    }
+
+    if (!dto.uniqueAgentKey || !agent.uniqueAgentKey || agent.uniqueAgentKey.trim() !== dto.uniqueAgentKey.trim()) {
+      throw new UnauthorizedException('Invalid Unique Agent Key.');
     }
 
     const ok = await bcrypt.compare(dto.password, agent.passwordHash);
@@ -64,7 +85,7 @@ export class PortalAuthService {
     });
 
     return {
-      ...this.buildTokens(agent.id, username, 'AGENT'),
+      ...this.buildTokens(agent.id, agent.username, 'AGENT'),
       agentCode: agent.agentCode,
       fullName: agent.fullName,
     };

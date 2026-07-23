@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -63,6 +63,7 @@ model Member {
   depositAccounts  DepositAccount[]
   pigmyAccounts    PigmyAccount[]
   loans            Loan[]
+  depositApplications DepositApplication[]
 }
 
 model ShareAccount {
@@ -221,6 +222,9 @@ model PigmyAccount {
   schemeId        String
   scheme          PigmyScheme @relation(fields: [schemeId], references: [id])
   agentId         String?  // Assigned collection agent
+  allocationDate  DateTime?
+  allocationCycle Int?
+  allocationSequence Int?
   startDate       DateTime @default(now())
   maturityDate    DateTime
   status          String   @default("ACTIVE") // ACTIVE, MATURED, CLOSED
@@ -256,3 +260,23 @@ model PigmyCollection {
 
   createdAt       DateTime @default(now())
 }
+
+model DepositApplication {
+  id                String      @id @default(cuid())
+  applicationNo   String      @unique // e.g. SHR-DP-FD-123456
+  memberId        String
+  member          Member      @relation(fields: [memberId], references: [id])
+  type            String      // FD, RD, PIGMY
+  amount          Float       // Principal amount
+  interestRate    Float
+  termMonths      Int
+  status          String      @default("PENDING") // PENDING, APPROVED, REJECTED
+  documents       String?     // JSON string of file paths (idProof, incomeProof, applicantPhoto, applicantSignature, panProof)
+  additionalDetails String?   // JSON string of nominee, bank, sourceOfFunds, expectedMaturity, etc.
+  adminRemarks    String?
+  approvedBy      String?
+  approvedDate    DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+

@@ -38,6 +38,7 @@ const AdminNavbar = () => {
     { name: "Overview", path: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Pigmy Control", path: "/admin/pigmy", icon: PiggyBank },
     { name: "Loan Approvals", path: "/admin/loans", icon: HandCoins },
+    { name: "Deposit Approvals", path: "/admin/deposits", icon: PiggyBank },
     { name: "Member Registry", path: "/admin/members", icon: Users },
     { name: "System Reports", path: "/admin/reports", icon: BarChart3 },
   ];

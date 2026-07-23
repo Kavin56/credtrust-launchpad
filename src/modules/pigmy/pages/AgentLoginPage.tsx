@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, User, Lock, Loader2 } from "lucide-react";
+import { ShieldCheck, User, Lock, KeyRound, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/modules/login/AuthContext";
@@ -10,19 +10,24 @@ import { useAuth } from "@/modules/login/AuthContext";
 const AgentLoginPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [uniqueAgentKey, setUniqueAgentKey] = useState("");
   const [loading, setLoading] = useState(false);
   const { loginAgent } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!username.trim() || !password || !uniqueAgentKey.trim()) {
+      toast.error("Please enter Username, Password, and Unique Agent Key");
+      return;
+    }
     setLoading(true);
     try {
-      await loginAgent(username.trim(), password);
+      await loginAgent(username.trim(), password, uniqueAgentKey.trim());
       toast.success("Welcome to the collection portal");
       navigate("/agent", { replace: true });
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Invalid username or password");
+      toast.error(err?.response?.data?.message || "Invalid credentials or key");
     } finally {
       setLoading(false);
     }
@@ -43,7 +48,7 @@ const AgentLoginPage = () => {
         </div>
         <form onSubmit={handleSubmit} className="p-8 space-y-5">
           <div className="space-y-2">
-            <Label className="text-xs font-bold text-slate-500 uppercase">Username</Label>
+            <Label className="text-xs font-bold text-slate-500 uppercase">Username / Email</Label>
             <div className="relative">
               <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
               <Input
@@ -51,11 +56,12 @@ const AgentLoginPage = () => {
                 className="pl-10 h-11"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="agent01"
+                placeholder="agent01 or agent@email.com"
                 autoComplete="username"
               />
             </div>
           </div>
+
           <div className="space-y-2">
             <Label className="text-xs font-bold text-slate-500 uppercase">Password</Label>
             <div className="relative">
@@ -70,13 +76,33 @@ const AgentLoginPage = () => {
               />
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs font-bold text-slate-500 uppercase flex items-center justify-between">
+              <span>Unique Agent Key</span>
+              <span className="text-[10px] text-amber-600 font-bold">Mandatory</span>
+            </Label>
+            <div className="relative">
+              <KeyRound className="absolute left-3 top-3 h-4 w-4 text-amber-500" />
+              <Input
+                required
+                type="text"
+                className="pl-10 h-11 border-amber-200 focus-visible:ring-amber-500"
+                value={uniqueAgentKey}
+                onChange={(e) => setUniqueAgentKey(e.target.value)}
+                placeholder="Enter your assigned Unique Key (e.g. KEY-123456)"
+              />
+            </div>
+          </div>
+
           <Button
             type="submit"
             disabled={loading}
-            className="w-full h-11 bg-[#1a1f36] hover:bg-black font-bold"
+            className="w-full h-11 bg-[#1a1f36] hover:bg-black font-bold text-[#c9a84c]"
           >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in"}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin text-[#c9a84c]" /> : "Sign in to Agent Portal"}
           </Button>
+
           <p className="text-center text-xs text-slate-400">
             <Link to="/admin/login" className="text-[#1a1f36] font-bold hover:underline">
               Admin login

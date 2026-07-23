@@ -44,6 +44,42 @@ const PigmyDashboard = () => {
     }
   });
 
+  const { data: adminNotifications = [], refetch: refetchAdminNotifs } = useQuery({
+    queryKey: ['admin-notifications'],
+    queryFn: async () => {
+      const res = await api.get('/admin/agents/admin-notifications');
+      return res.data;
+    },
+    refetchInterval: 15000,
+  });
+
+  const pendingNotifsCount = React.useMemo(() => {
+    return adminNotifications.filter((n: any) => n.status === 'PENDING').length;
+  }, [adminNotifications]);
+
+  const handleApproveAgent = async (agentId: string) => {
+    try {
+      await api.patch(`/admin/agents/${agentId}/approve`);
+      toast.success("Agent Approved Successfully");
+      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-agents'] });
+      queryClient.invalidateQueries({ queryKey: ['pigmy-stats'] });
+    } catch (e) {
+      toast.error("Failed to approve agent");
+    }
+  };
+
+  const handleRejectAgent = async (agentId: string) => {
+    try {
+      await api.patch(`/admin/agents/${agentId}/reject`);
+      toast.error("Agent Request Rejected");
+      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-agents'] });
+    } catch (e) {
+      toast.error("Failed to reject agent");
+    }
+  };
+
   // Filter States
   const [filterPigmyId, setFilterPigmyId] = React.useState('');
   const [filterTimeframe, setFilterTimeframe] = React.useState('all');
@@ -98,14 +134,14 @@ const PigmyDashboard = () => {
           
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
-               <Button variant="outline" className="bg-[#1a1f36] hover:bg-black text-white border-none gap-2 text-sm font-bold h-11 px-6 rounded-xl shadow-lg shadow-indigo-900/10" onClick={() => navigate('/admin/pigmy/maturity')}>
+               <Button variant="outline" className="bg-[#1a1f36] hover:bg-black text-white border-none gap-2 text-sm font-bold h-11 px-5 rounded-xl shadow-lg shadow-indigo-900/10" onClick={() => navigate('/admin/pigmy/allocation')}>
+                  <UserPlus className="h-4 w-4 text-[#c9a84c]" /> User Allocation
+               </Button>
+               <Button variant="outline" className="bg-[#1a1f36] hover:bg-black text-white border-none gap-2 text-sm font-bold h-11 px-5 rounded-xl shadow-lg shadow-indigo-900/10" onClick={() => navigate('/admin/pigmy/maturity')}>
                   <ShieldAlert className="h-4 w-4" /> Approve Withdrawal
                </Button>
-               <Button variant="outline" className="bg-[#c9a84c] hover:bg-[#b39543] text-[#1a1f36] border-none gap-2 text-sm font-bold h-11 px-6 rounded-xl shadow-lg shadow-yellow-900/10">
+               <Button variant="outline" className="bg-[#c9a84c] hover:bg-[#b39543] text-[#1a1f36] border-none gap-2 text-sm font-bold h-11 px-5 rounded-xl shadow-lg shadow-yellow-900/10">
                   <Calculator className="h-4 w-4" /> Calculate Interest
-               </Button>
-               <Button variant="outline" className="bg-white hover:bg-gray-50 text-[#1a1f36] border-gray-200 gap-2 text-sm font-bold h-11 px-6 rounded-xl shadow-sm">
-                  <Download className="h-4 w-4" /> Export
                </Button>
                 <Button 
                   className="bg-[#1a1f36] hover:bg-black text-white gap-2 font-bold h-11 rounded-xl"
@@ -119,10 +155,63 @@ const PigmyDashboard = () => {
             </div>
 
             <div className="flex items-center gap-2 ml-4">
-               <button className="relative p-2.5 bg-white border border-gray-200 rounded-full text-gray-400 hover:text-[#1a1f36] transition-all shadow-sm">
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-               </button>
+               <Popover>
+                 <PopoverTrigger asChild>
+                   <button className="relative p-2.5 bg-white border border-gray-200 rounded-full text-gray-400 hover:text-[#1a1f36] transition-all shadow-sm">
+                      <Bell className="h-4 w-4" />
+                      {pendingNotifsCount > 0 && (
+                        <span className="absolute -top-1 -right-1 min-w-[18px] h-4 px-1 bg-red-500 text-white rounded-full text-[9px] font-black flex items-center justify-center border-2 border-white">
+                          {pendingNotifsCount}
+                        </span>
+                      )}
+                   </button>
+                 </PopoverTrigger>
+                 <PopoverContent className="w-96 p-4 space-y-3" align="end">
+                   <div className="flex items-center justify-between border-b pb-2">
+                     <h4 className="font-bold text-[#1a1f36] text-sm flex items-center gap-2">
+                       <Bell className="h-4 w-4 text-amber-500" /> Notifications & Agent Requests
+                     </h4>
+                     {pendingNotifsCount > 0 && (
+                       <Badge className="bg-red-100 text-red-700 text-[10px]">{pendingNotifsCount} Pending</Badge>
+                     )}
+                   </div>
+                   <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+                     {adminNotifications.length === 0 ? (
+                       <p className="text-xs text-slate-400 text-center py-6">No new notifications.</p>
+                     ) : (
+                       adminNotifications.map((notif: any) => (
+                         <div key={notif.id} className="py-2.5 space-y-1.5">
+                           <p className="text-xs font-semibold text-slate-800 leading-snug">{notif.message}</p>
+                           <div className="flex items-center justify-between">
+                             <span className="text-[10px] text-slate-400 font-medium">
+                               {new Date(notif.createdAt).toLocaleString()}
+                             </span>
+                             {notif.status === 'PENDING' && (
+                               <div className="flex items-center gap-1">
+                                 <Button
+                                   size="sm"
+                                   className="h-6 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 rounded"
+                                   onClick={() => handleApproveAgent(notif.agentId)}
+                                 >
+                                   Approve
+                                 </Button>
+                                 <Button
+                                   size="sm"
+                                   variant="outline"
+                                   className="h-6 text-[10px] text-rose-600 border-rose-200 hover:bg-rose-50 font-bold px-2 rounded"
+                                   onClick={() => handleRejectAgent(notif.agentId)}
+                                 >
+                                   Reject
+                                 </Button>
+                               </div>
+                             )}
+                           </div>
+                         </div>
+                       ))
+                     )}
+                   </div>
+                 </PopoverContent>
+               </Popover>
                <button className="p-1 bg-white border border-gray-200 rounded-full shadow-sm">
                   <div className="w-8 h-8 rounded-full bg-[#1a1f36] flex items-center justify-center text-xs font-black text-white">
                     AD

@@ -34,7 +34,7 @@ interface AuthContextType {
   logout: () => void;
   refreshProfileStatus: () => Promise<void>;
   loginPortalAdmin: (email: string, password: string, adminKey: string) => Promise<void>;
-  loginAgent: (username: string, password: string) => Promise<void>;
+  loginAgent: (username: string, password: string, uniqueAgentKey: string) => Promise<void>;
 }
 
 const provider = import.meta.env.VITE_AUTH_PROVIDER || "api"; // 'api' | 'firebase'
@@ -226,8 +226,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  const loginAgent = async (username: string, password: string) => {
-    const { data } = await api.post("/auth/agent/login", { username, password });
+  const loginAgent = async (username: string, password: string, uniqueAgentKey: string) => {
+    const { data } = await api.post("/auth/agent/login", { username, password, uniqueAgentKey });
     applySession({
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,

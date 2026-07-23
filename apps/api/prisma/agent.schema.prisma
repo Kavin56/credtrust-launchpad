@@ -4,19 +4,51 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("AGENT_DATABASE_URL")
 }
 
 model Agent {
-  id           String   @id @default(cuid())
-  username     String   @unique
-  passwordHash String
-  fullName     String
-  phone        String?
-  agentCode    String   @unique
-  status       String   @default("ACTIVE")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  lastLoginAt  DateTime?
+  id              String    @id @default(cuid())
+  username        String    @unique
+  email           String?   @unique
+  passwordHash    String
+  fullName        String
+  phone           String?
+  agentCode       String    @unique
+  uniqueAgentKey  String    @default(cuid())
+  status          String    @default("PENDING_APPROVAL") // PENDING_APPROVAL, ACTIVE, REJECTED
+  approvedBy      String?
+  approvedDate    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  lastLoginAt     DateTime?
+}
+
+model AgentNotification {
+  id          String   @id @default(cuid())
+  agentId     String
+  userId      String?
+  message     String
+  day         String?
+  time        String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model AdminNotification {
+  id          String   @id @default(cuid())
+  agentId     String
+  message     String
+  status      String   @default("PENDING") // PENDING, ACTIONED
+  createdAt   DateTime @default(now())
+}
+
+model AllocationTracker {
+  id                   String   @id @default("default-tracker")
+  lastAllocatedAgentId String?
+  currentCycleNumber   Int      @default(1)
+  nextAllocationIndex  Int      @default(0)
+  configuredRatio      Int      @default(10)
+  updatedAt            DateTime @updatedAt @default(now())
 }

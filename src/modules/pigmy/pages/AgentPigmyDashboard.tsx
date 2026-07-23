@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
   HandCoins, Users, TrendingUp, Download, Play, 
-  CheckCircle2, XCircle, Search, Printer, History, RefreshCw, MapPin, Loader2
+  CheckCircle2, XCircle, Search, Printer, History, RefreshCw, MapPin, Loader2,
+  Bell, Calendar, Clock, Phone, ArrowUpDown, ChevronLeft, ChevronRight, Filter
 } from 'lucide-react';
 import { PigmyStats } from '../components/PigmyStats';
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useAuth } from '@/modules/login/AuthContext';
@@ -25,11 +28,18 @@ const AgentPigmyDashboard = () => {
   const [collectAmount, setCollectAmount] = useState('');
   const [selectedAccountId, setSelectedAccountId] = useState('');
   const [actingId, setActingId] = useState<string | null>(null);
+
+  // Table Filter, Search, Sorting, Pagination States
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
-    console.log("AgentPigmyDashboard version 104 loaded");
-    toast.info("Agent Dashboard Loaded");
+    console.log("AgentPigmyDashboard with Agent Notifications & My Pigmy Users loaded");
   }, []);
 
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -56,6 +66,38 @@ const AgentPigmyDashboard = () => {
     },
     refetchInterval: 30000,
   });
+
+  // Agent Notifications Query
+  const { data: agentNotifData, refetch: refetchNotifs } = useQuery({
+    queryKey: ['agent-notifications'],
+    queryFn: async () => {
+      const res = await api.get('/admin/agents/agent-notifications');
+      return res.data;
+    },
+    refetchInterval: 15000,
+  });
+
+  const notifications = agentNotifData?.notifications || [];
+  const unreadCount = agentNotifData?.unreadCount || 0;
+
+  const markNotificationRead = async (id: string) => {
+    try {
+      await api.patch(`/admin/agents/agent-notifications/${id}/read`);
+      refetchNotifs();
+    } catch (e) {
+      toast.error("Failed to mark as read");
+    }
+  };
+
+  const markAllNotificationsRead = async () => {
+    try {
+      await api.patch('/admin/agents/agent-notifications/read-all');
+      toast.success("All notifications marked as read");
+      refetchNotifs();
+    } catch (e) {
+      toast.error("Failed to mark all as read");
+    }
+  };
 
   const updateStatus = async (collectionId: string, status: "COMPLETED" | "REJECTED") => {
     setActingId(collectionId);
@@ -104,6 +146,39 @@ const AgentPigmyDashboard = () => {
     }
   };
 
+  // Filtered & Sorted Pigmy Users for "My Pigmy Users" Section
+  const filteredCustomers = useMemo(() => {
+    if (!customers) return [];
+    let list = [...customers];
+
+    if (customerSearch.trim()) {
+      const q = customerSearch.trim().toLowerCase();
+      list = list.filter((c: any) => 
+        c.member?.fullName?.toLowerCase().includes(q) ||
+        c.accountNumber?.toLowerCase().includes(q) ||
+        c.member?.contact?.includes(q)
+      );
+    }
+
+    if (statusFilter !== 'all') {
+      list = list.filter((c: any) => c.status === statusFilter);
+    }
+
+    list.sort((a: any, b: any) => {
+      const dateA = new Date(a.allocationDate || a.createdAt).getTime();
+      const dateB = new Date(b.allocationDate || b.createdAt).getTime();
+      return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+
+    return list;
+  }, [customers, customerSearch, statusFilter, sortOrder]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredCustomers.length / itemsPerPage));
+  const paginatedCustomers = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredCustomers.slice(start, start + itemsPerPage);
+  }, [filteredCustomers, currentPage]);
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 font-sans">
       <header className="sticky top-0 z-50 bg-[#1a1f36] text-white border-b border-white/10">
@@ -112,7 +187,52 @@ const AgentPigmyDashboard = () => {
             <p className="text-xs font-bold text-[#c9a84c] uppercase tracking-widest">Agent Portal</p>
             <p className="text-sm font-bold">{user?.email}</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            {/* Agent Notification Popover */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="relative p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all">
+                  <Bell className="h-4 w-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-4 px-1 bg-amber-500 text-slate-950 rounded-full text-[9px] font-black flex items-center justify-center border-2 border-[#1a1f36]">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-96 p-4 space-y-3" align="end">
+                <div className="flex items-center justify-between border-b pb-2">
+                  <h4 className="font-bold text-[#1a1f36] text-sm flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-amber-500" /> Notifications
+                  </h4>
+                  {unreadCount > 0 && (
+                    <Button variant="ghost" size="sm" onClick={markAllNotificationsRead} className="text-[10px] font-bold text-amber-600 hover:text-amber-700 h-6">
+                      Mark all as read
+                    </Button>
+                  )}
+                </div>
+                <div className="max-h-72 overflow-y-auto divide-y divide-slate-100">
+                  {notifications.length === 0 ? (
+                    <p className="text-xs text-slate-400 text-center py-6">No notifications yet.</p>
+                  ) : (
+                    notifications.map((notif: any) => (
+                      <div
+                        key={notif.id}
+                        onClick={() => !notif.isRead && markNotificationRead(notif.id)}
+                        className={`py-2.5 space-y-1 cursor-pointer transition-colors ${!notif.isRead ? "bg-amber-50/50 p-2 rounded-lg" : ""}`}
+                      >
+                        <p className="text-xs font-semibold text-slate-800 leading-snug">{notif.message}</p>
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-medium">
+                          <span>{notif.day || ''} {notif.time || ''}</span>
+                          <span className="text-slate-400">{new Date(notif.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+
             <Link to="/pigmy" className="text-xs font-bold text-white/60 hover:text-white">Pigmy home</Link>
             <Button
               variant="ghost"
@@ -224,76 +344,96 @@ const AgentPigmyDashboard = () => {
            </Card>
         </div>
 
-        {/* Customer List */}
+        {/* Customer List & My Pigmy Users Section */}
         <div className="lg:col-span-2">
             <Card className="border-none shadow-xl overflow-hidden h-full">
-               <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100">
+               <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 bg-white p-6">
                   <div>
-                     <CardTitle className="text-lg">Assigned Customers</CardTitle>
+                     <CardTitle className="text-lg font-bold text-[#1a1f36] flex items-center gap-2">
+                       <Users className="h-5 w-5 text-[#c9a84c]" /> My Pigmy Users
+                     </CardTitle>
                      <p className="text-xs text-slate-500 font-medium mt-1">
-                       {customersLoading || pendingLoading 
-                         ? "Loading..." 
-                         : `Showing ${customers?.length || 0} active customers and ${pendingCollections?.length || 0} pending collections`}
+                       Showing {filteredCustomers.length} allocated Pigmy accounts
                      </p>
                   </div>
-                  <Button variant="ghost" className="text-blue-600 text-xs font-bold">View All Customers</Button>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                     <div className="relative">
+                       <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                       <Input
+                         placeholder="Search User or Acc..."
+                         className="pl-8 h-9 text-xs w-44 bg-slate-50"
+                         value={customerSearch}
+                         onChange={(e) => { setCustomerSearch(e.target.value); setCurrentPage(1); }}
+                       />
+                     </div>
+
+                     <Select value={statusFilter} onValueChange={(val) => { setStatusFilter(val); setCurrentPage(1); }}>
+                       <SelectTrigger className="h-9 text-xs w-28 bg-slate-50">
+                         <SelectValue placeholder="Status" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="all">All Status</SelectItem>
+                         <SelectItem value="ACTIVE">Active</SelectItem>
+                         <SelectItem value="CLOSED">Closed</SelectItem>
+                       </SelectContent>
+                     </Select>
+
+                     <Button
+                       size="sm"
+                       variant="outline"
+                       className="h-9 px-2 text-xs font-bold bg-slate-50"
+                       onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                     >
+                       <ArrowUpDown className="h-3.5 w-3.5 mr-1" /> {sortOrder === 'asc' ? 'Oldest' : 'Newest'}
+                     </Button>
+                  </div>
                </CardHeader>
                <CardContent className="p-0">
                   <Table>
                      <TableHeader className="bg-slate-50/50">
                         <TableRow>
-                           <TableHead className="text-[10px] font-black uppercase text-slate-400">Unique ID</TableHead>
-                           <TableHead className="text-[10px] font-black uppercase text-slate-400">Customer Name</TableHead>
+                           <TableHead className="text-[10px] font-black uppercase text-slate-400">User Name</TableHead>
+                           <TableHead className="text-[10px] font-black uppercase text-slate-400">Pigmy Acc No</TableHead>
+                           <TableHead className="text-[10px] font-black uppercase text-slate-400">Mobile No</TableHead>
+                           <TableHead className="text-[10px] font-black uppercase text-slate-400">Assigned Date</TableHead>
                            <TableHead className="text-[10px] font-black uppercase text-slate-400">Status</TableHead>
-                           <TableHead className="text-right text-[10px] font-black uppercase text-slate-400">Scheme</TableHead>
                            <TableHead className="text-right text-[10px] font-black uppercase text-slate-400">Action</TableHead>
                         </TableRow>
                      </TableHeader>
                      <TableBody>
-                        {/* Pending Collections */}
+                        {/* Pending Collections Banner Rows */}
                         {!pendingLoading && pendingCollections && pendingCollections.map((p: any) => (
                            <TableRow key={`pending-${p.id}`} className="bg-amber-50/50">
-                              <TableCell className="font-bold text-xs font-mono">{p.account?.accountNumber}</TableCell>
-                              <TableCell className="font-bold">
+                              <TableCell className="font-bold text-xs">
                                  <div>{p.account?.member?.fullName}</div>
-                                 <div className="text-[10px] text-slate-500 font-medium">Pending Online Payment</div>
+                                 <div className="text-[10px] text-amber-700 font-bold">Pending Online Approval</div>
                               </TableCell>
+                              <TableCell className="font-mono text-xs font-bold">{p.account?.accountNumber}</TableCell>
+                              <TableCell className="text-xs font-medium">{p.account?.member?.contact || 'N/A'}</TableCell>
+                              <TableCell className="text-xs text-slate-500 font-medium">Pending</TableCell>
                               <TableCell>
-                                 <div className="flex flex-col gap-1">
-                                    <Badge className="bg-amber-100 text-amber-700 w-fit">
-                                       PENDING
-                                    </Badge>
-                                    <span className="text-xs font-bold text-slate-700">₹{p.amount?.toLocaleString()} ({p.method})</span>
-                                 </div>
+                                 <Badge className="bg-amber-100 text-amber-700 font-bold text-[10px]">
+                                    ₹{p.amount?.toLocaleString()} PENDING
+                                 </Badge>
                               </TableCell>
-                              <TableCell className="text-right font-bold text-xs">{p.account?.scheme?.name}</TableCell>
                               <TableCell className="text-right">
-                                 <div className="flex justify-end gap-2">
+                                 <div className="flex justify-end gap-1.5">
                                     <Button
                                       size="sm"
-                                      className="bg-emerald-600 hover:bg-emerald-700 h-8 text-xs font-bold"
+                                      className="bg-emerald-600 hover:bg-emerald-700 h-7 text-[10px] font-bold px-2"
                                       disabled={actingId === p.id}
                                       onClick={() => updateStatus(p.id, "COMPLETED")}
                                     >
-                                      {actingId === p.id ? (
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                      ) : (
-                                        <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                                      )}
                                       Approve
                                     </Button>
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      className="h-8 text-red-600 border-red-200 text-xs font-bold bg-white"
+                                      className="h-7 text-red-600 border-red-200 text-[10px] font-bold px-2 bg-white"
                                       disabled={actingId === p.id}
                                       onClick={() => updateStatus(p.id, "REJECTED")}
                                     >
-                                      {actingId === p.id ? (
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                      ) : (
-                                        <XCircle className="h-3.5 w-3.5 mr-1" />
-                                      )}
                                       Reject
                                     </Button>
                                  </div>
@@ -301,22 +441,31 @@ const AgentPigmyDashboard = () => {
                            </TableRow>
                         ))}
 
-                        {/* Active Customers */}
-                        {!customersLoading && customers && customers.map((c: any) => (
+                        {/* Active Pigmy Users */}
+                        {!customersLoading && paginatedCustomers.map((c: any) => (
                            <TableRow key={c.id}>
-                              <TableCell className="font-bold text-xs font-mono">{c.accountNumber}</TableCell>
-                              <TableCell className="font-bold">{c.member?.fullName}</TableCell>
+                              <TableCell className="font-bold text-sm text-[#1a1f36]">
+                                {c.member?.fullName}
+                              </TableCell>
+                              <TableCell className="font-bold text-xs font-mono text-amber-700">
+                                {c.accountNumber}
+                              </TableCell>
+                              <TableCell className="text-xs text-slate-600 font-medium">
+                                <span className="flex items-center gap-1"><Phone className="h-3 w-3 text-slate-400 inline" /> {c.member?.contact || 'N/A'}</span>
+                              </TableCell>
+                              <TableCell className="text-xs text-slate-500 font-medium">
+                                {c.allocationDate ? new Date(c.allocationDate).toLocaleDateString() : new Date(c.createdAt).toLocaleDateString()}
+                              </TableCell>
                               <TableCell>
-                                 <Badge className="bg-emerald-100 text-emerald-700">
-                                    ACTIVE
+                                 <Badge className="bg-emerald-100 text-emerald-700 font-bold text-[10px]">
+                                    {c.status || "ACTIVE"}
                                  </Badge>
                               </TableCell>
-                              <TableCell className="text-right font-bold text-xs">{c.scheme?.name}</TableCell>
                               <TableCell className="text-right">
                                  <Button 
                                    size="sm" 
                                    variant="default" 
-                                   className="bg-blue-600 hover:bg-blue-700"
+                                   className="bg-blue-600 hover:bg-blue-700 text-xs font-bold h-8 px-3"
                                    onClick={() => {
                                      setSearchId(c.accountNumber);
                                      setSelectedAccountId(c.id);
@@ -329,23 +478,50 @@ const AgentPigmyDashboard = () => {
                            </TableRow>
                         ))}
 
-                        {(customersLoading || pendingLoading) && [1,2,3].map(i => (
+                        {customersLoading && [1,2,3,4].map(i => (
                           <TableRow key={i} className="animate-pulse">
-                             <TableCell colSpan={5} className="h-12 bg-slate-100" />
+                             <TableCell colSpan={6} className="h-12 bg-slate-100" />
                           </TableRow>
                         ))}
 
-                        {!(customersLoading || pendingLoading) && 
-                         (!pendingCollections || pendingCollections.length === 0) && 
-                         (!customers || customers.length === 0) && (
+                        {!customersLoading && paginatedCustomers.length === 0 && (
                            <TableRow>
-                             <TableCell colSpan={5} className="text-center py-8 text-slate-500 font-medium">
-                               No assigned customers or pending collections
+                             <TableCell colSpan={6} className="text-center py-8 text-slate-400 font-medium text-xs">
+                               No Pigmy users assigned to you matching filters.
                              </TableCell>
                            </TableRow>
                         )}
                      </TableBody>
                   </Table>
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between p-4 border-t border-slate-100 bg-slate-50/50 text-xs">
+                      <span className="text-slate-500 font-medium">
+                        Page {currentPage} of {totalPages} ({filteredCustomers.length} total users)
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={currentPage === 1}
+                          onClick={() => setCurrentPage(p => p - 1)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={currentPage === totalPages}
+                          onClick={() => setCurrentPage(p => p + 1)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                </CardContent>
             </Card>
         </div>
