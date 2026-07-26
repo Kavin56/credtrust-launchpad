@@ -147,8 +147,12 @@ const PaymentsPage = () => {
                                  <Calendar className="w-6 h-6" />
                               </div>
                               <div className="space-y-1">
-                                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 leading-none">Loan EMI</p>
-                                 <h4 className="font-bold text-[#1a1f36] text-[15px]">Schedule #{d.id.slice(0,6)}</h4>
+                                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#6b21a8] leading-none">
+                                    {d.loanType || "Loan EMI"}
+                                  </p>
+                                  <h4 className="font-bold text-[#1a1f36] text-[15px]">
+                                    {d.loanNumber || `Loan #${d.loanId?.slice(0, 8)}`}
+                                  </h4>
                                  <p className="text-[11px] text-gray-400">Due {new Date(d.dueDate).toDateString()}</p>
                               </div>
                            </div>

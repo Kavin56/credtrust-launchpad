@@ -1,4 +1,4 @@
-import { Search, ChevronRight, Eye, Home, Smartphone, Info, CreditCard, ChevronDown, Landmark, PiggyBank, CircleDollarSign, Calculator, User } from 'lucide-react';
+import { Search, ChevronRight, Eye, Home, Smartphone, Info, CreditCard, ChevronDown, Landmark, PiggyBank, CircleDollarSign, Calculator, User, Clock, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -9,6 +9,7 @@ import api, { getApiBaseUrl } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 import { useAuth } from '@/modules/login/AuthContext';
 
@@ -39,6 +40,23 @@ const AccountsPage = () => {
     },
   });
 
+
+  const [selectedLoanSummary, setSelectedLoanSummary] = useState<any>(null);
+  const [selectedDepositSummary, setSelectedDepositSummary] = useState<any>(null);
+
+  const getFormattedRegisteredId = (app: any) => {
+    const regId = app?.registeredId || app?.member?.memberId || "";
+    if (!regId) return "—";
+    const trimmed = regId.trim();
+    if (trimmed.toUpperCase().startsWith("ROJA")) {
+      if (trimmed.toUpperCase().startsWith("ROJA-")) {
+        return trimmed;
+      }
+      return `ROJA-${trimmed.slice(4)}`;
+    }
+    return `ROJA-${trimmed}`;
+  };
+  
   const loans = Array.isArray(rawLoans) ? rawLoans : [];
   const pendingLoans = loans.filter((l: any) => ['PENDING', 'UNDER_REVIEW', 'SUBMITTED'].includes(String(l.status).toUpperCase()));
   const activeLoans = loans.filter((l: any) => ['APPROVED', 'DISBURSED', 'ACTIVE'].includes(String(l.status).toUpperCase()));
@@ -489,28 +507,38 @@ const AccountsPage = () => {
                       <div className="space-y-4">
                          {depLoading && <Skeleton className="h-20 w-full" />}
                          {!depLoading && deposits?.length === 0 && <div className="text-gray-400 text-sm">No deposits yet.</div>}
-                         {!depLoading && deposits?.map((dep:any) => (
-                           <div key={dep.id} className="bg-white rounded-[32px] p-6 border border-gray-100 flex items-center justify-between hover:border-[#6b21a8] transition-all cursor-pointer shadow-sm">
-                              <div className="flex items-center gap-4">
-                                 <div className={`w-12 h-12 rounded-2xl ${dep.kind === 'FD' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'} flex items-center justify-center`}>
-                                    <Landmark className="w-6 h-6" />
-                                 </div>
+{!depLoading && deposits?.map((dep:any) => (
+                            <div 
+                              key={dep.id} 
+                              onClick={() => setSelectedDepositSummary(dep)}
+                              className="bg-white rounded-[32px] p-6 border border-gray-100 flex items-center justify-between hover:border-[#6b21a8] transition-all cursor-pointer shadow-sm hover:shadow-md"
+                            >
+                               <div className="flex items-center gap-4">
+                                  <div className={`w-12 h-12 rounded-2xl ${dep.kind === 'FD' ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'} flex items-center justify-center`}>
+                                     <Landmark className="w-6 h-6" />
+                                  </div>
+                                  <div>
+                                     <h4 className="text-[14px] font-bold text-[#1a1f36]">{dep.kind} Deposit</h4>
+                                     <p className="text-[11px] text-gray-400">{dep.applicationNo || dep.id.slice(0,8)} | {Number(dep.interestRate)}%</p>
+                                  </div>
+                               </div>
+                               <div className="text-right flex flex-col items-end gap-2">
                                  <div>
-                                    <h4 className="text-[14px] font-bold text-[#1a1f36]">{dep.kind} Deposit</h4>
-                                    <p className="text-[11px] text-gray-400">{dep.id.slice(0,8)} | {Number(dep.rate)}%</p>
+                                    <p className="text-[15px] font-black text-[#1a1f36]">₹{Number(dep.amount).toLocaleString()}</p>
+                                    <p className="text-[10px] font-bold text-emerald-600 tracking-tighter uppercase">{new Date(dep.maturityDate).toDateString()}</p>
                                  </div>
-                              </div>
-                              <div className="text-right flex flex-col items-end gap-2">
-                                <div>
-                                   <p className="text-[15px] font-black text-[#1a1f36]">₹{Number(dep.principal).toLocaleString()}</p>
-                                   <p className="text-[10px] font-bold text-emerald-600 tracking-tighter uppercase">{new Date(dep.maturityDate).toDateString()}</p>
-                                </div>
-                                <Link to="/payments" className="px-3 py-1 bg-white border border-gray-200 rounded-lg text-[9px] font-black uppercase text-[#6b21a8] hover:bg-gray-50 tracking-widest">
-                                   Re-invest
-                                </Link>
-                             </div>
-                           </div>
-                         ))}
+                                 <Link 
+                                   to="/payments" 
+                                   onClick={(e) => {
+                                     e.stopPropagation();
+                                   }}
+                                   className="px-3 py-1 bg-white border border-gray-200 rounded-lg text-[9px] font-black uppercase text-[#6b21a8] hover:bg-gray-50 tracking-widest"
+                                 >
+                                    Re-invest
+                                 </Link>
+                               </div>
+                            </div>
+                          ))}
                       </div>
                    </div>
                 </div>
@@ -579,69 +607,332 @@ const AccountsPage = () => {
                            <Landmark className="absolute -right-8 -bottom-8 w-40 h-40 text-white/5 pointer-events-none" />
                        </div>
 
-                       <div className="space-y-4">
-                          {loanLoading && <Skeleton className="h-20 w-full" />}
-                          {!loanLoading && loans?.length === 0 && (
-                             <div className="p-8 bg-white rounded-[32px] border border-gray-100 text-center space-y-2">
-                               <Landmark className="w-10 h-10 text-gray-300 mx-auto" />
-                               <p className="text-gray-500 font-bold text-sm">No loans found</p>
-                               <p className="text-xs text-gray-400">You haven't submitted any loan applications yet.</p>
-                             </div>
-                          )}
-                          {!loanLoading && activeLoans?.map((loan:any) => (
-                            <div key={loan.id} className="bg-white rounded-[32px] p-6 border border-gray-100 flex items-center justify-between hover:border-[#6b21a8] transition-all cursor-pointer shadow-sm">
-                               <div className="flex items-center gap-4">
-                                  <div className={`w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-[#c9a84c]`}>
-                                     <CircleDollarSign className="w-6 h-6" />
-                                  </div>
-                                  <div>
-                                     <h4 className="text-[14px] font-bold text-[#1a1f36]">{loan.type || loan.product}</h4>
-                                     <p className="text-[11px] text-gray-400">{loan.loanNumber || loan.id.slice(0,8)} | EMI: ₹{Number(loan.emiAmount||0).toLocaleString()}</p>
-                                  </div>
+                        <div className="space-y-4">
+                           {loanLoading && <Skeleton className="h-20 w-full" />}
+                           {!loanLoading && loans?.length === 0 && (
+                              <div className="p-8 bg-white rounded-[32px] border border-gray-100 text-center space-y-2">
+                                <Landmark className="w-10 h-10 text-gray-300 mx-auto" />
+                                <p className="text-gray-500 font-bold text-sm">No loans found</p>
+                                <p className="text-xs text-gray-400">You haven't submitted any loan applications yet.</p>
+                              </div>
+                           )}
+                           {!loanLoading && activeLoans?.map((loan:any) => {
+                             const amount = Number(loan.amount || 0);
+                             const netDisbursed = loan.netDisbursed ?? (amount - amount * 0.025);
+                             const totalMonths = loan.termMonths || 12;
+                             const paidMonths = loan.emiSchedule?.filter((s: any) => s.isPaid).length || 0;
+                             const firstEmi = loan.emiSchedule?.[0];
+                             const emiVal = firstEmi?.totalEmi || (amount * (loan.interestRate / 1200) * Math.pow(1 + loan.interestRate / 1200, totalMonths)) / (Math.pow(1 + loan.interestRate / 1200, totalMonths) - 1);
+                             const emiAmount = Math.round(emiVal * 100) / 100;
+                             const outstandingBalance = Math.round(emiAmount * (totalMonths - paidMonths) * 100) / 100;
+
+                             const nextEmiItem = loan.emiSchedule?.find((s: any) => !s.isPaid);
+                             const nextEmiDate = nextEmiItem ? new Date(nextEmiItem.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
+                             // Timeline
+                             const startDate = loan.disbursedAt ? new Date(loan.disbursedAt) : new Date(loan.createdAt);
+                             const endDate = new Date(startDate);
+                             endDate.setMonth(endDate.getMonth() + totalMonths);
+                             const timelineStr = `${startDate.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })} - ${endDate.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}`;
+
+                             return (
+                               <div 
+                                 key={loan.id} 
+                                 onClick={() => setSelectedLoanSummary(loan)}
+                                 className="bg-white rounded-[32px] p-6 border border-gray-100 hover:border-[#6b21a8] transition-all cursor-pointer shadow-sm space-y-4 hover:shadow-md"
+                               >
+                                 <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                       <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-[#c9a84c] shrink-0">
+                                          <CircleDollarSign className="w-5 h-5" />
+                                       </div>
+                                       <div>
+                                          <h4 className="text-sm font-bold text-[#1a1f36]">{loan.type}</h4>
+                                          <p className="text-[10px] text-gray-400 font-mono">{loan.loanNumber || loan.id.slice(0,8)}</p>
+                                       </div>
+                                    </div>
+                                    <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-[9px] font-black uppercase tracking-wider border border-emerald-100">
+                                      {loan.status}
+                                    </span>
+                                 </div>
+
+                                 {/* Grid of details (Requirement 6) */}
+                                 <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 text-xs border-t border-slate-50 pt-3">
+                                    <div>
+                                       <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Amount Applied</span>
+                                       <span className="font-extrabold text-[#1a1f36]">₹{amount.toLocaleString()}</span>
+                                    </div>
+                                    <div>
+                                       <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Net Disbursed</span>
+                                       <span className="font-extrabold text-emerald-600">₹{netDisbursed.toLocaleString()}</span>
+                                    </div>
+                                    <div>
+                                       <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Monthly EMI</span>
+                                       <span className="font-extrabold text-[#1a1f36]">₹{emiAmount.toLocaleString()}</span>
+                                    </div>
+                                    <div>
+                                       <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Outstanding Balance</span>
+                                       <span className="font-extrabold text-rose-600">₹{outstandingBalance.toLocaleString()}</span>
+                                    </div>
+                                    <div>
+                                       <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Next EMI Date</span>
+                                       <span className="font-extrabold text-[#1a1f36]">{nextEmiDate}</span>
+                                    </div>
+                                    <div>
+                                       <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">EMI Progress</span>
+                                       <span className="font-extrabold text-[#1a1f36]">{paidMonths} / {totalMonths} Months Paid</span>
+                                    </div>
+                                    <div className="col-span-2">
+                                       <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Timeline</span>
+                                       <span className="font-extrabold text-slate-600">{timelineStr} ({totalMonths} Months)</span>
+                                    </div>
+                                 </div>
+
+                                 <div className="flex justify-between items-center pt-2 border-t border-slate-50">
+                                   <span className="text-[9px] text-[#6b21a8] font-bold uppercase tracking-wider">Click to view full statement</span>
+                                   <Link 
+                                     to="/payments" 
+                                     onClick={(e) => e.stopPropagation()} 
+                                     className="px-3 py-1 bg-[#1a1f36] text-white rounded-lg text-[9px] font-black uppercase hover:bg-black tracking-widest shadow-sm"
+                                   >
+                                      Pay EMI
+                                   </Link>
+                                 </div>
                                </div>
-                               <div className="text-right flex flex-col items-end gap-2">
-                                  <div>
-                                     <p className="text-[15px] font-black text-[#1a1f36]">₹{Number(loan.amount || loan.principal || 0).toLocaleString()}</p>
-                                     <p className="text-[10px] font-bold tracking-tighter uppercase text-emerald-600">{loan.status}</p>
-                                  </div>
-                                  <Link to="/payments" className="px-3 py-1 bg-[#1a1f36] text-white rounded-lg text-[9px] font-black uppercase hover:bg-black tracking-widest shadow-sm">
-                                     Pay EMI
-                                  </Link>
-                               </div>
-                            </div>
-                          ))}
-                       </div>
+                             );
+                           })}
+                        </div>
                     </div>
 
-                   {/* Repayment Schedule Link */}
-                   <div className="p-8 bg-gray-50 rounded-[40px] border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6">
-                      <div className="flex items-center gap-6">
-                         <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm text-[#6b21a8]">
-                            <Calculator className="w-8 h-8" />
-                         </div>
-                         <div className="space-y-1">
-                            <h4 className="text-[16px] font-bold text-[#1a1f36]">Interactive EMI Calculator</h4>
-                            <p className="text-[12px] text-gray-400 max-w-xs">Plan your next borrowing with our real-time interest estimator.</p>
-                         </div>
-                      </div>
-                      <Link to="/loan-apply" className="px-10 py-4 bg-white border-2 border-indigo-100 text-[#6b21a8] font-bold rounded-2xl hover:bg-indigo-50 transition-all text-[13px] shadow-sm">
-                         Calculate Repayment
-                      </Link>
-                   </div>
-                </div>
-             ) : (
-                <div className="h-60 flex flex-col items-center justify-center text-center space-y-4 bg-gray-50/50 rounded-[40px] border border-gray-100 border-dashed">
-                   <Landmark className="w-12 h-12 text-gray-300" />
-                   <div>
-                      <p className="text-[14px] font-bold text-gray-500">Feature Pending</p>
-                      <p className="text-[11px] text-gray-400">Application for {accountTabs[activeTabIndex]} will be available soon.</p>
-                   </div>
-                </div>
-             )}
-          </main>
-        </div>
-      </div>
+                    {/* Repayment Schedule Link */}
+                    <div className="p-8 bg-gray-50 rounded-[40px] border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                       <div className="flex items-center gap-6">
+                          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-sm text-[#6b21a8]">
+                             <Calculator className="w-8 h-8" />
+                          </div>
+                          <div className="space-y-1">
+                             <h4 className="text-[16px] font-bold text-[#1a1f36]">Interactive EMI Calculator</h4>
+                             <p className="text-[12px] text-gray-400 max-w-xs">Plan your next borrowing with our real-time interest estimator.</p>
+                          </div>
+                       </div>
+                       <Link to="/loan-apply" className="px-10 py-4 bg-white border-2 border-indigo-100 text-[#6b21a8] font-bold rounded-2xl hover:bg-indigo-50 transition-all text-[13px] shadow-sm">
+                          Calculate Repayment
+                       </Link>
+                    </div>
+                 </div>
+              ) : (
+                 <div className="h-60 flex flex-col items-center justify-center text-center space-y-4 bg-gray-50/50 rounded-[40px] border border-gray-100 border-dashed">
+                    <Landmark className="w-12 h-12 text-gray-300" />
+                    <div>
+                       <p className="text-[14px] font-bold text-gray-500">Feature Pending</p>
+                       <p className="text-[11px] text-gray-400">Application for {accountTabs[activeTabIndex]} will be available soon.</p>
+                    </div>
+                 </div>
+              )}
+           </main>
+         </div>
+       </div>
 
+       <Dialog open={selectedLoanSummary !== null} onOpenChange={(open) => !open && setSelectedLoanSummary(null)}>
+         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto rounded-3xl p-6 font-sans">
+           <DialogHeader className="border-b border-gray-100 pb-4">
+             <div className="flex items-center justify-between">
+               <DialogTitle className="text-xl font-bold text-[#1a1f36] flex items-center gap-2">
+                 <FileText className="h-5 w-5 text-[#c9a84c]" />
+                 Loan Application & Repayment Summary
+               </DialogTitle>
+               {selectedLoanSummary && (
+                 <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${
+                   selectedLoanSummary.status === 'PENDING' ? 'bg-amber-100 text-amber-800' :
+                   ['APPROVED', 'ACTIVE', 'DISBURSED'].includes(selectedLoanSummary.status) ? 'bg-emerald-100 text-emerald-800' :
+                   'bg-rose-100 text-rose-800'
+                 }`}>
+                   {selectedLoanSummary.status}
+                 </span>
+               )}
+             </div>
+             <DialogDescription className="text-xs text-slate-500">
+               Complete details and repayment history for Loan {selectedLoanSummary?.loanNumber || selectedLoanSummary?.id?.slice(0, 8)}
+             </DialogDescription>
+           </DialogHeader>
+
+           {selectedLoanSummary && (() => {
+             const amount = Number(selectedLoanSummary.amount || 0);
+             const totalCharges = amount * 0.025;
+             const procCharges = selectedLoanSummary.processingCharges ?? (totalCharges * 0.5);
+             const docCharges = selectedLoanSummary.documentationCharges ?? (totalCharges * 0.4);
+             const othCharges = selectedLoanSummary.otherCharges ?? (totalCharges * 0.1);
+             const netDisbursed = selectedLoanSummary.netDisbursed ?? (amount - totalCharges);
+
+             const totalMonths = selectedLoanSummary.termMonths || 12;
+             const paidMonths = selectedLoanSummary.emiSchedule?.filter((s: any) => s.isPaid).length || 0;
+             const progressPercent = Math.min(Math.round((paidMonths / totalMonths) * 100), 100);
+
+             const firstEmi = selectedLoanSummary.emiSchedule?.[0];
+             const emiVal = firstEmi?.totalEmi || (amount * (selectedLoanSummary.interestRate / 1200) * Math.pow(1 + selectedLoanSummary.interestRate / 1200, totalMonths)) / (Math.pow(1 + selectedLoanSummary.interestRate / 1200, totalMonths) - 1);
+             const emiAmount = Math.round(emiVal * 100) / 100;
+             const outstandingBalance = Math.round(emiAmount * (totalMonths - paidMonths) * 100) / 100;
+
+             const nextEmiItem = selectedLoanSummary.emiSchedule?.find((s: any) => !s.isPaid);
+             const nextEmiDate = nextEmiItem ? new Date(nextEmiItem.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+             
+             // Format dates
+             const startDate = selectedLoanSummary.disbursedAt ? new Date(selectedLoanSummary.disbursedAt) : new Date(selectedLoanSummary.createdAt);
+             const startStr = startDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+             
+             // End date: Start Date + termMonths
+             const endDate = new Date(startDate);
+             endDate.setMonth(endDate.getMonth() + totalMonths);
+             const endStr = endDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+             return (
+               <div className="space-y-6 py-4">
+                 {/* 1. Core Identification and Status */}
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                   <div className="p-3 bg-slate-50 rounded-2xl">
+                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Registered ID</p>
+                     <p className="text-sm font-black text-slate-900">{getFormattedRegisteredId(selectedLoanSummary)}</p>
+                   </div>
+                   <div className="p-3 bg-slate-50 rounded-2xl">
+                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Applicant Name</p>
+                     <p className="text-sm font-bold text-slate-900">{selectedLoanSummary.member?.fullName || "—"}</p>
+                   </div>
+                   <div className="p-3 bg-slate-50 rounded-2xl">
+                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Interest Rate</p>
+                     <p className="text-sm font-black text-slate-900">{selectedLoanSummary.interestRate}% p.a.</p>
+                   </div>
+                   <div className="p-3 bg-slate-50 rounded-2xl">
+                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Outstanding Balance</p>
+                     <p className="text-sm font-black text-rose-600">₹{outstandingBalance.toLocaleString()}</p>
+                   </div>
+                 </div>
+
+                 {/* 2. Proportional Charges & Disbursement Calculation */}
+                 <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 space-y-4">
+                   <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Loan Disbursement & Charges Summary</h4>
+                   <div className="text-xs space-y-2 text-[#1a1f36]">
+                     <div className="flex justify-between font-bold">
+                       <span>Loan Amount Applied</span>
+                       <span>₹{amount.toLocaleString()}</span>
+                     </div>
+                     <div className="border-t border-slate-200/50 my-2" />
+                     <div className="space-y-1.5 pl-2 text-slate-500 font-medium">
+                       <div className="flex justify-between">
+                         <span>Less: Processing Charges (50%)</span>
+                         <span>- ₹{procCharges.toLocaleString()}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span>Less: Documentation Charges (40%)</span>
+                         <span>- ₹{docCharges.toLocaleString()}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span>Less: Other Charges (10%)</span>
+                         <span>- ₹{othCharges.toLocaleString()}</span>
+                       </div>
+                     </div>
+                     <div className="border-t border-slate-200/50 my-2" />
+                     <div className="flex justify-between font-black text-[#1a1f36] text-sm bg-slate-100/50 p-2.5 rounded-xl">
+                       <span>Net Disbursed Amount</span>
+                       <span className="text-emerald-600">₹{netDisbursed.toLocaleString()}</span>
+                     </div>
+                   </div>
+                 </div>
+
+                 {/* 3. EMI Progress Tracker */}
+                 {selectedLoanSummary.status !== 'PENDING' && (
+                   <div className="space-y-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                     <div className="flex justify-between items-center text-xs">
+                       <span className="font-bold uppercase text-slate-500">EMI Progress</span>
+                       <span className="font-black text-[#1a1f36]">{paidMonths} / {totalMonths} Months Completed</span>
+                     </div>
+                     
+                     {/* Sleek progress bar */}
+                     <div className="w-full bg-slate-200/60 h-2.5 rounded-full overflow-hidden flex">
+                       <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }} />
+                     </div>
+
+                     <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                       <span>Paid: {paidMonths} Months</span>
+                       <span>Remaining: {totalMonths - paidMonths} Months</span>
+                     </div>
+                   </div>
+                 )}
+
+                 {/* 4. Timeline details */}
+                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl text-xs">
+                   <div>
+                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Approved Date</p>
+                     <p className="font-bold text-[#1a1f36]">{selectedLoanSummary.disbursedAt ? startStr : "Awaiting Approval"}</p>
+                   </div>
+                   <div>
+                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">EMI Start Date</p>
+                     <p className="font-bold text-[#1a1f36]">{selectedLoanSummary.disbursedAt ? startStr : "Awaiting Approval"}</p>
+                   </div>
+                   <div>
+                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">EMI End Date</p>
+                     <p className="font-bold text-[#1a1f36]">{selectedLoanSummary.disbursedAt ? endStr : "Awaiting Approval"}</p>
+                   </div>
+                   <div>
+                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Repayment Duration</p>
+                     <p className="font-bold text-emerald-600">{totalMonths} Months</p>
+                   </div>
+                 </div>
+
+                 {/* 5. EMI Payment History Table */}
+                 {selectedLoanSummary.status !== 'PENDING' && (
+                   <div className="space-y-3">
+                     <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-500">EMI Payment Status</h4>
+                     <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-sm">
+                       <table className="w-full text-left border-collapse text-xs">
+                         <thead>
+                           <tr className="bg-slate-50 border-b border-slate-100">
+                             <th className="p-3 font-bold text-slate-400">S.No</th>
+                             <th className="p-3 font-bold text-slate-400">EMI Due Date</th>
+                             <th className="p-3 font-bold text-slate-400">EMI Month</th>
+                             <th className="p-3 font-bold text-slate-400">Amount Paid</th>
+                             <th className="p-3 font-bold text-slate-400">Payment Date</th>
+                             <th className="p-3 font-bold text-slate-400">Status</th>
+                           </tr>
+                         </thead>
+                         <tbody className="divide-y divide-slate-100 font-medium text-[#1a1f36]">
+                           {selectedLoanSummary.emiSchedule?.map((s: any, idx: number) => {
+                             const dueDate = new Date(s.dueDate);
+                             const dueMonthName = dueDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                             const dueStr = dueDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                             
+                             let status = "Pending";
+                             if (s.isPaid) status = "Paid";
+                             else if (dueDate < new Date()) status = "Overdue";
+
+                             return (
+                               <tr key={s.id} className="hover:bg-slate-50/50">
+                                 <td className="p-3 font-mono">{idx + 1}</td>
+                                 <td className="p-3">{dueStr}</td>
+                                 <td className="p-3">{dueMonthName}</td>
+                                 <td className="p-3 font-bold">{s.isPaid ? `₹${s.totalEmi.toLocaleString()}` : "—"}</td>
+                                 <td className="p-3">{s.paidAt ? new Date(s.paidAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}</td>
+                                 <td className="p-3">
+                                   <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider ${
+                                     status === 'Paid' ? 'bg-emerald-50 text-emerald-700' :
+                                     status === 'Overdue' ? 'bg-rose-50 text-rose-700' :
+                                     'bg-amber-50 text-amber-700'
+                                   }`}>
+                                     {status}
+                                   </span>
+                                 </td>
+                               </tr>
+                             );
+                           })}
+                         </tbody>
+                       </table>
+                     </div>
+                   </div>
+                 )}
+               </div>
+             );
+           })()}
+         </DialogContent>
+       </Dialog>
       <Footer />
     </div>
   );

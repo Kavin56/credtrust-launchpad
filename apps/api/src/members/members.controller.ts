@@ -28,6 +28,12 @@ export class MembersController {
     private readonly authService: AuthService,
   ) {}
 
+  @Get('validate-id/:id')
+  @UseGuards(JwtAuthGuard)
+  validateId(@Param('id') id: string) {
+    return this.membersService.validateRegisteredId(id);
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'CEO', 'DIRECTOR')

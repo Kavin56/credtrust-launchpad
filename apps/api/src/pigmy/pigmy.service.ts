@@ -64,7 +64,8 @@ export class PigmyService {
           agentId: dto.agentId,
           startDate,
           maturityDate,
-          status: 'ACTIVE',
+          status: (dto as any).status || 'ACTIVE',
+          registeredId: (dto as any).registeredId || null,
         },
       });
     } catch (error) {
@@ -73,58 +74,31 @@ export class PigmyService {
     }
   }
 
-  async selfEnroll(userId: string, schemeId: string) {
+  async selfEnroll(userId: string, schemeId: string, registeredId?: string) {
     try {
-      let member = await this.prisma.member.findUnique({
-        where: { userId },
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: { member: true }
       });
-
+      const member = user?.member;
       if (!member) {
-        // Create skeleton member profile so they can at least start Pigmy
-        const user = await this.prisma.user.findUnique({ where: { id: userId } });
-        if (!user) throw new NotFoundException('User not found');
-
-        // Simple ID generation for skeleton
-        const prefix = 'SRN-GEN';
-        const lastMember = await this.prisma.member.findFirst({
-          where: { memberId: { startsWith: prefix } },
-          orderBy: { memberId: 'desc' },
-        });
-        let nextNumber = 1;
-        if (lastMember) {
-          const parts = lastMember.memberId.split('-');
-          const lastNum = parseInt(parts[parts.length - 1]);
-          if (!isNaN(lastNum)) nextNumber = lastNum + 1;
-        }
-        const memberId = `${prefix}-${nextNumber.toString().padStart(4, '0')}`;
-
-        member = await this.prisma.member.create({
-          data: {
-            userId,
-            memberId: `TEMP-${nanoid(6).toUpperCase()}`,
-            fullName: user.email.split('@')[0],
-            dob: new Date(1990, 0, 1), // Placeholder
-            gender: 'Other',
-            contact: '9999999999', // Placeholder
-            address: 'Update Required',
-            state: 'Tamil Nadu',
-            district: 'Chennai',
-            pincode: '600001',
-            aadhaarNumber: `TEMP-${Date.now()}-${nanoid(4)}`,
-            aadhaarHash: `TEMP-HASH-${Date.now()}-${nanoid(4)}`,
-            panNumber: `TEMP-PAN-${Date.now()}-${nanoid(4)}`,
-            panHash: `TEMP-PAN-HASH-${Date.now()}-${nanoid(4)}`,
-            kycStatus: 'PENDING',
-          }
-        });
+        throw new BadRequestException('Member profile not found');
       }
+
+      const rawId = (registeredId || '').toString().trim();
+      if (!rawId) {
+        throw new BadRequestException('Registered ID is mandatory');
+      }
+      const formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
 
       return await this.enrollAccount({
         memberId: member.id,
         schemeId,
         agentId: undefined,
         startDate: new Date(),
-      });
+        registeredId: formattedId,
+        status: 'PENDING'
+      } as any);
     } catch (error: any) {
       console.error('ERROR in selfEnroll:', error);
       // Re-throw as a friendly error if it's a known prisma error
@@ -562,5 +536,50 @@ export class PigmyService {
         },
       },
     });
+  }
+
+  async listApplications(status?: string) {
+    return this.prisma.pigmyAccount.findMany({
+      where: status ? { status } : {},
+      include: {
+        member: true,
+        scheme: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
+
+  async updateStatus(id: string, status: string, remarks?: string, agentId?: string) {
+    const account = await this.prisma.pigmyAccount.findUnique({
+      where: { id },
+      include: { member: true }
+    });
+
+    if (!account) {
+      throw new NotFoundException('Pigmy Account not found');
+    }
+
+    const updated = await this.prisma.pigmyAccount.update({
+      where: { id },
+      data: {
+        status,
+        agentId: agentId || account.agentId,
+      },
+      include: { member: true, scheme: true }
+    });
+
+    // Notify user
+    await this.prisma.notification.create({
+      data: {
+        memberId: account.memberId,
+        title: `Pigmy Account ${status}`,
+        message: `Your application for ${updated.scheme.name} has been ${status.toLowerCase()}.${remarks ? ' Remark: ' + remarks : ''}`,
+        type: status === 'ACTIVE' ? 'SUCCESS' : status === 'REJECTED' ? 'DANGER' : 'INFO'
+      }
+    });
+
+    return updated;
   }
 }

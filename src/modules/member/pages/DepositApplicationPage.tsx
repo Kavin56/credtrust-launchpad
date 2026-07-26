@@ -276,7 +276,7 @@ const DepositApplicationPage = () => {
 
     if (currentStep === 2) {
       // Validate Applicant Details
-      const reqApplicantFields = ['fullName', 'memberId', 'dob', 'mobile', 'email', 'aadhaar', 'pan', 'address'];
+      const reqApplicantFields = ['fullName', 'memberId', 'dob', 'mobile', 'email', 'aadhaar', 'pan', 'address', 'registeredId'];
       reqApplicantFields.forEach(f => {
         if (!formData[f] || !formData[f].trim()) {
           newErrors[f] = "This field is required";
@@ -396,12 +396,33 @@ const DepositApplicationPage = () => {
     simulateFileUpload(docId, file);
   };
 
-  const handleNext = () => {
-    if (validateStep(step)) {
-      setStep(step + 1);
-    } else {
+  const handleNext = async () => {
+    if (!validateStep(step)) {
       toast.error("Please fill all required fields or upload mandatory files to continue.");
+      return;
     }
+
+    if (step === 2) {
+      const regId = (formData.registeredId || '').toString().trim();
+      if (!regId) {
+        setErrors(prev => ({ ...prev, registeredId: "Registered ID is required" }));
+        toast.error("Registered ID is required");
+        return;
+      }
+
+      // Format registered ID (e.g. ROJA-001) directly without backend database check
+      const formatted = regId.toUpperCase().startsWith('ROJA-') ? regId.toUpperCase() : `ROJA-${regId}`;
+      setFormData(prev => ({ ...prev, registeredId: formatted }));
+
+      // Clear error
+      setErrors(prev => {
+        const updated = { ...prev };
+        delete updated.registeredId;
+        return updated;
+      });
+    }
+
+    setStep(step + 1);
   };
 
   const handleBack = () => setStep(step - 1);
@@ -427,6 +448,7 @@ const DepositApplicationPage = () => {
       payload.append('tenureMonths', tenure.toString());
       payload.append('payoutMode', formData.payoutPreference);
       payload.append('status', 'PENDING');
+      payload.append('registeredId', formData.registeredId || '');
 
       const additionalDetails = {
         certificateNumber: fdNumber,
@@ -591,6 +613,13 @@ const DepositApplicationPage = () => {
                    </div>
 
                    <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+                      {/* Registered ID field */}
+                      <div className="space-y-2 md:col-span-2">
+                         <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Registered ID <span className="text-red-500 font-black">*</span></Label>
+                         <Input value={formData.registeredId || ""} onChange={(e) => handleInputChange("registeredId", e.target.value)} placeholder="Enter Customer/Member ID (e.g. 001)" className="h-12 rounded-xl" />
+                         {errors.registeredId && <p className="text-xs text-red-500 font-bold">{errors.registeredId}</p>}
+                      </div>
+
                       {/* Auto-Fetched editable applicant details */}
                       <div className="space-y-2">
                          <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Full Name <span className="text-red-500 font-black">*</span></Label>

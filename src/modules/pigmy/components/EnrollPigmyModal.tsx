@@ -45,6 +45,8 @@ export const EnrollPigmyModal = ({ open, onOpenChange, onSuccess, profile }: Enr
   const [loading, setLoading] = useState(false);
   const [schemes, setSchemes] = useState<any[]>([]);
   const [selectedSchemeId, setSelectedSchemeId] = useState<string>('');
+  const [registeredId, setRegisteredId] = useState('');
+  const [registeredIdError, setRegisteredIdError] = useState('');
   
   const [kycData, setKycData] = useState({
     aadhaarNumber: profile?.aadhaarNumber || '',
@@ -121,6 +123,13 @@ export const EnrollPigmyModal = ({ open, onOpenChange, onSuccess, profile }: Enr
   };
 
   const handleEnroll = async () => {
+    const regId = registeredId.trim();
+    if (!regId) {
+      setRegisteredIdError("Registered ID is required");
+      toast.error("Registered ID is required");
+      return;
+    }
+
     if (!selectedSchemeId) {
       toast.error("Please select a savings scheme");
       return;
@@ -128,8 +137,11 @@ export const EnrollPigmyModal = ({ open, onOpenChange, onSuccess, profile }: Enr
 
     setLoading(true);
     try {
+      setRegisteredIdError("");
+
       await api.post('/pigmy/self-enroll', {
         schemeId: selectedSchemeId,
+        registeredId: regId,
       });
       toast.success("Welcome to Pigmy Savings!", {
         description: "Your account is now active. Start your daily savings today."
@@ -247,6 +259,25 @@ export const EnrollPigmyModal = ({ open, onOpenChange, onSuccess, profile }: Enr
                 <DialogDescription className="text-slate-500 font-medium text-base">
                   Select a savings scheme that works for you.
                 </DialogDescription>
+              </div>
+
+              {/* Registered ID Field */}
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                  Registered ID <span className="text-red-500 font-black">*</span>
+                </Label>
+                <Input
+                  value={registeredId}
+                  onChange={(e) => {
+                    setRegisteredId(e.target.value);
+                    if (registeredIdError) setRegisteredIdError('');
+                  }}
+                  placeholder="Enter Customer/Member ID (e.g. 001)"
+                  className="bg-slate-50 border-slate-100 h-12 rounded-xl focus:border-[#fcd34d] focus:ring-[#fcd34d]/20 transition-all font-bold text-sm"
+                />
+                {registeredIdError && (
+                  <p className="text-xs font-bold text-red-500 mt-1">{registeredIdError}</p>
+                )}
               </div>
 
               <div className="space-y-4 py-2">

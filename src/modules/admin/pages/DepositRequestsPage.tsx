@@ -43,6 +43,50 @@ const DepositRequestsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [remarks, setRemarks] = useState("");
   
+  const [txnAmount, setTxnAmount] = useState("");
+  const [txnType, setTxnType] = useState("DEPOSIT");
+  const [txnMode, setTxnMode] = useState("CASH");
+  const [txnRefNo, setTxnRefNo] = useState("");
+  const [isRecordingTxn, setIsRecordingTxn] = useState(false);
+
+  const handleRecordTxn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!txnAmount || Number(txnAmount) <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+    setIsRecordingTxn(true);
+    try {
+      await api.post(`/deposits/${selectedApp.id}/transaction`, {
+        amount: Number(txnAmount),
+        type: txnType,
+        paymentMode: txnMode,
+        referenceNumber: txnRefNo
+      });
+      toast.success("Transaction recorded successfully");
+      queryClient.invalidateQueries({ queryKey: ["admin-deposits"] });
+      const { data } = await api.get(`/deposits?status=APPROVED`);
+      const updated = data.find((d: any) => d.id === selectedApp.id);
+      if (updated) {
+        let parsedDetails = updated.additionalDetails;
+        if (typeof updated.additionalDetails === 'string') {
+          try { parsedDetails = JSON.parse(updated.additionalDetails); } catch (e) {}
+        }
+        let parsedDocs = updated.documents;
+        if (typeof updated.documents === 'string') {
+          try { parsedDocs = JSON.parse(updated.documents); } catch (e) {}
+        }
+        setSelectedApp({ ...updated, parsedDetails, parsedDocs });
+      }
+      setTxnAmount("");
+      setTxnRefNo("");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to record transaction");
+    } finally {
+      setIsRecordingTxn(false);
+    }
+  };
+  
   const queryClient = useQueryClient();
 
   const { data: applications, isLoading, error } = useQuery({
@@ -414,7 +458,7 @@ const DepositRequestsPage = () => {
                 </div>
               )}
 
-              {/* Admin Actions */}
+              {/* Admin Actions / Transactions / Repayments */}
               {selectedApp.status === "PENDING" ? (
                 <div className="pt-4 border-t border-gray-100 space-y-4">
                   <div className="space-y-2">
@@ -443,13 +487,131 @@ const DepositRequestsPage = () => {
                     </Button>
                   </DialogFooter>
                 </div>
+              ) : selectedApp.status === "APPROVED" ? (
+                <div className="pt-6 border-t border-gray-150 space-y-6">
+                  {/* Processed Banners */}
+                  <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-2xl text-xs text-emerald-800">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Account Active - Processed by {selectedApp.approvedBy || "Admin"}
+                    </p>
+                    {selectedApp.adminRemarks && (
+                      <p className="text-emerald-700 mt-1 italic">Remarks: {selectedApp.adminRemarks}</p>
+                    )}
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Left: Transaction History */}
+                    <div className="space-y-3">
+                      <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-400">Transaction History</h4>
+                      <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-sm max-h-[300px] overflow-y-auto">
+                        <table className="w-full text-left border-collapse text-[10px]">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-100 font-bold text-slate-400">
+                              <th className="p-2.5">Date</th>
+                              <th className="p-2.5">Type</th>
+                              <th className="p-2.5">Ref. No</th>
+                              <th className="p-2.5 text-right">Amount</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-medium text-[#1a1f36]">
+                            {selectedApp.transactions && selectedApp.transactions.length > 0 ? (
+                              selectedApp.transactions.map((txn: any) => (
+                                <tr key={txn.id} className="hover:bg-slate-50/55">
+                                  <td className="p-2.5">{new Date(txn.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}</td>
+                                  <td className="p-2.5">
+                                    <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${
+                                      txn.type === 'DEPOSIT' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                                    }`}>
+                                      {txn.type}
+                                    </span>
+                                  </td>
+                                  <td className="p-2.5 font-mono text-[9px]">{txn.referenceNumber || "—"}</td>
+                                  <td className="p-2.5 text-right font-bold">₹{txn.amount.toLocaleString()}</td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={4} className="p-6 text-center text-slate-400 italic">No transactions.</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Right: Record Transaction Form */}
+                    <form onSubmit={handleRecordTxn} className="space-y-4 p-5 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                      <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-400">Record Transaction</h4>
+                      
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Type</label>
+                            <select
+                              value={txnType}
+                              onChange={(e) => setTxnType(e.target.value)}
+                              className="w-full h-9 border border-slate-200 bg-white px-2 rounded-md text-xs font-medium outline-none"
+                            >
+                              <option value="DEPOSIT">DEPOSIT</option>
+                              <option value="WITHDRAWAL">WITHDRAWAL</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Mode</label>
+                            <select
+                              value={txnMode}
+                              onChange={(e) => setTxnMode(e.target.value)}
+                              className="w-full h-9 border border-slate-200 bg-white px-2 rounded-md text-xs font-medium outline-none"
+                            >
+                              <option value="CASH">CASH</option>
+                              <option value="UPI">UPI</option>
+                              <option value="CHEQUE">CHEQUE</option>
+                              <option value="BANK_TRANSFER">BANK TRANSFER</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Amount (₹)</label>
+                          <Input
+                            type="number"
+                            placeholder="Amount in ₹"
+                            value={txnAmount}
+                            onChange={(e) => setTxnAmount(e.target.value)}
+                            className="h-9 border-slate-200 text-xs"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Reference / UTR ID</label>
+                          <Input
+                            placeholder="Optional transaction reference"
+                            value={txnRefNo}
+                            onChange={(e) => setTxnRefNo(e.target.value)}
+                            className="h-9 border-slate-200 text-xs"
+                          />
+                        </div>
+
+                        <Button
+                          type="submit"
+                          disabled={isRecordingTxn}
+                          className="w-full h-10 bg-[#1a1f36] hover:bg-[#2d3356] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md"
+                        >
+                          {isRecordingTxn ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                          Submit Transaction
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
               ) : (
                 <div className="pt-4 border-t border-gray-100 bg-slate-50/30 p-4 rounded-2xl text-xs space-y-2">
                   <p className="font-bold text-[#1a1f36] flex items-center gap-1.5">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Request processed by {selectedApp.approvedBy || "Admin"}
+                    <XCircle className="h-4 w-4 text-rose-500" /> Request rejected by {selectedApp.approvedBy || "Admin"}
                   </p>
                   {selectedApp.adminRemarks && (
-                    <p className="text-slate-500 font-medium italic">Remarks: {selectedApp.adminRemarks}</p>
+                    <p className="text-slate-500 font-medium italic">Reason: {selectedApp.adminRemarks}</p>
                   )}
                 </div>
               )}

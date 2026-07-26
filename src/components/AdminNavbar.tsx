@@ -37,6 +37,7 @@ const AdminNavbar = () => {
   const navItems = [
     { name: "Overview", path: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Pigmy Control", path: "/admin/pigmy", icon: PiggyBank },
+    { name: "Pigmy Requests", path: "/admin/pigmy/requests", icon: Users },
     { name: "Loan Approvals", path: "/admin/loans", icon: HandCoins },
     { name: "Deposit Approvals", path: "/admin/deposits", icon: PiggyBank },
     { name: "Member Registry", path: "/admin/members", icon: Users },

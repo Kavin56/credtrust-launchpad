@@ -20,6 +20,7 @@ import Footer from "@/components/Footer";
 const CustomerPigmyDashboard = () => {
   const queryClient = useQueryClient();
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
+  const [selectedAccountNumber, setSelectedAccountNumber] = useState<string>("");
 
   // 1. Fetch Profile to get Member ID & pigmy accounts
   const { data: profile, isLoading: profileLoading } = useQuery({
@@ -30,18 +31,25 @@ const CustomerPigmyDashboard = () => {
     }
   });
 
-  // 2. Fetch Pigmy Account
+  // Automatically select the first account once profile is loaded
+  React.useEffect(() => {
+    if (profile?.pigmyAccounts?.length > 0 && !selectedAccountNumber) {
+      setSelectedAccountNumber(profile.pigmyAccounts[0].accountNumber);
+    }
+  }, [profile, selectedAccountNumber]);
+
+  // 2. Fetch Selected Pigmy Account details
   const { data: account, isLoading: accountLoading, refetch: refetchAccount } = useQuery({
-    queryKey: ['my-pigmy-account'],
+    queryKey: ['my-pigmy-account', selectedAccountNumber],
     queryFn: async () => {
-      if (!profile?.pigmyAccounts?.[0]) return null;
-      const { data } = await api.get(`/pigmy/account/${profile.pigmyAccounts[0].accountNumber}`);
+      if (!selectedAccountNumber) return null;
+      const { data } = await api.get(`/pigmy/account/${selectedAccountNumber}`);
       return data;
     },
-    enabled: !!profile
+    enabled: !!selectedAccountNumber
   });
 
-  // 3. Fetch History
+  // 3. Fetch History (all collections)
   const { data: history, isLoading: historyLoading, refetch: refetchHistory } = useQuery({
     queryKey: ['my-pigmy-history'],
     queryFn: async () => {
@@ -57,10 +65,16 @@ const CustomerPigmyDashboard = () => {
     toast.success("Dashboard data refreshed");
   };
 
-  // Real-time metrics computed directly from completed transactions and account balance
+  // Filter collections specifically for the selected account
+  const accountCollections = useMemo(() => {
+    const targetAccNum = selectedAccountNumber || profile?.pigmyAccounts?.[0]?.accountNumber;
+    if (!targetAccNum || !Array.isArray(history)) return [];
+    return history.filter((h: any) => h.account?.accountNumber === targetAccNum);
+  }, [history, selectedAccountNumber, profile]);
+
   const completedTxns = useMemo(() => {
-    return Array.isArray(history) ? history.filter((h: any) => h.status === 'COMPLETED') : [];
-  }, [history]);
+    return accountCollections.filter((h: any) => h.status === 'COMPLETED');
+  }, [accountCollections]);
 
   const totalPaidAmount = useMemo(() => {
     const fromHistory = completedTxns.reduce((sum: number, h: any) => sum + (Number(h.amount) || 0), 0);
@@ -99,7 +113,7 @@ const CustomerPigmyDashboard = () => {
   const welcomeName = profile?.fullName || "User";
   const displayBalance = totalPaidAmount;
   const displayInterest = account?.interestEarned || 0;
-  const displayAccountNumber = account?.accountNumber || profile?.pigmyAccounts?.[0]?.accountNumber || "NOT_ASSIGNED";
+  const displayAccountNumber = selectedAccountNumber || profile?.pigmyAccounts?.[0]?.accountNumber || "NOT_ASSIGNED";
   const schemeName = account?.scheme?.name || "Pigmy Savings Scheme";
   const schemeType = account?.scheme?.type || "DAILY";
   const interestRate = account?.scheme?.interestRate || 6.5;
@@ -119,6 +133,22 @@ const CustomerPigmyDashboard = () => {
               <Star className="h-8 w-8 text-blue-600 fill-blue-600" /> My Pigmy Savings
             </h1>
             <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-1">Hello, {welcomeName}</p>
+            {profile?.pigmyAccounts?.length > 1 && (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Account:</span>
+                <select
+                  value={selectedAccountNumber}
+                  onChange={(e) => setSelectedAccountNumber(e.target.value)}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-[#1a1f36] shadow-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                >
+                  {profile.pigmyAccounts.map((acc: any) => (
+                    <option key={acc.accountNumber} value={acc.accountNumber}>
+                      {acc.accountNumber}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <div className="flex gap-2 w-full md:w-auto">
             <Button variant="outline" size="icon" onClick={handleRefresh} className="rounded-xl border-slate-200">

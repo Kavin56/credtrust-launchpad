@@ -34,33 +34,23 @@ export class LoansService {
   ) {}
 
   async apply(dto: any, files: UploadedLoanFile[]) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: dto.userId },
+      include: { member: true }
+    });
+    const member = user?.member;
+    if (!member) {
+      throw new BadRequestException('Member profile not found');
+    }
+
+    const rawId = (dto.registeredId || '').toString().trim();
+    if (!rawId) {
+      throw new BadRequestException('Registered ID is mandatory');
+    }
+    const formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
+
     const loanCount = await this.prisma.loan.count();
     const loanNumber = `L${(loanCount + 1).toString().padStart(8, '0')}`;
-    
-    // Associate the loan with a Member.
-    // Frontend/auth can provide different identifiers depending on auth mode:
-    // - member.id (our DB PK)
-    // - member.memberId (e.g. MEM0001)
-    // - user.id / firebase uid (mapped to Member.userId)
-    const rawMemberId = (dto.memberId || dto.userId || '').toString().trim();
-    let member =
-      (rawMemberId
-        ? await this.prisma.member.findFirst({
-            where: {
-              OR: [
-                { id: rawMemberId },
-                { memberId: rawMemberId },
-                { userId: rawMemberId },
-              ],
-            },
-          })
-        : null) || null;
-
-    if (!member) {
-      throw new BadRequestException(
-        'No member profile found for the logged-in user. Please complete or verify the member profile before applying.',
-      );
-    }
 
     const documentPaths: Record<string, string> = {};
 
@@ -78,18 +68,32 @@ export class LoansService {
       );
     }
 
+    // Proportional charges calculation:
+    // Amount = ₹10,000 -> Charges = ₹250 (2.5% of principal)
+    const amount = parseFloat(dto.amount || '0');
+    const totalCharges = amount * 0.025;
+    const processingCharges = totalCharges * 0.5;      // 50% of charges
+    const documentationCharges = totalCharges * 0.4;  // 40% of charges
+    const otherCharges = totalCharges * 0.1;          // 10% of charges
+    const netDisbursed = amount - totalCharges;
+
     const newLoan = await this.prisma.loan.create({
       data: {
         loanNumber,
         member: { connect: { id: member.id } },
         type: dto.type || 'Personal Loan',
-        amount: parseFloat(dto.amount),
-        interestRate: parseFloat(dto.interestRate),
-        termMonths: parseInt(dto.termMonths),
+        amount,
+        interestRate: parseFloat(dto.interestRate || '12'),
+        termMonths: parseInt(dto.termMonths || '12'),
         purpose: dto.purpose || 'Personal Use',
-        employmentStatus: dto.employmentStatus,
+        employmentStatus: dto.employmentStatus || 'Salaried',
         monthlyIncome: dto.monthlyIncome ? parseFloat(dto.monthlyIncome) : null,
         documents: JSON.stringify(documentPaths),
+        registeredId: formattedId,
+        processingCharges,
+        documentationCharges,
+        otherCharges,
+        netDisbursed,
         status: 'PENDING',
       },
       include: {
@@ -105,6 +109,15 @@ export class LoansService {
       throw new BadRequestException('Invalid loan status');
     }
 
+    const existingLoan = await this.prisma.loan.findUnique({
+      where: { id: loanId },
+      include: { emiSchedule: true }
+    });
+
+    if (!existingLoan) {
+      throw new NotFoundException('Loan not found');
+    }
+
     const loan = await this.prisma.loan.update({
       where: { id: loanId },
       data: { 
@@ -115,6 +128,51 @@ export class LoansService {
       include: { member: true }
     });
 
+    // 2. Generate EMI schedule ONLY after admin approval
+    if (status === 'APPROVED' && existingLoan.emiSchedule.length === 0) {
+      const amount = loan.amount;
+      const termMonths = loan.termMonths;
+      const interestRate = loan.interestRate;
+      
+      const monthlyRate = interestRate / 12 / 100;
+      
+      // Calculate monthly EMI (compounding formula)
+      const emi = monthlyRate === 0 
+        ? amount / termMonths 
+        : (amount * monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / (Math.pow(1 + monthlyRate, termMonths) - 1);
+
+      let currentBalance = amount;
+      const schedules = [];
+      const approvalDate = new Date();
+
+      for (let i = 0; i < termMonths; i++) {
+        const dueDate = new Date(approvalDate);
+        dueDate.setMonth(dueDate.getMonth() + i);
+
+        const interestPart = currentBalance * monthlyRate;
+        let principalPart = emi - interestPart;
+
+        if (i === termMonths - 1) {
+          principalPart = currentBalance;
+        }
+
+        currentBalance -= principalPart;
+
+        schedules.push({
+          loanId: loan.id,
+          dueDate,
+          principalPart: Math.round(principalPart * 100) / 100,
+          interestPart: Math.round(interestPart * 100) / 100,
+          totalEmi: Math.round(emi * 100) / 100,
+          isPaid: false,
+        });
+      }
+
+      await this.prisma.emiSchedule.createMany({
+        data: schedules
+      });
+    }
+
     // Trigger notification
     await this.notificationsService.create({
       memberId: loan.memberId,
@@ -123,7 +181,7 @@ export class LoansService {
       type: status === 'APPROVED' ? 'SUCCESS' : status === 'REJECTED' ? 'DANGER' : 'INFO'
     });
 
-    return loan;
+    return this.getLoan(loan.id);
   }
 
   async approveLoan(loanId: string) {
@@ -133,7 +191,11 @@ export class LoansService {
   async getLoan(id: string) {
     const loan = await this.prisma.loan.findUnique({
       where: { id },
-      include: { member: true }
+      include: { 
+        member: true,
+        emiSchedule: { orderBy: { dueDate: 'asc' } },
+        repayments: { orderBy: { createdAt: 'asc' } }
+      }
     });
     if (!loan) throw new NotFoundException('Loan not found');
     return loan;
@@ -146,7 +208,9 @@ export class LoansService {
         status: status as any
       },
       include: {
-        member: true
+        member: true,
+        emiSchedule: true,
+        repayments: true
       },
       orderBy: {
         createdAt: 'desc'
@@ -162,7 +226,11 @@ export class LoansService {
 
     return this.prisma.loan.findMany({
       where: { memberId: member.id },
-      include: { member: true },
+      include: { 
+        member: true,
+        emiSchedule: { orderBy: { dueDate: 'asc' } },
+        repayments: { orderBy: { createdAt: 'asc' } }
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -172,6 +240,61 @@ export class LoansService {
   }
 
   async repay(loanId: string, dto: any) {
-    return { success: true, message: 'Repayment recorded' };
+    const loan = await this.prisma.loan.findUnique({
+      where: { id: loanId },
+      include: { emiSchedule: { orderBy: { dueDate: 'asc' } } }
+    });
+
+    if (!loan) {
+      throw new NotFoundException('Loan not found');
+    }
+
+    // Find the oldest unpaid EMI schedule
+    const oldestPendingEmi = loan.emiSchedule.find(emi => !emi.isPaid);
+    if (!oldestPendingEmi) {
+      return { success: false, message: 'All EMIs are already fully paid.' };
+    }
+
+    const payAmount = parseFloat(dto.amount || '0');
+    const paymentMode = dto.paymentMode || 'CASH';
+
+    // Record the payment
+    const repayment = await this.prisma.loanRepayment.create({
+      data: {
+        loanId,
+        amount: payAmount,
+        penaltyAmount: parseFloat(dto.penaltyAmount || '0'),
+        paymentMode,
+        referenceNumber: dto.transactionId || dto.referenceNumber || null,
+        createdAt: new Date(),
+      }
+    });
+
+    // Update EmiSchedule status
+    await this.prisma.emiSchedule.update({
+      where: { id: oldestPendingEmi.id },
+      data: {
+        isPaid: true,
+        paidAt: new Date()
+      }
+    });
+
+    // Check if all EMIs are paid, if yes close the loan
+    const remainingUnpaidCount = await this.prisma.emiSchedule.count({
+      where: { loanId, isPaid: false }
+    });
+
+    if (remainingUnpaidCount === 0) {
+      await this.prisma.loan.update({
+        where: { id: loanId },
+        data: { status: 'CLOSED', closedAt: new Date() }
+      });
+    }
+
+    return { 
+      success: true, 
+      message: 'Repayment recorded successfully',
+      repayment 
+    };
   }
 }

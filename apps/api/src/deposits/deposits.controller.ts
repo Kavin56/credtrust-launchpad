@@ -15,6 +15,7 @@ import { DepositsService } from './deposits.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { RolesGuard, Roles } from '../common/guards/roles.guard';
 
 type UploadedDepositFile = {
   fieldname: string;
@@ -26,7 +27,7 @@ type UploadedDepositFile = {
 
 @ApiTags('deposits')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('deposits')
 export class DepositsController {
   private readonly logger = new Logger(DepositsController.name);
@@ -103,5 +104,11 @@ export class DepositsController {
   ) {
     const adminName = req.user?.email || 'Admin';
     return this.depositsService.updateStatus(id, body.status, body.remarks, adminName);
+  }
+
+  @Post(':id/transaction')
+  @Roles('ADMIN', 'CEO')
+  addTransaction(@Param('id') id: string, @Body() dto: any) {
+    return this.depositsService.addTransaction(id, dto);
   }
 }

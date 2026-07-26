@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, UseGuards, Request, Query, Patch } from '@nestjs/common';
 import { PigmyService } from './pigmy.service';
 import { CreatePigmySchemeDto, EnrollPigmyAccountDto, AddCollectionDto, UpdateCollectionStatusDto, InitiatePaymentDto, ConfirmPaymentDto } from './dto/pigmy.dto';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -39,8 +39,8 @@ export class PigmyController {
   @Post('self-enroll')
   @Roles('MEMBER')
   @ApiOperation({ summary: 'Self-enroll into a Pigmy scheme (Member)' })
-  async selfEnroll(@Body() dto: { schemeId: string }, @Request() req: any) {
-    return this.pigmyService.selfEnroll(req.user.userId, dto.schemeId);
+  async selfEnroll(@Body() dto: { schemeId: string; registeredId?: string }, @Request() req: any) {
+    return this.pigmyService.selfEnroll(req.user.userId, dto.schemeId, dto.registeredId);
   }
 
   @Post('collection')
@@ -105,6 +105,23 @@ export class PigmyController {
   @ApiOperation({ summary: 'Assigned Pigmy customers for logged-in agent' })
   async getAgentCustomers(@Request() req: any) {
     return this.pigmyService.getAgentCustomers(req.user.userId);
+  }
+
+  @Get('applications')
+  @Roles('ADMIN', 'CEO')
+  @ApiOperation({ summary: 'List all Pigmy scheme enrollment applications (Admin)' })
+  async getApplications(@Query('status') status?: string) {
+    return this.pigmyService.listApplications(status);
+  }
+
+  @Put('applications/:id/status')
+  @Roles('ADMIN', 'CEO')
+  @ApiOperation({ summary: 'Approve, reject or wait Pigmy application (Admin)' })
+  async updateApplicationStatus(
+    @Param('id') id: string,
+    @Body() body: { status: string; remarks?: string; agentId?: string }
+  ) {
+    return this.pigmyService.updateStatus(id, body.status, body.remarks, body.agentId);
   }
 
   @Get('account/:number')

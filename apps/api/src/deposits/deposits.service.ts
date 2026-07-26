@@ -34,21 +34,20 @@ export class DepositsService {
   }
 
   async apply(userId: string, fields: any, files: UploadedDepositFile[]) {
-    // Find member by user ID
-    const member = await this.prisma.member.findFirst({
-      where: {
-        OR: [
-          { userId: userId },
-          { id: userId }
-        ]
-      }
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { member: true }
     });
-
+    const member = user?.member;
     if (!member) {
-      throw new BadRequestException(
-        'No member profile found for the logged-in user. Please complete the member profile before applying for deposits.'
-      );
+      throw new BadRequestException('Member profile not found');
     }
+
+    const rawId = (fields.registeredId || '').toString().trim();
+    if (!rawId) {
+      throw new BadRequestException('Registered ID is mandatory');
+    }
+    const formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
 
     const documentPaths: Record<string, string> = {};
 
@@ -79,6 +78,7 @@ export class DepositsService {
         interestRate: rate,
         termMonths: tenureMonths,
         status: 'PENDING',
+        registeredId: formattedId,
         documents: JSON.stringify(documentPaths),
         additionalDetails: fields.additionalDetails || null,
       },
@@ -105,7 +105,7 @@ export class DepositsService {
       // Active approved deposit accounts
       const activeAccounts = await this.prisma.depositAccount.findMany({
         where: { memberId },
-        include: { member: true },
+        include: { member: true, transactions: { orderBy: { createdAt: 'desc' } } },
         orderBy: { createdAt: 'desc' }
       });
 
@@ -122,6 +122,7 @@ export class DepositsService {
         status: 'APPROVED',
         documents: null,
         additionalDetails: null,
+        transactions: acc.transactions,
         createdAt: acc.createdAt,
         updatedAt: acc.updatedAt
       }));
@@ -133,7 +134,7 @@ export class DepositsService {
     }
 
     // Admin view
-    return this.prisma.depositApplication.findMany({
+    const apps = await this.prisma.depositApplication.findMany({
       where: {
         status: status as any
       },
@@ -144,6 +145,23 @@ export class DepositsService {
         createdAt: 'desc'
       }
     });
+
+    if (status === 'APPROVED') {
+      const appsWithTxns = [];
+      for (const app of apps) {
+        const account = await this.prisma.depositAccount.findFirst({
+          where: { memberId: app.memberId, type: app.type },
+          include: { transactions: { orderBy: { createdAt: 'desc' } } }
+        });
+        appsWithTxns.push({
+          ...app,
+          accountNumber: account?.accountNumber,
+          transactions: account?.transactions || []
+        });
+      }
+      return appsWithTxns;
+    }
+    return apps;
   }
 
   async updateStatus(id: string, status: string, remarks?: string, adminName?: string) {
@@ -224,5 +242,41 @@ export class DepositsService {
     }
 
     return updated;
+  }
+
+  async addTransaction(applicationId: string, dto: any) {
+    const app = await this.prisma.depositApplication.findUnique({
+      where: { id: applicationId }
+    });
+    if (!app) throw new NotFoundException('Application not found');
+    const account = await this.prisma.depositAccount.findFirst({
+      where: { memberId: app.memberId, type: app.type }
+    });
+    if (!account) throw new NotFoundException('Deposit account not found');
+
+    const amount = parseFloat(dto.amount);
+    const type = dto.type || 'DEPOSIT';
+    const paymentMode = dto.paymentMode || 'CASH';
+    const referenceNumber = dto.referenceNumber || null;
+
+    const newBalance = type === 'DEPOSIT' 
+      ? account.balance + amount 
+      : account.balance - amount;
+
+    await this.prisma.depositAccount.update({
+      where: { id: account.id },
+      data: { balance: newBalance }
+    });
+
+    return this.prisma.depositTransaction.create({
+      data: {
+        accountId: account.id,
+        amount,
+        type,
+        paymentMode,
+        referenceNumber,
+        balanceAfter: newBalance
+      }
+    });
   }
 }

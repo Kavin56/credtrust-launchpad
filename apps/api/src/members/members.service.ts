@@ -411,4 +411,55 @@ export class MembersService {
     }
     return updated;
   }
+
+  async validateRegisteredId(id: string) {
+    const inputId = id.trim();
+    if (!inputId) {
+      return { valid: false, message: 'ID cannot be empty' };
+    }
+
+    // Check exact match, match with prepended prefix, or match by suffix
+    let member = await this.prisma.member.findFirst({
+      where: {
+        OR: [
+          { memberId: inputId },
+          { memberId: `ROJA-${inputId}` },
+          { memberId: { endsWith: `-${inputId}` } },
+          { memberId: { endsWith: `-${inputId.padStart(4, '0')}` } }
+        ]
+      }
+    });
+
+    if (!member) {
+      // General contains check
+      member = await this.prisma.member.findFirst({
+        where: {
+          memberId: { contains: inputId, mode: 'insensitive' }
+        }
+      });
+    }
+
+    if (member) {
+      // Format the ID to ROJA-<number> or ROJA-<id>
+      let formattedId = member.memberId;
+      const parts = member.memberId.split('-');
+      const lastPart = parts[parts.length - 1];
+      const parsedNum = parseInt(lastPart);
+      if (!isNaN(parsedNum)) {
+        formattedId = `ROJA-${lastPart}`;
+      } else {
+        formattedId = `ROJA-${member.memberId}`;
+      }
+
+      return {
+        valid: true,
+        memberId: member.memberId,
+        fullName: member.fullName,
+        formattedId,
+        member
+      };
+    }
+
+    return { valid: false, message: 'Invalid Registered ID' };
+  }
 }

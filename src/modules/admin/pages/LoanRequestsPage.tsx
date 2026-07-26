@@ -59,6 +59,37 @@ const LoanRequestsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [remarks, setRemarks] = useState("");
   
+  const [repayAmount, setRepayAmount] = useState("");
+  const [paymentMode, setPaymentMode] = useState("CASH");
+  const [refNo, setRefNo] = useState("");
+  const [isRepaying, setIsRepaying] = useState(false);
+
+  const handleRecordRepayment = async (e: React.FormEvent) => {
+     e.preventDefault();
+     if (!repayAmount || Number(repayAmount) <= 0) {
+        toast.error("Please enter a valid amount");
+        return;
+     }
+     setIsRepaying(true);
+     try {
+        await api.post(`/loans/${selectedLoan.id}/repay`, {
+           amount: Number(repayAmount),
+           paymentMode,
+           referenceNumber: refNo
+        });
+        toast.success("Repayment recorded successfully");
+        queryClient.invalidateQueries({ queryKey: ["admin-loans"] });
+        const { data: updatedLoan } = await api.get(`/loans/${selectedLoan.id}`);
+        setSelectedLoan(updatedLoan);
+        setRepayAmount("");
+        setRefNo("");
+     } catch (err: any) {
+        toast.error(err?.response?.data?.message || "Failed to record repayment");
+     } finally {
+        setIsRepaying(false);
+     }
+  };
+  
   const queryClient = useQueryClient();
 
   const { data: loans, isLoading, error, isError } = useQuery({
@@ -411,6 +442,40 @@ const LoanRequestsPage = () => {
                               </>
                            );
                         })()}
+                        
+                        {selectedLoan.status !== 'PENDING' && (
+                           <div className="mt-6 space-y-3">
+                              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">EMI Repayment Schedule</h4>
+                              <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-sm max-h-[300px] overflow-y-auto">
+                                 <table className="w-full text-left border-collapse text-[11px]">
+                                    <thead>
+                                       <tr className="bg-slate-50 border-b border-slate-100 font-bold text-slate-400">
+                                          <th className="p-3">Inst. #</th>
+                                          <th className="p-3">Due Date</th>
+                                          <th className="p-3 text-right">Amount</th>
+                                          <th className="p-3 text-center">Status</th>
+                                       </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 font-medium text-[#1a1f36]">
+                                       {selectedLoan.emiSchedule?.map((emi: any, idx: number) => (
+                                          <tr key={emi.id} className="hover:bg-slate-50/50">
+                                             <td className="p-3 font-bold">{idx + 1}</td>
+                                             <td className="p-3">{new Date(emi.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                             <td className="p-3 text-right font-bold">₹{Number(emi.totalEmi).toLocaleString()}</td>
+                                             <td className="p-3 text-center">
+                                                <span className={`px-2 py-0.5 rounded-[6px] text-[9px] font-black uppercase tracking-wider ${
+                                                   emi.isPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'
+                                                }`}>
+                                                   {emi.isPaid ? 'Paid' : 'Pending'}
+                                                </span>
+                                             </td>
+                                          </tr>
+                                       ))}
+                                    </tbody>
+                                 </table>
+                              </div>
+                           </div>
+                        )}
                      </div>
 
                      {/* Right Column: Documents & Decision */}
@@ -460,45 +525,109 @@ const LoanRequestsPage = () => {
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Underwriting Action</h4>
-                           <textarea 
-                              placeholder="Add internal review remarks..."
-                              className="w-full h-24 p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-[#1a1f36]/5 outline-none resize-none"
-                              value={remarks}
-                              onChange={(e) => setRemarks(e.target.value)}
-                           />
-                        </div>
+                        {selectedLoan.status === 'PENDING' ? (
+                           <div className="space-y-4">
+                              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Underwriting Action</h4>
+                              <textarea 
+                                 placeholder="Add internal review remarks..."
+                                 className="w-full h-24 p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-[#1a1f36]/5 outline-none resize-none"
+                                 value={remarks}
+                                 onChange={(e) => setRemarks(e.target.value)}
+                              />
+                           </div>
+                        ) : (['APPROVED', 'ACTIVE', 'DISBURSED'].includes(selectedLoan.status)) ? (
+                           <form onSubmit={handleRecordRepayment} className="space-y-4 p-5 bg-slate-50/80 rounded-2xl border border-slate-100/50">
+                              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Record Repayment</h4>
+                              
+                              <div className="space-y-3">
+                                 <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Repayment Amount (₹)</label>
+                                    <Input 
+                                       type="number"
+                                       placeholder="e.g. 5000"
+                                       value={repayAmount}
+                                       onChange={(e) => setRepayAmount(e.target.value)}
+                                       className="h-10 border-slate-200"
+                                       required
+                                    />
+                                 </div>
+                                 
+                                 <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Payment Mode</label>
+                                    <select
+                                       value={paymentMode}
+                                       onChange={(e) => setPaymentMode(e.target.value)}
+                                       className="w-full h-10 border border-slate-200 bg-white px-3 rounded-md text-xs font-medium outline-none"
+                                    >
+                                       <option value="CASH">CASH</option>
+                                       <option value="UPI">UPI</option>
+                                       <option value="CHEQUE">CHEQUE</option>
+                                       <option value="BANK_TRANSFER">BANK TRANSFER</option>
+                                    </select>
+                                 </div>
+
+                                 <div>
+                                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Reference / Txn ID</label>
+                                    <Input 
+                                       placeholder="Optional ref number"
+                                       value={refNo}
+                                       onChange={(e) => setRefNo(e.target.value)}
+                                       className="h-10 border-slate-200"
+                                    />
+                                 </div>
+
+                                 <Button 
+                                    type="submit"
+                                    disabled={isRepaying}
+                                    className="w-full h-11 bg-[#1a1f36] hover:bg-[#2d3356] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md"
+                                 >
+                                    {isRepaying ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                                    Submit Repayment
+                                 </Button>
+                              </div>
+                           </form>
+                        ) : null}
                      </div>
                   </div>
 
                   <DialogFooter className="p-8 bg-slate-50/50 border-t border-slate-100 sm:justify-between flex flex-wrap gap-4">
-                     <div className="flex gap-2">
+                     {selectedLoan.status === 'PENDING' ? (
+                        <>
+                           <div className="flex gap-2">
+                              <Button 
+                                 disabled={updateStatusMutation.isPending}
+                                 onClick={() => handleAction(selectedLoan.id, "REJECTED")}
+                                 variant="outline" 
+                                 className="h-14 px-8 border-red-100 text-red-600 hover:bg-red-50 font-black text-xs uppercase tracking-widest rounded-2xl"
+                              >
+                                 Reject Application
+                              </Button>
+                              <Button 
+                                 disabled={updateStatusMutation.isPending}
+                                 onClick={() => handleAction(selectedLoan.id, "ADDITIONAL_DOCUMENTS_REQUIRED")}
+                                 variant="outline" 
+                                 className="h-14 px-8 border-amber-200 text-amber-600 hover:bg-amber-50 font-black text-xs uppercase tracking-widest rounded-2xl"
+                              >
+                                 Request Info
+                              </Button>
+                           </div>
+                           <Button 
+                              disabled={updateStatusMutation.isPending}
+                              onClick={() => handleAction(selectedLoan.id, "APPROVED")}
+                              className="h-14 px-10 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-emerald-900/20"
+                           >
+                              {updateStatusMutation.isPending ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <CheckCircle2 className="w-5 h-5 mr-3" />}
+                              Approve & Disburse
+                           </Button>
+                        </>
+                     ) : (
                         <Button 
-                           disabled={updateStatusMutation.isPending}
-                           onClick={() => handleAction(selectedLoan.id, "REJECTED")}
-                           variant="outline" 
-                           className="h-14 px-8 border-red-100 text-red-600 hover:bg-red-50 font-black text-xs uppercase tracking-widest rounded-2xl"
+                           onClick={() => setIsModalOpen(false)}
+                           className="h-14 px-10 bg-slate-600 hover:bg-slate-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-slate-900/20 ml-auto"
                         >
-                           Reject Application
+                           Close Details
                         </Button>
-                        <Button 
-                           disabled={updateStatusMutation.isPending}
-                           onClick={() => handleAction(selectedLoan.id, "ADDITIONAL_DOCUMENTS_REQUIRED")}
-                           variant="outline" 
-                           className="h-14 px-8 border-amber-200 text-amber-600 hover:bg-amber-50 font-black text-xs uppercase tracking-widest rounded-2xl"
-                        >
-                           Request Info
-                        </Button>
-                     </div>
-                     <Button 
-                        disabled={updateStatusMutation.isPending}
-                        onClick={() => handleAction(selectedLoan.id, "APPROVED")}
-                        className="h-14 px-10 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-emerald-900/20"
-                     >
-                        {updateStatusMutation.isPending ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <CheckCircle2 className="w-5 h-5 mr-3" />}
-                        Approve & Disburse
-                     </Button>
+                     )}
                   </DialogFooter>
                </div>
                )}

@@ -247,6 +247,7 @@ const LoanApplicationPage = () => {
 
   const getRequiredFields = () => {
     const baseFields = [
+      { name: 'registeredId', label: 'Registered ID', type: 'text', placeholder: 'Enter Customer/Member ID (e.g. 001)' },
       { name: 'employmentType', label: 'Employment Type', type: 'select', options: [
         'Government Employee',
         'Private Sector Employee',
@@ -572,12 +573,33 @@ const LoanApplicationPage = () => {
     simulateFileUpload(docId, file);
   };
 
-  const handleNext = () => {
-    if (validateStep(step)) {
-      setStep(step + 1);
-    } else {
+  const handleNext = async () => {
+    if (!validateStep(step)) {
       toast.error("Please fill all required fields/uploads to continue.");
+      return;
     }
+
+    if (step === 2) {
+      const regId = (formData.registeredId || '').toString().trim();
+      if (!regId) {
+        setErrors(prev => ({ ...prev, registeredId: "Registered ID is required" }));
+        toast.error("Registered ID is required");
+        return;
+      }
+
+      // Format registered ID (e.g. ROJA-001) directly without backend database check
+      const formatted = regId.toUpperCase().startsWith('ROJA-') ? regId.toUpperCase() : `ROJA-${regId}`;
+      setFormData(prev => ({ ...prev, registeredId: formatted }));
+
+      // Clear error
+      setErrors(prev => {
+        const updated = { ...prev };
+        delete updated.registeredId;
+        return updated;
+      });
+    }
+
+    setStep(step + 1);
   };
 
   const handleBack = () => setStep(step - 1);
@@ -596,6 +618,7 @@ const LoanApplicationPage = () => {
       payload.append('employmentStatus', formData.employmentType || "Self-Declared");
       payload.append('monthlyIncome', formData.monthlySalary || "0");
       payload.append('status', 'PENDING');
+      payload.append('registeredId', formData.registeredId || '');
 
       const details = {
         applicationId: appID,
@@ -884,12 +907,15 @@ const LoanApplicationPage = () => {
                             )}
                          </div>
                       </div>
-
-                      <div className="bg-[#1a1f36] rounded-[32px] p-8 text-white flex flex-col justify-center text-center space-y-5 shadow-xl relative overflow-hidden">
+                           <div className="bg-[#1a1f36] rounded-[32px] p-8 text-white flex flex-col justify-center text-center space-y-5 shadow-xl relative overflow-hidden">
                          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
                          <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Estimated Monthly EMI</span>
                          <h3 className="text-4xl font-black">₹{Math.round(calculateEMI()).toLocaleString()}</h3>
                          <div className="pt-4 border-t border-white/10 flex flex-col gap-3 text-[11px] font-bold text-white/60 uppercase">
+                             <div className="flex justify-between border-b border-white/5 pb-1 text-[#c9a84c]">
+                                <span>Registered ID</span>
+                                <span className="font-mono">{formData.registeredId || "—"}</span>
+                             </div>
                              <div className="flex justify-between">
                                 <span>Rate of Interest</span>
                                 <span className="text-white">{selectedLoan.rate}% p.a.</span>

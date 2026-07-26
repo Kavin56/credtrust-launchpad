@@ -27,6 +27,7 @@ import ServicesPage from "./modules/member/pages/ServicesPage";
 import ProductDetailPage from "./modules/member/pages/ProductDetailPage";
 import LoanRequestsPage from "./modules/admin/pages/LoanRequestsPage";
 import DepositRequestsPage from "./modules/admin/pages/DepositRequestsPage";
+import PigmyRequestsPage from "./modules/admin/pages/PigmyRequestsPage";
 import PigmyDashboard from "./modules/pigmy/pages/PigmyDashboard";
 import AgentPigmyDashboard from "./modules/pigmy/pages/AgentPigmyDashboard";
 import CustomerPigmyDashboard from "./modules/pigmy/pages/CustomerPigmyDashboard";
@@ -83,6 +84,7 @@ const App = () => (
           <Route path="/admin/dashboard" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/loans" element={<ProtectedRoute requireAdmin><LoanRequestsPage /></ProtectedRoute>} />
           <Route path="/admin/deposits" element={<ProtectedRoute requireAdmin><DepositRequestsPage /></ProtectedRoute>} />
+          <Route path="/admin/pigmy/requests" element={<ProtectedRoute requireAdmin><PigmyRequestsPage /></ProtectedRoute>} />
           <Route path="/admin/pigmy" element={<ProtectedRoute requireAdmin><PigmyDashboard /></ProtectedRoute>} />
           <Route path="/admin/pigmy/add-customer" element={<ProtectedRoute requireAdmin><AddCustomer /></ProtectedRoute>} />
           <Route path="/admin/pigmy/maturity" element={<ProtectedRoute requireAdmin><MaturityProcess /></ProtectedRoute>} />

@@ -124,6 +124,12 @@ model Loan {
   documents       String?      // Stored as JSON string for SQLite
   adminRemarks    String?
   
+  registeredId    String?
+  processingCharges Float?
+  documentationCharges Float?
+  otherCharges    Float?
+  netDisbursed    Float?
+
   status          String       @default("PENDING")
   termMonths      Int
   disbursedAt     DateTime?
@@ -230,6 +236,7 @@ model PigmyAccount {
   startDate       DateTime @default(now())
   maturityDate    DateTime
   status          String   @default("ACTIVE") // ACTIVE, MATURED, CLOSED
+  registeredId    String?
   balance         Float    @default(0)
   totalPaidDays   Int      @default(0)
   interestEarned  Float    @default(0)
@@ -273,6 +280,7 @@ model DepositApplication {
   interestRate    Float
   termMonths      Int
   status          String      @default("PENDING") // PENDING, APPROVED, REJECTED
+  registeredId    String?
   documents       String?     // JSON string of file paths (idProof, incomeProof, applicantPhoto, applicantSignature, panProof)
   additionalDetails String?   // JSON string of nominee, bank, sourceOfFunds, expectedMaturity, etc.
   adminRemarks    String?
