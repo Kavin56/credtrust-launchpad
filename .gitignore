@@ -42,3 +42,4 @@ apps/api/src/generated/
 # Databases
 *.db
 *.db-journal
+serviceAccountKey.json

@@ -1,7 +1,15 @@
 import axios from "axios";
 
+export const getApiBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl && !envUrl.includes("credtrust-api-176626350005.us-central1.run.app") && envUrl !== "http://localhost:3000/api/v1") {
+    return envUrl;
+  }
+  return "https://credtrust-launchpad-git-176626350005.asia-south1.run.app/api/v1";
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1",
+  baseURL: getApiBaseUrl(),
   // File uploads + cold-start can exceed 30s; keep UX responsive via UI state instead.
   timeout: 120_000,
 });

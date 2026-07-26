@@ -2,9 +2,10 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
-import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FirebaseRegisterDto } from './dto/firebase-register.dto';
+import { initializeFirebaseAdmin } from '../common/utils/firebase';
 
 type FirebaseIdentity = {
   firebaseUid: string;
@@ -98,14 +99,13 @@ export class AuthService {
   }
 
   async authenticateBearerToken(token: string) {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new UnauthorizedException('JWT_SECRET is not configured.');
     try {
-      const secret = process.env.JWT_SECRET;
-      if (!secret) throw new UnauthorizedException('JWT_SECRET is not configured.');
       const decoded: any = this.jwtService.verify(token, { secret });
       return { userId: decoded.sub, role: decoded.role, email: decoded.email };
-    } catch {
-      const firebaseIdentity = await this.verifyFirebaseToken(token);
-      return this.buildFirebaseSession(firebaseIdentity);
+    } catch (err) {
+      throw new UnauthorizedException('Invalid or expired JWT token');
     }
   }
 
@@ -165,7 +165,22 @@ export class AuthService {
   }
 
   private async buildFirebaseSession(firebaseIdentity: FirebaseIdentity) {
-    const user = await this.findOrCreateUserFromFirebase(firebaseIdentity);
+    // CRITICAL: Only look up the user — never create one here.
+    // A DB user is only created atomically inside complete-profile (with KYC docs).
+    const user = await this.prisma.user.findUnique({
+      where: { email: firebaseIdentity.email },
+    });
+
+    // New user — needs to complete full registration with KYC documents first.
+    if (!user) {
+      return {
+        pendingRegistration: true,
+        email: firebaseIdentity.email,
+        firebaseUid: firebaseIdentity.firebaseUid,
+        hasMemberProfile: false,
+      };
+    }
+
     const member = await this.prisma.member.findUnique({
       where: { userId: user.id },
     });
@@ -175,25 +190,32 @@ export class AuthService {
       data: { lastLoginAt: new Date() },
     });
 
+    // Existing user without member profile (incomplete registration — edge case)
     if (!member && user.role === 'MEMBER') {
       return {
+        pendingRegistration: true,
         userId: user.id,
         email: user.email,
         role: user.role,
-        memberId: null,
         hasMemberProfile: false,
       };
     }
 
+    // Fully registered user — return tokens.
+    const tokens = this.buildTokens(user.id, user.email, user.role);
     return {
+      ...tokens,
       userId: user.id,
       email: user.email,
       role: user.role,
-      memberId: member?.id || null,
+      memberId: member?.memberId || null,
       hasMemberProfile: !!member || user.role !== 'MEMBER',
     };
   }
 
+  /**
+   * Used only for ADMIN and PORTAL flows — creates user if they don't exist.
+   */
   private async findOrCreateUserFromFirebase(
     firebaseIdentity: FirebaseIdentity,
     preferredRole = 'MEMBER',
@@ -210,6 +232,27 @@ export class AuthService {
         email: firebaseIdentity.email,
         passwordHash: await bcrypt.hash(firebaseIdentity.firebaseUid, 10),
         role: preferredRole,
+        lastLoginAt: new Date(),
+      },
+    });
+  }
+
+  /**
+   * Called from MembersService.completeProfile to create a new User + Member atomically.
+   * Only called after KYC documents have been uploaded successfully.
+   */
+  async createMemberUser(firebaseIdentity: FirebaseIdentity): Promise<{ id: string; email: string; role: string }> {
+    const existing = await this.prisma.user.findUnique({
+      where: { email: firebaseIdentity.email },
+    });
+    if (existing) {
+      return existing;
+    }
+    return this.prisma.user.create({
+      data: {
+        email: firebaseIdentity.email,
+        passwordHash: await bcrypt.hash(firebaseIdentity.firebaseUid, 10),
+        role: 'MEMBER',
         lastLoginAt: new Date(),
       },
     });
@@ -259,24 +302,7 @@ export class AuthService {
   }
 
   private getFirebaseAuth() {
-    if (!getApps().length) {
-      const projectId = process.env.FIREBASE_PROJECT_ID;
-      const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-      const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-
-      if (!projectId || !clientEmail || !privateKey) {
-        throw new UnauthorizedException('Firebase admin credentials are missing.');
-      }
-
-      initializeApp({
-        credential: cert({
-          projectId,
-          clientEmail,
-          privateKey,
-        }),
-      });
-    }
-
+    initializeFirebaseAdmin();
     return getAuth();
   }
 
@@ -298,6 +324,7 @@ export class AuthService {
   }
 
   async checkMemberProfile(userId: string) {
+    if (!userId) return null;
     return this.prisma.member.findUnique({
       where: { userId },
     });

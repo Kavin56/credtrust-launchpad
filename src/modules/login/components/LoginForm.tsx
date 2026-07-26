@@ -30,10 +30,14 @@ export const LoginForm = ({ onToggleForm, onAdminMode, onForgotPassword }: Login
       await login(email, password);
       toast.success("Logged in successfully");
       const role = localStorage.getItem("role");
+      const hasMemberProfile = localStorage.getItem("hasMemberProfile") === "true";
+
       if (role === "ADMIN" || role === "CEO") {
         navigate("/admin/pigmy");
       } else if (role === "AGENT") {
         navigate("/agent");
+      } else if (!hasMemberProfile) {
+        navigate("/signup-flow");
       } else {
         navigate("/dashboard");
       }
@@ -50,7 +54,18 @@ export const LoginForm = ({ onToggleForm, onAdminMode, onForgotPassword }: Login
     try {
       await loginWithGoogle();
       toast.success("Logged in with Google");
-      navigate("/dashboard");
+      const role = localStorage.getItem("role");
+      const hasMemberProfile = localStorage.getItem("hasMemberProfile") === "true";
+
+      if (role === "ADMIN" || role === "CEO") {
+        navigate("/admin/pigmy");
+      } else if (role === "AGENT") {
+        navigate("/agent");
+      } else if (!hasMemberProfile) {
+        navigate("/signup-flow");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error: any) {
       console.error(error);
       toast.error(error?.message || "Failed to login with Google");

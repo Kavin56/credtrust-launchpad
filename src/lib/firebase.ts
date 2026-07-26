@@ -2,15 +2,15 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 
-// Fallback to provided config when env not set
+// Fallback config — uses the active Firebase project (gen-lang-client-0156201953)
 const fallbackConfig = {
-  apiKey: "AIzaSyBCJfF3ynqJHCkhWbiokzG6i-mXKxRprvA",
-  authDomain: "cred-trust.firebaseapp.com",
-  projectId: "cred-trust",
-  storageBucket: "cred-trust.firebasestorage.app",
-  messagingSenderId: "525769770230",
-  appId: "1:525769770230:web:02b32fe4882ea8b5ee58d7",
-  measurementId: "G-E9JT7Z3RP0",
+  apiKey: "AIzaSyAHQVHtVofMnQUhoir-1qT5wizEl6XkTt0",
+  authDomain: "gen-lang-client-0156201953.firebaseapp.com",
+  projectId: "gen-lang-client-0156201953",
+  storageBucket: "gen-lang-client-0156201953.firebasestorage.app",
+  messagingSenderId: "176626350005",
+  appId: "1:176626350005:web:2cf0ad918e0dfeaecc4bfc",
+  measurementId: "G-0JYENXPWKF",
 };
 
 const firebaseConfig = {

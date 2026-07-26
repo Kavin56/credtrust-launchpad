@@ -15,6 +15,7 @@ import { LoansService } from './loans.service';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
 import { JwtAuthGuard } from '../auth/jwt.guard';
+import { Roles, RolesGuard } from '../common/guards/roles.guard';
 
 type UploadedLoanFile = {
   fieldname: string;
@@ -26,7 +27,7 @@ type UploadedLoanFile = {
 
 @ApiTags('loans')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('loans')
 export class LoansController {
   private readonly logger = new Logger(LoansController.name);
@@ -34,15 +35,30 @@ export class LoansController {
   constructor(private readonly loansService: LoansService) {}
 
   // @Roles(Role.ADMIN, Role.CEO)
+  @Get('my')
+  @Roles('MEMBER', 'ADMIN', 'CEO', 'DIRECTOR', 'TELLER')
+  findMyLoans(@Req() req: FastifyRequest) {
+    const userId = (req as any).user?.userId;
+    return this.loansService.listForMember(userId);
+  }
+
   @Get()
+  @Roles('ADMIN', 'CEO', 'DIRECTOR', 'TELLER', 'MEMBER')
   findAll(
+    @Req() req: FastifyRequest,
     @Query('memberId') memberId?: string,
     @Query('status') status?: string,
   ) {
+    const role = (req as any).user?.role;
+    const userId = (req as any).user?.userId;
+    if (role === 'MEMBER') {
+      return this.loansService.listForMember(userId);
+    }
     return this.loansService.list(memberId, status);
   }
 
   @Post('apply')
+  @Roles('MEMBER')
   async apply(@Req() req: FastifyRequest) {
     const startedAt = Date.now();
     const userId = (req as any).user?.userId ?? 'unknown';
@@ -100,12 +116,14 @@ export class LoansController {
 
   // @Roles(Role.ADMIN, Role.CEO)
   @Patch(':id/approve')
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
   approve(@Param('id') id: string) {
     return this.loansService.approveLoan(id);
   }
 
   // @Roles(Role.ADMIN, Role.CEO)
   @Put(':id/status')
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
   updateStatus(
     @Param('id') id: string,
     @Body() body: { status: string; remarks?: string },
@@ -114,6 +132,7 @@ export class LoansController {
   }
 
   @Get('check-eligibility')
+  @Roles('MEMBER')
   checkEligibility(
     @Query('memberId') memberId: string,
     @Query('amount') amount: number,
@@ -122,16 +141,19 @@ export class LoansController {
   }
 
   @Get(':id')
+  @Roles('ADMIN', 'CEO', 'DIRECTOR', 'TELLER')
   findOne(@Param('id') id: string) {
     return this.loansService.getLoan(id);
   }
 
   @Post(':id/repay')
+  @Roles('MEMBER')
   repay(@Param('id') id: string, @Body() dto: any) {
     return this.loansService.repay(id, dto);
   }
 
   @Post('pay')
+  @Roles('MEMBER')
   pay(@Body() dto: { loanId: string; amount: number; paymentMethod: string; transactionId?: string }) {
     const { loanId, ...repaymentData } = dto;
     return this.loansService.repay(loanId, repaymentData);

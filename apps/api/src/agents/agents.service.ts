@@ -171,15 +171,62 @@ export class AgentsService {
       throw new NotFoundException('Agent not found or not active');
     }
 
-    const result = await this.prisma.pigmyAccount.updateMany({
-      where: { id: { in: dto.accountIds } },
-      data: { agentId: dto.agentId },
-    });
+    let assignedCount = 0;
+    for (const accountId of dto.accountIds) {
+      if (accountId.startsWith('member_')) {
+        const memberId = accountId.replace('member_', '');
+        const existingAcc = await this.prisma.pigmyAccount.findFirst({
+          where: { memberId },
+        });
+        if (existingAcc) {
+          await this.prisma.pigmyAccount.update({
+            where: { id: existingAcc.id },
+            data: { agentId: dto.agentId },
+          });
+        } else {
+          let scheme = await this.prisma.pigmyScheme.findFirst();
+          if (!scheme) {
+            scheme = await this.prisma.pigmyScheme.create({
+              data: {
+                name: 'Daily Pigmy Deposit',
+                type: 'DAILY',
+                minAmount: 10,
+                maxAmount: 50000,
+                maturityPeriod: 12,
+                interestRate: 6.5,
+              },
+            });
+          }
+          const accNumber = `PG-${Date.now().toString().slice(-6)}`;
+          const maturityDate = new Date();
+          maturityDate.setFullYear(maturityDate.getFullYear() + 1);
+
+          await this.prisma.pigmyAccount.create({
+            data: {
+              accountNumber: accNumber,
+              memberId,
+              schemeId: scheme.id,
+              agentId: dto.agentId,
+              balance: 0,
+              maturityDate,
+              status: 'ACTIVE',
+            },
+          });
+        }
+        assignedCount++;
+      } else {
+        await this.prisma.pigmyAccount.updateMany({
+          where: { id: accountId },
+          data: { agentId: dto.agentId },
+        });
+        assignedCount++;
+      }
+    }
 
     return {
       agentId: dto.agentId,
       agentCode: agent.agentCode,
-      assignedCount: result.count,
+      assignedCount,
     };
   }
 
@@ -199,23 +246,52 @@ export class AgentsService {
 
   async listAccountsForAssignment(search?: string) {
     const q = search?.trim();
-    return this.prisma.pigmyAccount.findMany({
+
+    const members = await this.prisma.member.findMany({
       where: q
         ? {
             OR: [
-              { accountNumber: { contains: q } },
-              { member: { fullName: { contains: q } } },
-              { member: { contact: { contains: q } } },
+              { fullName: { contains: q, mode: 'insensitive' } },
+              { memberId: { contains: q, mode: 'insensitive' } },
+              { contact: { contains: q, mode: 'insensitive' } },
             ],
           }
         : undefined,
       include: {
-        member: { select: { fullName: true, contact: true, memberId: true } },
-        scheme: { select: { name: true, type: true } },
+        pigmyAccounts: {
+          include: {
+            scheme: { select: { name: true } },
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
+      orderBy: { fullName: 'asc' },
+      take: 100,
     });
+
+    const results: any[] = [];
+    for (const m of members) {
+      if (m.pigmyAccounts && m.pigmyAccounts.length > 0) {
+        for (const acc of m.pigmyAccounts) {
+          results.push({
+            id: acc.id,
+            accountNumber: acc.accountNumber,
+            member: { fullName: m.fullName, contact: m.contact, memberId: m.memberId },
+            scheme: acc.scheme || { name: 'Pigmy Savings' },
+            agentId: acc.agentId,
+          });
+        }
+      } else {
+        results.push({
+          id: `member_${m.id}`,
+          accountNumber: `PIGMY-${m.memberId}`,
+          member: { fullName: m.fullName, contact: m.contact, memberId: m.memberId },
+          scheme: { name: 'Unassigned Member Account' },
+          agentId: null,
+        });
+      }
+    }
+
+    return results;
   }
 
   async deleteAgent(id: string) {
@@ -226,13 +302,11 @@ export class AgentsService {
       throw new NotFoundException('Agent not found');
     }
 
-    // Unassign accounts assigned to this agent
     await this.prisma.pigmyAccount.updateMany({
       where: { agentId: id },
       data: { agentId: null },
     });
 
-    // Unassign collections assigned to this agent
     await this.prisma.pigmyCollection.updateMany({
       where: { agentId: id },
       data: { agentId: null },

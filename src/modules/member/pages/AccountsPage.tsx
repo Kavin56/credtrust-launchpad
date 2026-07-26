@@ -1,11 +1,11 @@
-import { Search, ChevronRight, Eye, Home, Smartphone, Info, CreditCard, ChevronDown, Landmark, PiggyBank, CircleDollarSign, Calculator } from 'lucide-react';
+import { Search, ChevronRight, Eye, Home, Smartphone, Info, CreditCard, ChevronDown, Landmark, PiggyBank, CircleDollarSign, Calculator, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import api from '@/lib/api';
+import api, { getApiBaseUrl } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
@@ -31,13 +31,17 @@ const AccountsPage = () => {
       return data;
     },
   });
-  const { data: loans, isLoading: loanLoading } = useQuery({
+  const { data: rawLoans, isLoading: loanLoading } = useQuery({
     queryKey: ["loans"],
     queryFn: async () => {
-      const { data } = await api.get("/loans");
-      return data;
+      const { data } = await api.get("/loans/my");
+      return Array.isArray(data) ? data : (data?.data || data?.items || []);
     },
   });
+
+  const loans = Array.isArray(rawLoans) ? rawLoans : [];
+  const pendingLoans = loans.filter((l: any) => ['PENDING', 'UNDER_REVIEW', 'SUBMITTED'].includes(String(l.status).toUpperCase()));
+  const activeLoans = loans.filter((l: any) => ['APPROVED', 'DISBURSED', 'ACTIVE'].includes(String(l.status).toUpperCase()));
   const { data: profile, refetch: refetchProfile } = useQuery({
     queryKey: ["member-profile"],
     queryFn: async () => {
@@ -48,6 +52,7 @@ const AccountsPage = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
 
   const handlePhotoClick = () => {
     fileInputRef.current?.click();
@@ -83,6 +88,18 @@ const AccountsPage = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const getPhotoUrl = (url: string | null | undefined) => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const baseUrl = getApiBaseUrl();
+    if (url.startsWith('gs://') || url.startsWith('/uploads/')) {
+      return `${baseUrl}/storage/view?path=${encodeURIComponent(url)}`;
+    }
+    const domain = baseUrl.replace(/\/api\/v1\/?$/, '');
+    const separator = url.startsWith('/') ? '' : '/';
+    return `${domain}${separator}${url}`;
   };
 
   const getCardName = () => {
@@ -220,214 +237,205 @@ const AccountsPage = () => {
                   </div>
 
                   {/* Summary Grid */}
-                  <div className="grid lg:grid-cols-[1fr,320px] gap-10">
-                    <div className="space-y-8">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                          <div className="space-y-1.5">
-                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Account Description</p>
-                              <p className="text-[13px] font-bold text-[#1a1f36]">LOTUS SAVINGS SOCIETY-ADHAAR- CHQ</p>
-                          </div>
-                          <div className="space-y-1.5">
-                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Currency</p>
-                              <p className="text-[13px] font-bold text-[#1a1f36]">Rupees</p>
-                          </div>
-                          <div className="space-y-1.5">
-                              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Rate of Interest</p>
-                              <p className="text-[13px] font-bold text-[#1a1f36]">2.50%</p>
-                          </div>
-                        </div>
+                  <div className="space-y-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                      <div className="space-y-1.5">
+                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Account Description</p>
+                          <p className="text-[13px] font-bold text-[#1a1f36]">LOTUS SAVINGS SOCIETY-ADHAAR- CHQ</p>
+                      </div>
+                      <div className="space-y-1.5">
+                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Currency</p>
+                          <p className="text-[13px] font-bold text-[#1a1f36]">Rupees</p>
+                      </div>
+                      <div className="space-y-1.5">
+                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Rate of Interest</p>
+                          <p className="text-[13px] font-bold text-[#1a1f36]">2.50%</p>
+                      </div>
+                    </div>
 
-                        {/* Government ID Card */}
-                        <div className="pt-8 border-t border-gray-100">
-                          <h4 className="text-[14px] font-bold text-[#1a1f36] mb-6">Society ID card</h4>
-                          
-                          <div className="flex flex-col lg:flex-row gap-8 items-start">
-                            {/* FRONT SIDE */}
-                            <div className="w-[480px] h-[300px] bg-white border-2 border-[#1E3A8A] rounded-lg p-4 flex flex-col justify-between font-sans relative shadow-md select-none text-[#1E3A8A] shrink-0">
-                              {/* Header */}
-                              <div className="text-center border-b border-[#1E3A8A] pb-2 mb-2">
-                                <h5 className="font-extrabold text-[9.5px] uppercase tracking-wide leading-tight text-[#1E3A8A]">
-                                  SRI ROJA SHABARISH GURUJI SOUHARADA SAHAKARA NIYAMITHA
-                                </h5>
-                              </div>
-                              
-                              {/* Content area */}
-                              <div className="flex gap-4 flex-1 my-1">
-                                {/* Photo & QR Code Placeholder */}
-                                <div className="flex flex-col gap-2 shrink-0 items-center justify-between py-0.5">
-                                  <div 
-                                    onClick={handlePhotoClick}
-                                    className="w-[85px] h-[100px] border-2 border-[#1E3A8A] flex flex-col items-center justify-center bg-gray-50 rounded shrink-0 overflow-hidden cursor-pointer hover:bg-gray-100/80 transition-all relative group"
-                                  >
-                                    <input 
-                                      type="file" 
-                                      ref={fileInputRef} 
-                                      onChange={handleFileChange} 
-                                      accept="image/*" 
-                                      className="hidden" 
-                                    />
-                                    {uploading && (
-                                      <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
-                                        <div className="w-5 h-5 border-2 border-[#1E3A8A] border-t-transparent rounded-full animate-spin"></div>
-                                      </div>
-                                    )}
-                                    {profile?.photoUrl ? (
-                                      <img src={profile.photoUrl} alt="Photo" className="w-full h-full object-cover" />
-                                    ) : (
-                                      <div className="text-center p-0.5">
-                                        <span className="text-[7px] font-bold text-gray-400 block mb-0.5 leading-none">PHOTO</span>
-                                        <span className="text-[9px] font-bold text-[#1E3A8A] leading-none">PHOTO</span>
-                                      </div>
-                                    )}
-                                    <div className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[7px] font-bold py-0.5 text-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                      Upload Photo
+                    {/* Government ID Card */}
+                    <div className="pt-8 border-t border-gray-100">
+                      <div className="flex items-center justify-between mb-6">
+                        <h4 className="text-[14px] font-bold text-[#1a1f36]">Society ID card</h4>
+                        <button 
+                          onClick={() => setIsFlipped(!isFlipped)}
+                          className="px-4 py-2 border-2 border-[#1E3A8A] text-[#1E3A8A] font-bold text-xs rounded-xl hover:bg-[#1E3A8A] hover:text-white transition-all shadow-sm flex items-center gap-2"
+                        >
+                          <CreditCard className="w-3.5 h-3.5" />
+                          Show {isFlipped ? "Front" : "Back"} Side
+                        </button>
+                      </div>
+                      
+                      <div className="flex flex-col items-center sm:items-start gap-4">
+                        {!isFlipped ? (
+                          /* FRONT SIDE */
+                          <div className="w-full max-w-[480px] h-[300px] bg-white border-2 border-[#1E3A8A] rounded-lg p-4 flex flex-col justify-between font-sans relative shadow-md select-none text-[#1E3A8A] shrink-0">
+                            {/* Header */}
+                            <div className="text-center border-b border-[#1E3A8A] pb-2 mb-2">
+                              <h5 className="font-extrabold text-[9.5px] uppercase tracking-wide leading-tight text-[#1E3A8A]">
+                                SRI ROJA SHABARISH GURUJI SOUHARADA SAHAKARA NIYAMITHA
+                              </h5>
+                            </div>
+                            
+                            {/* Content area */}
+                            <div className="flex gap-4 flex-1 my-1">
+                              {/* Photo & QR Code Placeholder */}
+                              <div className="flex flex-col gap-2 shrink-0 items-center justify-between py-0.5">
+                                <div className="w-[85px] h-[100px] border-2 border-[#1E3A8A] flex flex-col items-center justify-center bg-gray-50 rounded shrink-0 overflow-hidden relative">
+                                  {getPhotoUrl(profile?.photoUrl) ? (
+                                    <img src={getPhotoUrl(profile.photoUrl)!} alt="Photo" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="text-center p-0.5">
+                                      <User className="w-8 h-8 text-gray-400 mx-auto" />
+                                      <span className="text-[7px] font-bold text-gray-400 block mt-1 leading-none">NO PHOTO</span>
                                     </div>
-                                  </div>
-                                  
-                                  {/* Verification QR Code */}
-                                  <div className="border border-[#1E3A8A] p-0.5 bg-white rounded flex items-center justify-center">
-                                    <QRCodeSVG value={profile?.memberId || "UID-NOT-VERIFIED"} size={42} fgColor="#1E3A8A" />
-                                  </div>
+                                  )}
                                 </div>
                                 
-                                {/* Form fields */}
-                                <div className="flex-1 flex flex-col justify-between text-[8.5px] space-y-0.5 py-0.5">
-                                  <div className="flex items-end">
-                                    <span className="font-bold shrink-0">Name:&nbsp;</span>
-                                    <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
-                                      {getCardName()}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-end">
-                                    <span className="font-bold shrink-0">Role/Designation:&nbsp;</span>
-                                    <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
-                                      {profile?.designation || "......................................................."}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-end">
-                                    <span className="font-bold shrink-0">Dept/Organization:&nbsp;</span>
-                                    <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
-                                      {profile?.department || "......................................................."}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-end">
-                                    <span className="font-bold shrink-0">Contact Number:&nbsp;</span>
-                                    <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
-                                      {profile?.contact || "......................................................."}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-end">
-                                    <span className="font-bold shrink-0">Other Details:&nbsp;</span>
-                                    <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
-                                      {profile?.course || "......................................................."}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-end">
-                                    <span className="font-bold shrink-0">Unique ID:&nbsp;</span>
-                                    <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
-                                      {profile?.seatBookingNumber || "......................................."}
-                                    </span>
-                                  </div>
+                                {/* Verification QR Code */}
+                                <div className="border border-[#1E3A8A] p-0.5 bg-white rounded flex items-center justify-center">
+                                  <QRCodeSVG value={profile?.memberId || "UID-NOT-VERIFIED"} size={42} fgColor="#1E3A8A" />
                                 </div>
                               </div>
                               
-                              {/* Bottom Section */}
-                              <div className="flex justify-between items-end text-[8.5px] pt-1.5 border-t border-[#1E3A8A]/50">
-                                <div>
-                                  <span className="font-bold">Year: </span>
-                                  <span className="font-semibold text-black">{new Date().getFullYear()}</span>
+                              {/* Form fields */}
+                              <div className="flex-1 flex flex-col justify-between text-[8.5px] space-y-0.5 py-0.5">
+                                <div className="flex items-end">
+                                  <span className="font-bold shrink-0">Name:&nbsp;</span>
+                                  <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
+                                    {getCardName()}
+                                  </span>
                                 </div>
-                                <div className="text-center flex flex-col items-center">
-                                  <div className="w-24 border-b border-dotted border-[#1E3A8A] h-3 mb-0.5"></div>
-                                  <span className="text-[7.5px] font-bold">Authorized Officer's Signature</span>
+                                <div className="flex items-end">
+                                  <span className="font-bold shrink-0">Role/Designation:&nbsp;</span>
+                                  <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
+                                    {profile?.designation || "......................................................."}
+                                  </span>
                                 </div>
-                                <div className="text-center flex flex-col items-center">
-                                  <div className="w-24 border-b border-dotted border-[#1E3A8A] h-3 mb-0.5"></div>
-                                  <span className="text-[7.5px] font-bold">Candidate's Signature</span>
+                                <div className="flex items-end">
+                                  <span className="font-bold shrink-0">Dept/Organization:&nbsp;</span>
+                                  <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
+                                    {profile?.department || "......................................................."}
+                                  </span>
+                                </div>
+                                <div className="flex items-end">
+                                  <span className="font-bold shrink-0">Contact Number:&nbsp;</span>
+                                  <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
+                                    {profile?.contact || "......................................................."}
+                                  </span>
+                                </div>
+                                <div className="flex items-end">
+                                  <span className="font-bold shrink-0">Other Details:&nbsp;</span>
+                                  <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
+                                    {profile?.course || "......................................................."}
+                                  </span>
+                                </div>
+                                <div className="flex items-end">
+                                  <span className="font-bold shrink-0">Unique ID:&nbsp;</span>
+                                  <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
+                                    {profile?.seatBookingNumber || "......................................."}
+                                  </span>
                                 </div>
                               </div>
                             </div>
                             
-                            {/* BACK SIDE */}
-                            <div className="w-[480px] h-[300px] bg-white border-2 border-[#1E3A8A] rounded-lg p-4 flex flex-col justify-between font-sans relative shadow-md select-none text-[#1E3A8A] shrink-0">
-                              <div className="flex gap-4 flex-1">
-                                {/* Left Section: Terms */}
-                                <div className="w-[180px] border-r border-[#1E3A8A] pr-3 flex flex-col">
-                                  <div className="bg-[#1E3A8A] text-white text-[9px] font-bold py-1 px-2 rounded mb-2 text-center uppercase tracking-wide">
-                                    Terms & Conditions
+                            {/* Bottom Section */}
+                            <div className="flex justify-between items-end text-[8.5px] pt-1.5 border-t border-[#1E3A8A]/50">
+                              <div>
+                                <span className="font-bold">Year: </span>
+                                <span className="font-semibold text-black">{new Date().getFullYear()}</span>
+                              </div>
+                              <div className="text-center flex flex-col items-center">
+                                <div className="w-24 border-b border-dotted border-[#1E3A8A] h-3 mb-0.5"></div>
+                                <span className="text-[7.5px] font-bold">Authorized Officer's Signature</span>
+                              </div>
+                              <div className="text-center flex flex-col items-center">
+                                <div className="w-24 border-b border-dotted border-[#1E3A8A] h-3 mb-0.5"></div>
+                                <span className="text-[7.5px] font-bold">Candidate's Signature</span>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          /* BACK SIDE */
+                          <div className="w-full max-w-[480px] h-[300px] bg-white border-2 border-[#1E3A8A] rounded-lg p-4 flex flex-col justify-between font-sans relative shadow-md select-none text-[#1E3A8A] shrink-0">
+                            <div className="flex gap-4 flex-1">
+                              {/* Left Section: Terms */}
+                              <div className="w-[180px] border-r border-[#1E3A8A] pr-3 flex flex-col">
+                                <div className="bg-[#1E3A8A] text-white text-[9px] font-bold py-1 px-2 rounded mb-2 text-center uppercase tracking-wide">
+                                  Terms & Conditions
+                                </div>
+                                <ol className="list-decimal pl-4 text-[7.5px] leading-tight space-y-1.5 font-medium text-gray-700">
+                                  <li>This card is the property of the Society and must be returned upon cessation of membership.</li>
+                                  <li>Members must produce this card for all transactions, meetings, and availing of benefits.</li>
+                                  <li>Loss of this card should be reported immediately to the society administration.</li>
+                                  <li>This card is non-transferable and any unauthorized use is subject to disciplinary action.</li>
+                                </ol>
+                              </div>
+                              
+                              {/* Right Section: Details */}
+                              <div className="flex-1 pl-1 flex flex-col justify-between">
+                                {/* Ref & Handshake */}
+                                <div className="flex justify-between items-start">
+                                  <div className="text-[8px] font-medium">
+                                    Reference No.: <span className="font-bold text-black">{profile?.memberId || "........................"}</span>
                                   </div>
-                                  <ol className="list-decimal pl-4 text-[7.5px] leading-tight space-y-1.5 font-medium text-gray-700">
-                                    <li>This card is the property of the Society and must be returned upon cessation of membership.</li>
-                                    <li>Members must produce this card for all transactions, meetings, and availing of benefits.</li>
-                                    <li>Loss of this card should be reported immediately to the society administration.</li>
-                                    <li>This card is non-transferable and any unauthorized use is subject to disciplinary action.</li>
-                                  </ol>
+                                  {/* Handshake Icon */}
+                                  <div className="w-6 h-6 text-[#1E3A8A] flex items-center justify-center opacity-85">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                                      <path d="M11 12H3a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h8" />
+                                      <path d="M18 8H10a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h8" />
+                                      <path d="m16 4 4 4-4 4" />
+                                      <path d="m8 20-4-4 4-4" />
+                                    </svg>
+                                  </div>
                                 </div>
                                 
-                                {/* Right Section: Details */}
-                                <div className="flex-1 pl-1 flex flex-col justify-between">
-                                  {/* Ref & Handshake */}
-                                  <div className="flex justify-between items-start">
-                                    <div className="text-[8px] font-medium">
-                                      Reference No.: <span className="font-bold text-black">{profile?.memberId || "........................"}</span>
-                                    </div>
-                                    {/* Handshake Icon */}
-                                    <div className="w-6 h-6 text-[#1E3A8A] flex items-center justify-center opacity-85">
-                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-                                        <path d="M11 12H3a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h8" />
-                                        <path d="M18 8H10a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h8" />
-                                        <path d="m16 4 4 4-4 4" />
-                                        <path d="m8 20-4-4 4-4" />
-                                      </svg>
-                                    </div>
+                                {/* Center Headers */}
+                                <div className="text-center space-y-0.5 my-0.5">
+                                  <h6 className="font-extrabold text-[8.5px] uppercase tracking-tight leading-tight text-[#1E3A8A]">
+                                    SRI ROJA SHABARISH GURUJI SOUHARADA SAHAKARA NIYAMITHA
+                                  </h6>
+                                  <p className="font-semibold text-[8px] text-[#c9a84c] uppercase tracking-wide">
+                                    Identity Card Details
+                                  </p>
+                                </div>
+                                
+                                {/* Two-Column Details Grid */}
+                                <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[7.5px] py-1 text-gray-700 font-medium">
+                                  <div className="truncate">
+                                    <span className="font-bold text-[#1E3A8A]">DOB:</span>{" "}
+                                    <span className="text-black">{profile?.dob ? new Date(profile.dob).toLocaleDateString("en-IN") : "—"}</span>
                                   </div>
-                                  
-                                  {/* Center Headers */}
-                                  <div className="text-center space-y-0.5 my-0.5">
-                                    <h6 className="font-extrabold text-[8.5px] uppercase tracking-tight leading-tight text-[#1E3A8A]">
-                                      SRI ROJA SHABARISH GURUJI SOUHARADA SAHAKARA NIYAMITHA
-                                    </h6>
-                                    <p className="font-semibold text-[8px] text-[#c9a84c] uppercase tracking-wide">
-                                      Identity Card Details
-                                    </p>
+                                  <div className="truncate">
+                                    <span className="font-bold text-[#1E3A8A]">Gender:</span>{" "}
+                                    <span className="text-black">{profile?.gender || "—"}</span>
                                   </div>
-                                  
-                                  {/* Two-Column Details Grid */}
-                                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-[7.5px] py-1 text-gray-700 font-medium">
-                                    <div className="truncate">
-                                      <span className="font-bold text-[#1E3A8A]">DOB:</span>{" "}
-                                      <span className="text-black">{profile?.dob ? new Date(profile.dob).toLocaleDateString("en-IN") : "—"}</span>
-                                    </div>
-                                    <div className="truncate">
-                                      <span className="font-bold text-[#1E3A8A]">Gender:</span>{" "}
-                                      <span className="text-black">{profile?.gender || "—"}</span>
-                                    </div>
-                                    <div className="truncate">
-                                      <span className="font-bold text-[#1E3A8A]">Blood Group:</span>{" "}
-                                      <span className="text-black">{profile?.bloodGroup || "—"}</span>
-                                    </div>
-                                    <div className="truncate">
-                                      <span className="font-bold text-[#1E3A8A]">Emergency:</span>{" "}
-                                      <span className="text-black">{profile?.emergencyContact || "—"}</span>
-                                    </div>
-                                    <div className="col-span-2 truncate">
-                                      <span className="font-bold text-[#1E3A8A]">Email:</span>{" "}
-                                      <span className="text-black">{profile?.user?.email || user?.email || "—"}</span>
-                                    </div>
-                                    <div className="truncate">
-                                      <span className="font-bold text-[#1E3A8A]">Issue Date:</span>{" "}
-                                      <span className="text-black">
-                                        {profile?.issueDate ? new Date(profile.issueDate).toLocaleDateString("en-IN") : new Date().toLocaleDateString("en-IN")}
-                                      </span>
-                                    </div>
-                                    <div className="truncate">
-                                      <span className="font-bold text-[#1E3A8A]">Expiry Date:</span>{" "}
-                                      <span className="text-black">
-                                        {profile?.expiryDate ? new Date(profile.expiryDate).toLocaleDateString("en-IN") : "Permanent"}
-                                      </span>
-                                    </div>
+                                  <div className="truncate">
+                                    <span className="font-bold text-[#1E3A8A]">Blood Group:</span>{" "}
+                                    <span className="text-black">{profile?.bloodGroup || "—"}</span>
                                   </div>
-                                  
+                                  <div className="truncate">
+                                    <span className="font-bold text-[#1E3A8A]">Emergency:</span>{" "}
+                                    <span className="text-black">{profile?.emergencyContact || "—"}</span>
+                                  </div>
+                                  <div className="col-span-2 truncate">
+                                    <span className="font-bold text-[#1E3A8A]">Email:</span>{" "}
+                                    <span className="text-black">{profile?.user?.email || user?.email || "—"}</span>
+                                  </div>
+                                  <div className="truncate">
+                                    <span className="font-bold text-[#1E3A8A]">Issue Date:</span>{" "}
+                                    <span className="text-black">
+                                      {profile?.issueDate ? new Date(profile.issueDate).toLocaleDateString("en-IN") : new Date().toLocaleDateString("en-IN")}
+                                    </span>
+                                  </div>
+                                  <div className="truncate">
+                                    <span className="font-bold text-[#1E3A8A]">Expiry Date:</span>{" "}
+                                    <span className="text-black">
+                                      {profile?.expiryDate ? new Date(profile.expiryDate).toLocaleDateString("en-IN") : "Permanent"}
+                                    </span>
+                                  </div>
+                                </div>
+                                
                                   {/* Bottom Section */}
                                   <div className="flex justify-end items-end mt-auto pt-1">
                                     {/* Society Logo Emblem */}
@@ -445,22 +453,11 @@ const AccountsPage = () => {
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          )}
                         </div>
                       </div>
-
-                    <div className="bg-[#f1f5f9] rounded-[32px] p-8 space-y-6 self-start border border-gray-100 h-fit w-full">
-                        <div className="flex justify-between items-center py-2 border-b border-gray-200/50">
-                          <p className="text-[12px] font-bold text-gray-500 uppercase tracking-tight">Available Balance</p>
-                          <p className="text-[15px] font-black text-[#1a1f36]">₹{accounts?.[0]?.balance ? Number(accounts[0].balance).toLocaleString() : "0.00"}</p>
-                        </div>
-                        <div className="flex justify-between items-center py-2">
-                          <p className="text-[12px] font-bold text-gray-500 uppercase tracking-tight">Hold Amount</p>
-                          <p className="text-[15px] font-black text-[#1a1f36]">₹0.00</p>
-                        </div>
                     </div>
-                  </div>
-                </>
+                  </>
              ) : activeTabIndex === 1 ? (
                 <div className="space-y-8">
                    <div className="flex items-center justify-between">
@@ -519,60 +516,102 @@ const AccountsPage = () => {
                 </div>
              ) : activeTabIndex === 2 ? (
                 <div className="space-y-8">
-                   <div className="flex items-center justify-between">
-                      <h3 className="text-xl font-bold text-[#1a1f36]">Active Loans</h3>
-                      <Link to="/loan-apply" className="px-6 py-2.5 bg-[#1a1f36] text-white rounded-full text-[13px] font-bold hover:bg-[#2d3356] transition-all">
-                         + New Loan Application
-                      </Link>
-                   </div>
+                    <div className="flex items-center justify-between">
+                       <h3 className="text-xl font-bold text-[#1a1f36]">My Loan Portfolio</h3>
+                       <Link to="/loan-apply" className="px-6 py-2.5 bg-[#1a1f36] text-white rounded-full text-[13px] font-bold hover:bg-[#2d3356] transition-all shadow-sm">
+                          + New Loan Application
+                       </Link>
+                    </div>
 
-                   <div className="grid md:grid-cols-2 gap-8">
-                      {/* Summary Card */}
-                      <div className="bg-gradient-to-br from-[#1a1f36] to-[#2d3356] rounded-[40px] p-8 text-white relative overflow-hidden shadow-xl">
-                          <div className="relative z-10 space-y-6">
-                            <p className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] leading-none">Total Outstanding Balance</p>
-                            <p className="text-4xl font-black">₹{loans?.reduce((s:number,l:any)=>s+Number(l.principal),0).toLocaleString()}</p>
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
-                                <div>
-                                   <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Next EMI Due</p>
-                                   <p className="font-bold text-[#c9a84c]">{loans?.[0]?.nextDueDate ? new Date(loans[0].nextDueDate).toDateString() : "—"}</p>
-                                </div>
-                                <div>
-                                   <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Total EMI Amount</p>
-                                   <p className="font-bold text-emerald-400">₹{loans?.reduce((s:number,l:any)=>s+Number(l.emiAmount||0),0).toLocaleString()}</p>
-                                </div>
-                            </div>
-                          </div>
-                          <Landmark className="absolute -right-8 -bottom-8 w-40 h-40 text-white/5 pointer-events-none" />
-                      </div>
-
+                    {/* Pending Applications Banner */}
+                    {pendingLoans.length > 0 && (
                       <div className="space-y-4">
-                         {loanLoading && <Skeleton className="h-20 w-full" />}
-                         {!loanLoading && loans?.length === 0 && <div className="text-gray-400 text-sm">No loans yet.</div>}
-                         {!loanLoading && loans?.map((loan:any) => (
-                           <div key={loan.id} className="bg-white rounded-[32px] p-6 border border-gray-100 flex items-center justify-between hover:border-[#6b21a8] transition-all cursor-pointer shadow-sm">
+                        <h4 className="text-sm font-bold uppercase text-amber-700 tracking-wider flex items-center gap-2">
+                           <Clock className="w-4 h-4 text-amber-600" /> Pending Loan Applications ({pendingLoans.length})
+                        </h4>
+                        <div className="grid gap-4">
+                          {pendingLoans.map((pLoan: any) => (
+                            <div key={pLoan.id} className="bg-amber-50/70 border border-amber-200 rounded-[28px] p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm">
                               <div className="flex items-center gap-4">
-                                 <div className={`w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-[#c9a84c]`}>
-                                    <CircleDollarSign className="w-6 h-6" />
-                                 </div>
-                                 <div>
-                                    <h4 className="text-[14px] font-bold text-[#1a1f36]">{loan.product}</h4>
-                                    <p className="text-[11px] text-gray-400">{loan.id.slice(0,8)} | EMI: ₹{Number(loan.emiAmount||0).toLocaleString()}</p>
-                                 </div>
+                                <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-700 shrink-0">
+                                  <FileText className="w-6 h-6" />
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="text-[15px] font-bold text-[#1a1f36]">{pLoan.type || pLoan.product || "Loan Application"}</h4>
+                                    <span className="px-3 py-0.5 bg-amber-200 text-amber-900 rounded-full text-[10px] font-black uppercase tracking-wider">
+                                      Under Review
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-amber-800/80 mt-0.5">
+                                    App ID: <span className="font-mono font-bold">{pLoan.loanNumber || pLoan.id.slice(0, 8)}</span> · Submitted on {new Date(pLoan.createdAt || Date.now()).toLocaleDateString()}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="text-right flex flex-col items-end gap-2">
-                                 <div>
-                                    <p className="text-[15px] font-black text-[#1a1f36]">₹{Number(loan.principal).toLocaleString()}</p>
-                                    <p className={`text-[10px] font-bold tracking-tighter uppercase ${loan.status === 'DISBURSED' ? 'text-emerald-600' : 'text-rose-600'}`}>{loan.status}</p>
-                                 </div>
-                                 <Link to="/payments" className="px-3 py-1 bg-[#1a1f36] text-white rounded-lg text-[9px] font-black uppercase hover:bg-black tracking-widest shadow-sm">
-                                    Pay EMI
-                                 </Link>
+                              <div className="text-right flex flex-col items-end">
+                                <p className="text-xs text-amber-700 font-bold uppercase tracking-wider">Requested Principal</p>
+                                <p className="text-xl font-black text-[#1a1f36]">₹{Number(pLoan.amount || pLoan.principal || 0).toLocaleString()}</p>
+                                <p className="text-[11px] text-amber-800 italic mt-0.5">Application under admin review — no duplicate submit needed</p>
                               </div>
-                           </div>
-                         ))}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                   </div>
+                    )}
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                       {/* Summary Card */}
+                       <div className="bg-gradient-to-br from-[#1a1f36] to-[#2d3356] rounded-[40px] p-8 text-white relative overflow-hidden shadow-xl">
+                           <div className="relative z-10 space-y-6">
+                             <p className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] leading-none">Total Active Loan Balance</p>
+                             <p className="text-4xl font-black">₹{activeLoans?.reduce((s:number,l:any)=>s+Number(l.amount || l.principal || 0),0).toLocaleString()}</p>
+                             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                                 <div>
+                                    <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Next EMI Due</p>
+                                    <p className="font-bold text-[#c9a84c]">{activeLoans?.[0]?.nextDueDate ? new Date(activeLoans[0].nextDueDate).toDateString() : "—"}</p>
+                                 </div>
+                                 <div>
+                                    <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Total EMI Amount</p>
+                                    <p className="font-bold text-emerald-400">₹{activeLoans?.reduce((s:number,l:any)=>s+Number(l.emiAmount||0),0).toLocaleString()}</p>
+                                 </div>
+                             </div>
+                           </div>
+                           <Landmark className="absolute -right-8 -bottom-8 w-40 h-40 text-white/5 pointer-events-none" />
+                       </div>
+
+                       <div className="space-y-4">
+                          {loanLoading && <Skeleton className="h-20 w-full" />}
+                          {!loanLoading && loans?.length === 0 && (
+                             <div className="p-8 bg-white rounded-[32px] border border-gray-100 text-center space-y-2">
+                               <Landmark className="w-10 h-10 text-gray-300 mx-auto" />
+                               <p className="text-gray-500 font-bold text-sm">No loans found</p>
+                               <p className="text-xs text-gray-400">You haven't submitted any loan applications yet.</p>
+                             </div>
+                          )}
+                          {!loanLoading && activeLoans?.map((loan:any) => (
+                            <div key={loan.id} className="bg-white rounded-[32px] p-6 border border-gray-100 flex items-center justify-between hover:border-[#6b21a8] transition-all cursor-pointer shadow-sm">
+                               <div className="flex items-center gap-4">
+                                  <div className={`w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-[#c9a84c]`}>
+                                     <CircleDollarSign className="w-6 h-6" />
+                                  </div>
+                                  <div>
+                                     <h4 className="text-[14px] font-bold text-[#1a1f36]">{loan.type || loan.product}</h4>
+                                     <p className="text-[11px] text-gray-400">{loan.loanNumber || loan.id.slice(0,8)} | EMI: ₹{Number(loan.emiAmount||0).toLocaleString()}</p>
+                                  </div>
+                               </div>
+                               <div className="text-right flex flex-col items-end gap-2">
+                                  <div>
+                                     <p className="text-[15px] font-black text-[#1a1f36]">₹{Number(loan.amount || loan.principal || 0).toLocaleString()}</p>
+                                     <p className="text-[10px] font-bold tracking-tighter uppercase text-emerald-600">{loan.status}</p>
+                                  </div>
+                                  <Link to="/payments" className="px-3 py-1 bg-[#1a1f36] text-white rounded-lg text-[9px] font-black uppercase hover:bg-black tracking-widest shadow-sm">
+                                     Pay EMI
+                                  </Link>
+                               </div>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
 
                    {/* Repayment Schedule Link */}
                    <div className="p-8 bg-gray-50 rounded-[40px] border border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6">

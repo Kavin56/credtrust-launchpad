@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcryptjs';
-import { PrismaClient as AdminClient } from '@credtrust/prisma-admin';
+import { PrismaClient as AdminClient } from '@prisma/client';
 
 async function main() {
   const adminDb = new AdminClient();

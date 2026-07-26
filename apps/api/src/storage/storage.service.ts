@@ -1,61 +1,118 @@
 import { Injectable } from '@nestjs/common';
-import { Client } from 'minio';
+import * as admin from 'firebase-admin';
 import { randomBytes } from 'crypto';
-import { extname, join, resolve } from 'path';
-import { mkdir, writeFile } from 'fs/promises';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
 
 @Injectable()
 export class StorageService {
-  private client: Client;
-  private bucket: string;
-  private useLocal: boolean;
-  private uploadDir: string;
+  private bucket: any;
 
   constructor() {
-    this.useLocal = process.env.LOCAL_STORAGE === 'true';
-    this.uploadDir = resolve(
-      process.cwd(),
-      process.env.LOCAL_UPLOAD_DIR || '../../uploads',
-    );
-    this.client = new Client({
-      endPoint: process.env.MINIO_ENDPOINT || 'localhost',
-      port: Number(process.env.MINIO_PORT || 9000),
-      useSSL: false,
-      accessKey: process.env.MINIO_ACCESS_KEY || 'minio',
-      secretKey: process.env.MINIO_SECRET_KEY || 'minio123',
-    });
-    this.bucket = process.env.FILE_BUCKET || 'kyc';
+    const bucketName = process.env.FIREBASE_STORAGE_BUCKET || 'credtrust-storage-0156201953';
+    this.bucket = admin.storage().bucket(bucketName);
   }
 
-  async ensureBucket() {
-    const exists = await this.client.bucketExists(this.bucket).catch(async () => {
-      await this.client.makeBucket(this.bucket, 'us-east-1');
-      return true;
-    });
-    return exists;
+  async upload(buffer: Buffer, filename: string, contentType: string, prefix = 'private'): Promise<string> {
+    const key = `${prefix}/${Date.now()}-${randomBytes(12).toString('hex')}${extname(filename)}`;
+    try {
+      const file = this.bucket.file(key);
+      await file.save(buffer, {
+        metadata: { 
+          contentType,
+          cacheControl: 'private, no-store'
+        },
+      });
+      return `gs://${this.bucket.name}/${key}`;
+    } catch (error: any) {
+      console.warn(`GCS upload failed (${error.message}), saving to local storage.`);
+      const uploadDir = join(process.cwd(), 'uploads', prefix);
+      if (!existsSync(uploadDir)) {
+        mkdirSync(uploadDir, { recursive: true });
+      }
+      const localFilename = `${Date.now()}-${randomBytes(8).toString('hex')}${extname(filename)}`;
+      const localPath = join(uploadDir, localFilename);
+      writeFileSync(localPath, buffer);
+      return `/uploads/${prefix}/${localFilename}`;
+    }
   }
 
-  async upload(buffer: Buffer, filename: string, contentType: string) {
-    if (this.useLocal) {
-      await mkdir(this.uploadDir, { recursive: true });
-      const key = `${Date.now()}-${randomBytes(6).toString('hex')}${extname(
-        filename,
-      )}`;
-      const fullPath = join(this.uploadDir, key);
-      await writeFile(fullPath, buffer);
-      const base = process.env.FILE_BASE_URL || 'http://localhost:3000';
-      return `${base}/uploads/${key}`;
+  async signedUrl(storagePath: string, expiresInMs = 15 * 60 * 1000): Promise<string | null> {
+    if (!storagePath) return null;
+    if (storagePath.startsWith('http://') || storagePath.startsWith('https://')) {
+      return storagePath;
     }
 
-    await this.ensureBucket();
-    const key = `${Date.now()}-${randomBytes(6).toString('hex')}${extname(
-      filename,
-    )}`;
-    await this.client.putObject(this.bucket, key, buffer, buffer.length, {
-      'Content-Type': contentType,
-    });
-    const baseUrl =
-      process.env.FILE_BASE_URL || 'http://localhost:9000';
-    return `${baseUrl}/${this.bucket}/${key}`;
+    if (storagePath.startsWith('gs://')) {
+      try {
+        const [, , bucketName, ...keyParts] = storagePath.split('/');
+        const key = keyParts.join('/');
+        const bucket = admin.storage().bucket(bucketName || this.bucket.name);
+        const file = bucket.file(key);
+
+        const [url] = await file.getSignedUrl({
+          version: 'v4',
+          action: 'read',
+          expires: Date.now() + expiresInMs,
+        });
+        return url;
+      } catch (err: any) {
+        console.warn('GCS V4 getSignedUrl fallback to view endpoint:', err?.message || err);
+      }
+    }
+
+    // Fallback relative stream URL for local storage or fallback environments
+    return `/api/v1/storage/view?path=${encodeURIComponent(storagePath)}`;
+  }
+
+  async getFileBuffer(storagePath: string): Promise<{ buffer: Buffer; contentType: string } | null> {
+    if (!storagePath) return null;
+
+    // Handle local disk uploads
+    if (storagePath.startsWith('/uploads/')) {
+      const relativePath = storagePath.substring('/uploads/'.length);
+      const localPath = join(process.cwd(), 'uploads', relativePath);
+      if (existsSync(localPath)) {
+        const buffer = require('fs').readFileSync(localPath);
+        const ext = extname(localPath).toLowerCase();
+        let contentType = 'application/octet-stream';
+        if (ext === '.pdf') contentType = 'application/pdf';
+        else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+        else if (ext === '.png') contentType = 'image/png';
+        return { buffer, contentType };
+      }
+      return null;
+    }
+
+    // Handle GCS gs:// paths
+    if (storagePath.startsWith('gs://')) {
+      try {
+        const [, , bucketName, ...keyParts] = storagePath.split('/');
+        const key = keyParts.join('/');
+        const bucket = admin.storage().bucket(bucketName || this.bucket.name);
+        const file = bucket.file(key);
+
+        const [exists] = await file.exists();
+        if (!exists) return null;
+
+        const [buffer] = await file.download();
+        const [metadata] = await file.getMetadata();
+
+        let contentType = metadata.contentType || 'application/octet-stream';
+        if (contentType === 'application/octet-stream') {
+          const ext = extname(key).toLowerCase();
+          if (ext === '.pdf') contentType = 'application/pdf';
+          else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+          else if (ext === '.png') contentType = 'image/png';
+        }
+
+        return { buffer, contentType };
+      } catch (error) {
+        console.error('Error reading file from GCS:', error);
+        return null;
+      }
+    }
+
+    return null;
   }
 }

@@ -12,40 +12,40 @@ import fastifyHelmet from '@fastify/helmet';
 import fastifyRateLimit from '@fastify/rate-limit';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import multipart from '@fastify/multipart';
-import fastifyStatic from '@fastify/static';
 import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
-import { existsSync } from 'fs';
-import { cp, mkdir } from 'fs/promises';
-import { resolve } from 'path';
 import * as Sentry from '@sentry/node';
+import { initializeFirebaseAdmin } from './common/utils/firebase';
 
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
-const DEFAULT_UPLOAD_ROOT = resolve(process.cwd(), 'uploads');
-const LEGACY_UPLOAD_ROOT = resolve(process.cwd(), 'uploads');
 
 async function bootstrap() {
+  initializeFirebaseAdmin();
   if (process.env.SENTRY_DSN) {
     Sentry.init({
       dsn: process.env.SENTRY_DSN,
       tracesSampleRate: 0.2,
     });
   }
+
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ logger: false }),
+    new FastifyAdapter({
+      logger: false,
+      bodyLimit: 100 * 1024 * 1024, // 100 MB body payload limit
+    }),
     { bufferLogs: true },
   );
 
   app.useLogger(app.get(Logger));
   const logger = app.get(Logger);
-  const uploadRoot = resolve(
-    process.cwd(),
-    process.env.LOCAL_UPLOAD_DIR || 'uploads',
-  );
+  const corsOrigins = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
   // Enable CORS for the frontend dev server
   app.enableCors({
-    origin: true,
+    origin: process.env.NODE_ENV === 'production' ? corsOrigins : true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -63,24 +63,8 @@ async function bootstrap() {
   await app.register(fastifyHelmet);
   await app.register(fastifyRateLimit, { max: 100, timeWindow: '1 minute' });
   await app.register(multipart, {
-    limits: { fileSize: MAX_UPLOAD_BYTES, files: 5 },
+    limits: { fileSize: MAX_UPLOAD_BYTES, files: 100 },
     throwFileSizeLimit: true,
-  });
-  await mkdir(uploadRoot, { recursive: true });
-  if (
-    uploadRoot === DEFAULT_UPLOAD_ROOT &&
-    LEGACY_UPLOAD_ROOT !== uploadRoot &&
-    existsSync(LEGACY_UPLOAD_ROOT)
-  ) {
-    await cp(LEGACY_UPLOAD_ROOT, uploadRoot, {
-      recursive: true,
-      force: false,
-      errorOnExist: false,
-    });
-  }
-  await app.register(fastifyStatic, {
-    root: uploadRoot,
-    prefix: '/uploads/',
   });
 
   app
@@ -117,14 +101,17 @@ async function bootstrap() {
       },
     );
 
-  const config = new DocumentBuilder()
-    .setTitle('Sharanam API')
-    .setDescription('Credit Cooperative Society Management API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  app.getHttpAdapter().getInstance().get('/healthz', async () => ({ status: 'ok' }));
+  if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_SWAGGER === 'true') {
+    const config = new DocumentBuilder()
+      .setTitle('Sharanam API')
+      .setDescription('Credit Cooperative Society Management API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
+  }
 
   const port = process.env.PORT || 3000;
   await app.listen({ port: Number(port), host: '0.0.0.0' });

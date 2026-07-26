@@ -12,6 +12,7 @@ import MemberDashboard from "./modules/member/pages/MemberDashboard";
 import AdminDashboard from "./modules/admin/pages/AdminDashboard";
 import AdminIndex from "./pages/AdminIndex";
 import AdminLoginPage from "./modules/admin/pages/AdminLoginPage";
+import MemberRegistryPage from "./modules/admin/pages/MemberRegistryPage";
 import KYCForm from "./modules/member/components/KYCForm";
 import ProfilePage from "./modules/member/pages/ProfilePage";
 import AccountsPage from "./modules/member/pages/AccountsPage";
@@ -78,6 +79,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/admin" element={<AdminIndex />} />
           <Route path="/admin/login" element={<AdminLoginPage />} />
+          <Route path="/admin/members" element={<ProtectedRoute requireAdmin><MemberRegistryPage /></ProtectedRoute>} />
           <Route path="/admin/dashboard" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/loans" element={<ProtectedRoute requireAdmin><LoanRequestsPage /></ProtectedRoute>} />
           <Route path="/admin/deposits" element={<ProtectedRoute requireAdmin><DepositRequestsPage /></ProtectedRoute>} />

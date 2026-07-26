@@ -1,67 +1,107 @@
 import { Injectable, NotFoundException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
-import * as fs from 'fs';
-import * as path from 'path';
+import { StorageService } from '../storage/storage.service';
+import { EncryptionService } from '../common/utils/encryption.util';
 
 @Injectable()
 export class MembersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly storage: StorageService,
+    private readonly encryption: EncryptionService,
+  ) {}
 
-  async completeProfile(userId: string, data: any, files: any[]) {
+  /**
+   * Completes a member's registration.
+   * IMPORTANT: Both aadhaarDoc and panDoc files are REQUIRED.
+   * This is the ONLY place where a Member record is created.
+   * The controller has already created the DB User before calling this.
+   */
+  async completeProfile(
+    userId: string,
+    data: any,
+    files: any[],
+    firebaseIdentity: { email: string; firebaseUid: string },
+  ) {
     try {
-      // 1. Check if member already exists
-      let member = await this.prisma.member.findUnique({ where: { userId } });
-      
-      // 2. Generate Member ID if it doesn't exist
-      if (!member) {
-        const memberId = await this.generateMemberId(data.district);
-        const seatBookingNumber = await this.generateUniqueId(userId);
-        member = await this.prisma.member.create({
-          data: {
-            userId,
-            memberId,
-            fullName: data.fullName,
-            dob: new Date(data.dob),
-            gender: data.gender || 'Other',
-            contact: data.contact,
-            address: data.address,
-            state: data.state,
-            district: data.district,
-            pincode: data.pincode,
-            aadhaarNumber: data.aadhaarNumber,
-            panNumber: data.panNumber,
-            seatBookingNumber,
-          }
-        });
+      // 1. Reject if member already exists (prevent duplicate registrations)
+      const existingMember = await this.prisma.member.findUnique({ where: { userId } });
+      if (existingMember) {
+        throw new BadRequestException(
+          'A member profile already exists for this account. Please log in instead.',
+        );
       }
 
-      // 3. Handle File Uploads
-      const uploadDir = path.join(process.cwd(), 'uploads', 'signup');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+      // 2. Validate required document fields
+      const requiredFields = ['fullName', 'dob', 'gender', 'contact', 'address', 'state', 'district', 'pincode', 'aadhaarNumber', 'panNumber'];
+      const missingFields = requiredFields.filter((f) => !data[f]);
+      if (missingFields.length > 0) {
+        throw new BadRequestException(`Missing required fields: ${missingFields.join(', ')}`);
       }
 
+      // 3. Generate Member ID
+      const memberId = await this.generateMemberId(data.district);
+      const seatBookingNumber = await this.generateUniqueId(userId);
+
+      // 4. Upload KYC documents
       const filePaths: any = {};
       for (const file of files) {
-        const fileName = `${member.memberId}-${file.fieldname}-${Date.now()}${path.extname(file.filename)}`;
-        const filePath = path.join(uploadDir, fileName);
-        
-        fs.writeFileSync(filePath, file.buffer);
-        
-        filePaths[file.fieldname] = `/uploads/signup/${fileName}`;
+        filePaths[file.fieldname] = await this.storage.upload(
+          file.buffer,
+          `${memberId}-${file.fieldname}-${file.filename}`,
+          file.mimetype || 'application/octet-stream',
+          'kyc',
+        );
       }
 
-      console.log(`Profile completed successfully for user ${userId}. Member ID: ${member.memberId}`);
-      // 4. Update member with file paths
-      return await this.prisma.member.update({
-        where: { id: member.id },
+      // 5. Create member record (atomically - only after docs are saved)
+      const member = await this.prisma.member.create({
         data: {
-          aadhaarDocUrl: filePaths['aadhaarDoc'] || member.aadhaarDocUrl,
-          panDocUrl: filePaths['panDoc'] || member.panDocUrl,
+          userId,
+          memberId,
+          fullName: data.fullName,
+          dob: new Date(data.dob),
+          gender: data.gender || 'Other',
+          contact: data.contact,
+          address: data.address,
+          state: data.state,
+          district: data.district,
+          pincode: data.pincode,
+          aadhaarNumber: this.encryption.encrypt(data.aadhaarNumber),
+          aadhaarHash: this.encryption.lookupHash(data.aadhaarNumber),
+          panNumber: this.encryption.encrypt(data.panNumber),
+          panHash: this.encryption.lookupHash(data.panNumber),
+          seatBookingNumber,
+          aadhaarDocUrl: filePaths['aadhaarDoc'],
+          panDocUrl: filePaths['panDoc'],
           kycStatus: 'PENDING',
-        }
+        },
       });
+
+      console.log(`✅ Registration complete for user ${userId}. Member ID: ${member.memberId}`);
+
+      // 6. Issue JWT tokens so the client is immediately authenticated
+      const secret = process.env.JWT_SECRET;
+      const refreshSecret = process.env.JWT_REFRESH_SECRET;
+      if (!secret || !refreshSecret) throw new Error('JWT secrets not configured.');
+
+      const payload = { sub: userId, email: firebaseIdentity.email, role: 'MEMBER' };
+      const accessToken = this.jwtService.sign(payload, { secret, expiresIn: '24h' });
+      const refreshToken = this.jwtService.sign(payload, { secret: refreshSecret, expiresIn: '7d' });
+
+      return {
+        accessToken,
+        refreshToken,
+        role: 'MEMBER',
+        userId,
+        email: firebaseIdentity.email,
+        memberId: member.memberId,
+        hasMemberProfile: true,
+        message: 'Registration complete! Welcome to Saranam.',
+      };
     } catch (error: any) {
       if (error.code === 'P2002') {
         const fields = error.meta?.target || [];
@@ -141,14 +181,15 @@ export class MembersService {
     
     if (!member.seatBookingNumber) {
       const seatBookingNumber = await this.generateUniqueId(member.userId);
-      return this.prisma.member.update({
+      const updated = await this.prisma.member.update({
         where: { id: member.id },
         data: { seatBookingNumber },
         include: { user: true, depositAccounts: true, loans: true, shareAccounts: true, pigmyAccounts: true },
       });
+      return this.withSignedPhoto(updated);
     }
     
-    return member;
+    return this.withSignedPhoto(member);
   }
 
   private async generateUniqueId(userId: string): Promise<string> {
@@ -290,27 +331,62 @@ export class MembersService {
     }
 
     try {
-      const uploadDir = path.join(process.cwd(), 'uploads', 'profile');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
-      const fileName = `${userId}-profile-${Date.now()}${path.extname(file.filename)}`;
-      const filePath = path.join(uploadDir, fileName);
       const buffer = await file.toBuffer();
-      await fs.promises.writeFile(filePath, buffer);
-
-      const photoUrl = `/uploads/profile/${fileName}`;
+      const photoUrl = await this.storage.upload(
+        buffer,
+        `${userId}-profile-${file.filename}`,
+        file.mimetype || 'application/octet-stream',
+        'profile',
+      );
 
       await this.prisma.member.update({
         where: { userId },
         data: { photoUrl },
       });
 
-      return { photoUrl };
+      return { photoUrl: await this.storage.signedUrl(photoUrl) };
     } catch (error) {
       console.error('UPLOAD PHOTO ERROR:', error);
       throw new BadRequestException('Failed to upload profile picture.');
+    }
+  }
+
+  async uploadDocument(userId: string, docType: string, file: any) {
+    if (!file) {
+      throw new BadRequestException('No document file uploaded.');
+    }
+
+    const member = await this.prisma.member.findFirst({
+      where: { OR: [{ userId }, { id: userId }, { memberId: userId }] },
+    });
+    if (!member) {
+      throw new NotFoundException('Member profile not found.');
+    }
+
+    try {
+      const fileUrl = await this.storage.upload(
+        file.buffer,
+        `${member.memberId}-${docType}-${file.filename}`,
+        file.mimetype || 'application/octet-stream',
+        'kyc',
+      );
+
+      const updateData: any = {};
+      if (docType === 'panDoc' || docType === 'pan') {
+        updateData.panDocUrl = fileUrl;
+      } else {
+        updateData.aadhaarDocUrl = fileUrl;
+      }
+
+      await this.prisma.member.update({
+        where: { id: member.id },
+        data: updateData,
+      });
+
+      return { success: true, url: await this.storage.signedUrl(fileUrl) };
+    } catch (error) {
+      console.error('UPLOAD DOCUMENT ERROR:', error);
+      throw new BadRequestException('Failed to upload document.');
     }
   }
   
@@ -320,5 +396,19 @@ export class MembersService {
       data: { status: 'INACTIVE', exitReason: reason, deactivatedAt: new Date() },
     });
     return { success: true };
+  }
+
+  private async withSignedPhoto<T extends { photoUrl?: string | null; aadhaarDocUrl?: string | null; panDocUrl?: string | null }>(member: T): Promise<T> {
+    const updated = { ...member };
+    if (updated.photoUrl?.startsWith('gs://')) {
+      updated.photoUrl = await this.storage.signedUrl(updated.photoUrl);
+    }
+    if (updated.aadhaarDocUrl?.startsWith('gs://')) {
+      updated.aadhaarDocUrl = await this.storage.signedUrl(updated.aadhaarDocUrl);
+    }
+    if (updated.panDocUrl?.startsWith('gs://')) {
+      updated.panDocUrl = await this.storage.signedUrl(updated.panDocUrl);
+    }
+    return updated;
   }
 }

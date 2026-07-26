@@ -84,22 +84,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       };
 
       const syncFirebaseSession = async (fbUser: User) => {
-        const token = await fbUser.getIdToken(false);
-        api.defaults.headers.common.Authorization = `Bearer ${token}`;
+        const firebaseToken = await fbUser.getIdToken(false);
+        api.defaults.headers.common.Authorization = `Bearer ${firebaseToken}`;
         const session = await getFirebaseSession(fbUser);
         
-        localStorage.setItem("accessToken", token);
-        localStorage.setItem("email", session.email);
-        localStorage.setItem("role", session.role);
-        localStorage.setItem("userId", session.userId);
-        localStorage.setItem("hasMemberProfile", String(session.hasMemberProfile));
-        
-        setUser({ 
-          id: session.userId, 
-          email: session.email, 
-          role: session.role,
-          hasMemberProfile: session.hasMemberProfile
-        });
+        if (session.pendingRegistration) {
+          // User exists in Firebase but has NOT completed registration (no KYC).
+          // Store the Firebase token temporarily so the signup flow can use it.
+          // Do NOT store it as the app accessToken (that's reserved for JWT).
+          localStorage.setItem("firebaseIdToken", firebaseToken);
+          localStorage.setItem("email", session.email || fbUser.email || "");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("userId");
+          localStorage.setItem("hasMemberProfile", "false");
+          localStorage.setItem("role", "MEMBER");
+          setUser({
+            id: "",
+            email: session.email || fbUser.email || "",
+            role: "MEMBER",
+            hasMemberProfile: false,
+          });
+        } else {
+          // Fully registered user - apply the JWT session returned by backend.
+          localStorage.removeItem("firebaseIdToken");
+          localStorage.setItem("accessToken", session.accessToken || firebaseToken);
+          if (session.refreshToken) localStorage.setItem("refreshToken", session.refreshToken);
+          localStorage.setItem("email", session.email);
+          localStorage.setItem("role", session.role || "MEMBER");
+          localStorage.setItem("userId", session.userId || "");
+          localStorage.setItem("hasMemberProfile", String(session.hasMemberProfile));
+          // Use the JWT as the Authorization header
+          if (session.accessToken) {
+            api.defaults.headers.common.Authorization = `Bearer ${session.accessToken}`;
+          }
+          setUser({
+            id: session.userId || "",
+            email: session.email,
+            role: session.role || "MEMBER",
+            hasMemberProfile: session.hasMemberProfile,
+          });
+        }
       };
 
       const unsub = onAuthStateChanged(auth, async (fbUser) => {
@@ -169,8 +193,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       pauseFirebaseSyncRef.current = true;
       setLoading(true);
       try {
-        await signInWithEmailAndPassword(auth, email, password);
-        await refreshProfileStatus();
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        const firebaseToken = await userCred.user.getIdToken(true);
+        api.defaults.headers.common.Authorization = `Bearer ${firebaseToken}`;
+        
+        try {
+          const { data } = await api.post("/auth/firebase/session");
+          if (data.accessToken) {
+            applySession({
+              accessToken: data.accessToken,
+              refreshToken: data.refreshToken,
+              role: data.role,
+              email: data.email || email,
+              userId: data.userId,
+              hasMemberProfile: data.hasMemberProfile,
+            });
+          } else {
+            localStorage.setItem("firebaseIdToken", firebaseToken);
+            localStorage.setItem("email", data.email || email);
+            setUser({
+              id: userCred.user.uid,
+              email: data.email || email,
+              role: "MEMBER",
+              hasMemberProfile: false,
+            });
+          }
+        } catch {
+          localStorage.setItem("firebaseIdToken", firebaseToken);
+          localStorage.setItem("email", email);
+          setUser({
+            id: userCred.user.uid,
+            email,
+            role: "MEMBER",
+            hasMemberProfile: false,
+          });
+        }
       } finally {
         pauseFirebaseSyncRef.current = false;
         setLoading(false);
@@ -241,8 +298,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const loginWithGoogle = async () => {
     if (provider === "firebase") {
       const googleProvider = new GoogleAuthProvider();
-      await signInWithPopup(auth, googleProvider);
-      await refreshProfileStatus();
+      const result = await signInWithPopup(auth, googleProvider);
+      const firebaseToken = await result.user.getIdToken(true);
+      api.defaults.headers.common.Authorization = `Bearer ${firebaseToken}`;
+
+      try {
+        const { data } = await api.post("/auth/firebase/session");
+        if (data.accessToken) {
+          applySession({
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+            role: data.role,
+            email: data.email || result.user.email || "",
+            userId: data.userId,
+            hasMemberProfile: data.hasMemberProfile,
+          });
+        } else {
+          localStorage.setItem("firebaseIdToken", firebaseToken);
+          localStorage.setItem("email", data.email || result.user.email || "");
+          setUser({
+            id: result.user.uid,
+            email: data.email || result.user.email || "",
+            role: "MEMBER",
+            hasMemberProfile: false,
+          });
+        }
+      } catch {
+        localStorage.setItem("firebaseIdToken", firebaseToken);
+        localStorage.setItem("email", result.user.email || "");
+        setUser({
+          id: result.user.uid,
+          email: result.user.email || "",
+          role: "MEMBER",
+          hasMemberProfile: false,
+        });
+      }
     }
   };
 
@@ -272,8 +362,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const register = async (payload: { email: string; password: string }) => {
     if (provider === "firebase") {
-      await createUserWithEmailAndPassword(auth, payload.email, payload.password);
-      // Profile creation will be handled by the new flow
+      try {
+        await createUserWithEmailAndPassword(auth, payload.email, payload.password);
+      } catch (err: any) {
+        if (err?.code === 'auth/email-already-in-use') {
+          try {
+            await signInWithEmailAndPassword(auth, payload.email, payload.password);
+          } catch (signInErr: any) {
+            throw new Error('This email is already registered in Firebase. Please click "Log in" with your password or sign in with Google.');
+          }
+        } else {
+          throw err;
+        }
+      }
     }
   };
 

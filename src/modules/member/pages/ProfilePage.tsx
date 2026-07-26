@@ -22,16 +22,21 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import api, { getApiErrorMessage } from "@/lib/api";
+import api, { getApiErrorMessage, getApiBaseUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ProfilePage = () => {
   const [activeView, setActiveView] = useState('personal'); // personal, kyc, nominee, security
   const [isEditing, setIsEditing] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadDocType, setUploadDocType] = useState('aadhaarDoc');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadingDoc, setUploadingDoc] = useState(false);
   const [formState, setFormState] = useState({
     fullName: "",
     contact: "",
@@ -137,6 +142,7 @@ const ProfilePage = () => {
       emergencyContact: profile?.emergencyContact || "",
       issueDate: profile?.issueDate ? new Date(profile.issueDate).toLocaleDateString("en-IN") : new Date().toLocaleDateString("en-IN"),
       expiryDate: profile?.expiryDate ? new Date(profile.expiryDate).toLocaleDateString("en-IN") : "Permanent",
+      photoUrl: profile?.photoUrl || null,
     };
   }, [profile]);
 
@@ -163,15 +169,73 @@ const ProfilePage = () => {
   );
 
   const getDocUrl = (url: string) => {
-    if (!url) return null;
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1";
+    if (!url) return '#';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    const baseUrl = getApiBaseUrl();
+    if (url.startsWith('gs://') || url.startsWith('/uploads/')) {
+      return `${baseUrl}/storage/view?path=${encodeURIComponent(url)}`;
+    }
     const origin = baseUrl.replace('/api/v1', '');
-    return `${origin}${url}`;
+    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    return `${origin}${cleanPath}`;
   };
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     updateProfileMutation.mutate();
+  };
+
+  const handleUploadDocumentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadFile) {
+      toast.error("Please select a document file to upload.");
+      return;
+    }
+    setUploadingDoc(true);
+    try {
+      const formData = new FormData();
+      formData.append("docType", uploadDocType);
+      formData.append("file", uploadFile);
+      await api.post("/members/me/document", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      toast.success("KYC Document uploaded successfully!");
+      setShowUploadModal(false);
+      setUploadFile(null);
+      queryClient.invalidateQueries({ queryKey: ["member-profile"] });
+    } catch (err: any) {
+      toast.error(getApiErrorMessage(err, "Failed to upload document."));
+    } finally {
+      setUploadingDoc(false);
+    }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please select a valid image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Profile picture must be under 5MB.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      await api.post("/members/me/photo", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      toast.success("Profile photo updated successfully!");
+      queryClient.invalidateQueries({ queryKey: ["member-profile"] });
+    } catch (err: any) {
+      toast.error(getApiErrorMessage(err, "Failed to upload profile photo."));
+    }
   };
 
   return (
@@ -197,11 +261,16 @@ const ProfilePage = () => {
              <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm p-8 text-center space-y-6 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-full h-24 bg-gradient-to-br from-[#1a1f36] to-[#6b21a8] rounded-t-[40px]" />
                 <div className="relative pt-6">
-                   <div className="w-28 h-28 relative rounded-[32px] border-4 border-white shadow-xl bg-[#c9a84c] mx-auto flex items-center justify-center text-white text-[40px] font-black group-hover:rotate-6 transition-transform duration-500">
-                      {isLoading ? "..." : profileView.initials}
-                      <div className="absolute -bottom-1 -right-1 w-9 h-9 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#1a1f36] shadow-lg cursor-pointer z-10">
+                   <div className="w-28 h-28 relative rounded-[32px] border-4 border-white shadow-xl bg-[#c9a84c] mx-auto flex items-center justify-center text-white text-[40px] font-black group-hover:rotate-6 transition-transform duration-500 overflow-hidden">
+                      {profileView.photoUrl ? (
+                        <img src={getDocUrl(profileView.photoUrl)} alt={profileView.fullName} className="w-full h-full object-cover" />
+                      ) : (
+                        isLoading ? "..." : profileView.initials
+                      )}
+                      <label className="absolute -bottom-1 -right-1 w-9 h-9 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-[#1a1f36] shadow-lg cursor-pointer z-10">
                          <Camera className="w-4 h-4" />
-                      </div>
+                         <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                      </label>
                    </div>
                 </div>
                 <div>
@@ -430,8 +499,65 @@ const ProfilePage = () => {
                               <h3 className="text-2xl font-bold text-[#1a1f36]">KYC Vault</h3>
                               <p className="text-sm text-gray-400 font-medium">Your verified identity documents and portal access cards</p>
                            </div>
-                           <Button className="h-12 px-8 bg-[#1a1f36] text-white rounded-2xl font-bold">Upload New Document</Button>
+                           <Button 
+                              onClick={() => setShowUploadModal(true)}
+                              className="h-12 px-8 bg-[#1a1f36] text-white rounded-2xl font-bold hover:bg-[#2a2f46] transition-all"
+                            >
+                              Upload New Document
+                            </Button>
                         </div>
+
+                        <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
+                           <DialogContent className="max-w-md bg-white rounded-3xl p-6">
+                             <DialogHeader>
+                               <DialogTitle className="text-xl font-bold text-[#1a1f36]">Upload KYC Document</DialogTitle>
+                               <DialogDescription className="text-sm text-gray-500">
+                                 Select the document type and upload a PDF or image file (Max 20MB).
+                               </DialogDescription>
+                             </DialogHeader>
+                             <form onSubmit={handleUploadDocumentSubmit} className="space-y-5 mt-4">
+                               <div className="space-y-2">
+                                 <Label className="text-xs font-bold text-gray-600 uppercase">Document Type</Label>
+                                 <select
+                                   value={uploadDocType}
+                                   onChange={(e) => setUploadDocType(e.target.value)}
+                                   className="w-full h-11 px-4 rounded-xl border border-gray-200 text-sm font-medium focus:ring-2 focus:ring-[#1a1f36] outline-none"
+                                 >
+                                   <option value="aadhaarDoc">Aadhaar Card</option>
+                                   <option value="panDoc">PAN Card</option>
+                                 </select>
+                               </div>
+
+                               <div className="space-y-2">
+                                 <Label className="text-xs font-bold text-gray-600 uppercase">Document File</Label>
+                                 <Input
+                                   type="file"
+                                   accept=".pdf,image/*"
+                                   onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                                   className="h-12 rounded-xl cursor-pointer"
+                                 />
+                               </div>
+
+                               <div className="flex justify-end gap-3 pt-2">
+                                 <Button
+                                   type="button"
+                                   variant="outline"
+                                   onClick={() => setShowUploadModal(false)}
+                                   className="rounded-xl font-bold"
+                                 >
+                                   Cancel
+                                 </Button>
+                                 <Button
+                                   type="submit"
+                                   disabled={uploadingDoc || !uploadFile}
+                                   className="bg-[#1a1f36] text-white rounded-xl font-bold px-6"
+                                 >
+                                   {uploadingDoc ? "Uploading..." : "Upload Document"}
+                                 </Button>
+                               </div>
+                             </form>
+                           </DialogContent>
+                         </Dialog>
 
                         <div className="grid md:grid-cols-2 gap-8">
                            {kycCards.map((doc, i) => (
@@ -450,7 +576,7 @@ const ProfilePage = () => {
                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Profile Record</p>
                                    {doc.url ? (
                                      <button 
-                                       onClick={() => window.open(getDocUrl(doc.url), '_blank')}
+                                       onClick={() => window.open(getDocUrl(doc.url), '_blank', 'noopener,noreferrer')}
                                        className="p-3 bg-white rounded-2xl shadow-sm text-[#1a1f36] hover:bg-[#1a1f36] hover:text-white transition-all"
                                      >
                                         <Eye className="w-5 h-5" />

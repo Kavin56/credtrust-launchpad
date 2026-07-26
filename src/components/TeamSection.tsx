@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Marquee } from "./ui/marquee";
 import { UserCheck } from "lucide-react";
 
@@ -29,29 +29,16 @@ const teamMembers = [
   { name: "Mr. Sendil Kumar M", role: "Director", image: sendilImg },
   { name: "Mr. K. M. Suresh", role: "Director", image: sureshImg },
   { name: "Mr. Manjunath", role: "Director", image: manjunathImg },
+  { name: "Mrs. Malar", role: "Director", image: malarImg },
+  { name: "Mr. Yuvaraj", role: "Director", image: yuvarajImg },
 ];
 
 export default function TeamSection() {
-  const [isPaused, setIsPaused] = useState(true);
-  const [resetKey, setResetKey] = useState(0);
-
-  useEffect(() => {
-    if (isPaused) {
-      const timer = setTimeout(() => {
-        setIsPaused(false);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [isPaused]);
-
-  const handleMouseEnter = () => {
-    setResetKey((prev) => prev + 1);
-    setIsPaused(true);
-  };
+  const marqueeList = [...teamMembers, ...teamMembers];
 
   return (
-    <section className="relative w-full overflow-hidden bg-white py-20 md:py-32 dark:bg-background border-y border-gray-100">
-      {/* Decorative SVG Background */}
+    <section className="relative w-full overflow-hidden bg-white py-20 md:py-32 dark:bg-background border-y border-gray-100 font-sans">
+      {/* Background decoration */}
       <div className="absolute inset-0 pointer-events-none opacity-50">
         <svg
           className="absolute right-0 bottom-0 text-neutral-100 dark:text-neutral-900"
@@ -78,72 +65,45 @@ export default function TeamSection() {
         </svg>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl">
-        <div className="mx-auto mb-16 flex max-w-5xl flex-col items-center px-6 text-center lg:px-0">
-          <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-white shadow-xl shadow-primary/20 animate-float">
-           <UserCheck className="w-7 h-7" />
+      <div className="relative z-10 mx-auto max-w-7xl px-4 md:px-8">
+        
+        {/* Section Header */}
+        <div className="mx-auto mb-12 flex max-w-5xl flex-col items-center text-center">
+          <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#6b21a8] text-white shadow-xl shadow-[#6b21a8]/20 animate-float">
+            <UserCheck className="w-7 h-7" />
           </div>
 
-          <p className="text-sm font-bold text-primary uppercase tracking-[0.3em] mb-4">Leadership Excellence</p>
-          <h1 className="relative mb-6 font-heading font-bold text-4xl text-neutral-900 tracking-tight sm:text-5xl lg:text-6xl dark:text-neutral-100">
+          <p className="text-xs font-black text-[#6b21a8] uppercase tracking-[0.3em] mb-3">Leadership Excellence</p>
+          <h2 className="relative mb-6 font-heading font-black text-3xl sm:text-4xl lg:text-5xl text-[#1a1f36] tracking-tight">
             Sri Roja Shabarish Guruji Board of Directors
-            <svg
-              className="absolute -top-6 -right-12 -z-10 w-28 text-[#c9a84c]/20 dark:text-neutral-700"
-              fill="currentColor"
-              height="86"
-              viewBox="0 0 108 86"
-              width="108"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M38.8484 16.236L15 43.5793L78.2688 15L18.1218 71L93 34.1172L70.2047 65.2739"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="28"
-              />
-            </svg>
-          </h1>
-          <p className="max-w-2xl text-lg text-neutral-500 font-medium leading-relaxed">
+          </h2>
+          <p className="max-w-2xl text-base text-gray-500 font-medium leading-relaxed">
             Guiding our institution with integrity, vision, and a commitment to serving our community with excellence.
           </p>
         </div>
 
-        <div 
-          className="relative w-full py-10"
-          onMouseEnter={handleMouseEnter}
-        >
-          {/* Fading side masks */}
-          <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-40 bg-gradient-to-r from-white via-white/40 to-transparent dark:from-background" />
-          <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-40 bg-gradient-to-l from-white via-white/40 to-transparent dark:from-background" />
+        {/* Pure Auto Scroll Marquee Slider */}
+        <div className="relative w-full py-6">
+          <div className="pointer-events-none absolute top-0 left-0 z-10 h-full w-24 bg-gradient-to-r from-white to-transparent" />
+          <div className="pointer-events-none absolute top-0 right-0 z-10 h-full w-24 bg-gradient-to-l from-white to-transparent" />
 
-          <Marquee 
-            key={resetKey}
-            className="[--gap:3rem] [--duration:60s]" 
-            pauseOnHover={false}
-            repeat={4}
-            style={{ '--play-state': isPaused ? 'paused' : 'running' } as React.CSSProperties}
-          >
-            {teamMembers.map((member) => (
-              <div
-                className="group flex w-72 shrink-0 flex-col px-4"
-                key={member.name}
-              >
-                <div className="relative h-[400px] w-full overflow-hidden rounded-[32px] bg-neutral-50 border border-gray-100 shadow-sm transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-primary/10 group-hover:-translate-y-2">
+          <Marquee className="[--gap:1.5rem] [--duration:50s]" pauseOnHover={true} repeat={2}>
+            {marqueeList.map((member, idx) => (
+              <div className="group flex w-64 md:w-72 shrink-0 flex-col px-2" key={`${member.name}-${idx}`}>
+                <div className="relative h-[380px] w-full overflow-hidden rounded-[32px] bg-neutral-50 border border-gray-100 shadow-sm transition-all duration-500 group-hover:shadow-2xl group-hover:shadow-purple-900/10 group-hover:-translate-y-2">
                   <img
                     alt={member.name}
                     className="h-full w-full object-cover transition-all duration-700 group-hover:scale-105"
                     src={member.image}
-                    loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                   
                   <div className="absolute bottom-0 w-full p-4">
                     <div className="bg-white/95 backdrop-blur-md rounded-2xl p-3.5 shadow-xl border border-white text-center">
                       <h3 className="font-bold text-[#1a1f36] text-base leading-tight">
                         {member.name}
                       </h3>
-                      <p className="text-red-600 font-extrabold text-[10px] uppercase tracking-wider mt-1">
+                      <p className="text-[#c9a84c] font-black text-[10px] uppercase tracking-wider mt-1">
                         {member.role}
                       </p>
                     </div>
@@ -154,22 +114,24 @@ export default function TeamSection() {
           </Marquee>
         </div>
 
-        <div className="mx-auto mt-24 max-w-4xl px-6 text-center lg:px-0">
-          <p className="text-2xl font-serif italic text-neutral-800 leading-relaxed md:text-3xl dark:text-neutral-100 mb-10">
+        {/* Footer Quote */}
+        <div className="mx-auto mt-20 max-w-4xl px-6 text-center lg:px-0">
+          <p className="text-xl md:text-2xl font-serif italic text-neutral-800 leading-relaxed mb-8">
             "Our strength lies in our collective vision. We work tirelessly to ensure we remain the most reliable financial partner for every member."
           </p>
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-3">
             <div className="h-0.5 w-24 bg-[#c9a84c]" />
             <div className="text-center">
-              <p className="font-bold text-[#1a1f36] uppercase tracking-[0.2em] text-sm">
+              <p className="font-bold text-[#1a1f36] uppercase tracking-[0.2em] text-xs">
                 Sri Roja Shabarish Guruji Souharada Sahakara Niyamitha
               </p>
-              <p className="text-[#c9a84c] text-xs font-bold mt-1 tracking-widest">
-                BOARD OF DIRECTORS · EST. 2025
+              <p className="text-[#c9a84c] text-[11px] font-bold mt-1 tracking-widest uppercase">
+                Board of Directors · EST. 2025
               </p>
             </div>
           </div>
         </div>
+
       </div>
     </section>
   );
