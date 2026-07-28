@@ -359,6 +359,10 @@ const CustomerPigmyDashboard = () => {
                       <p className="font-bold text-slate-900">₹{account.scheme?.minAmount || "—"}</p>
                     </div>
                     <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Documentation Charge (2.5%)</p>
+                      <p className="font-bold text-red-600">₹{((account.scheme?.minAmount || 0) * 0.025).toLocaleString()}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Total Amount Collected</p>
                       <p className="font-bold text-slate-900">₹{totalPaidAmount.toLocaleString()}</p>
                     </div>
@@ -373,6 +377,10 @@ const CustomerPigmyDashboard = () => {
                     <div className="p-3 bg-slate-50 rounded-2xl">
                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Collection End Date</p>
                       <p className="font-bold text-slate-900">{account.endDate ? new Date(account.endDate).toLocaleDateString('en-IN') : "—"}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Pending Instalments</p>
+                      <p className="font-bold text-slate-900">{Math.max(0, (totalMonths || 12) - (totalPaidCount || 0))} / {totalMonths || 12}</p>
                     </div>
                     <div className="p-3 bg-slate-50 rounded-2xl">
                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Next Collection Date</p>

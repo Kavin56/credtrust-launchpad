@@ -325,10 +325,19 @@ const LoanRequestsPage = () => {
                            <span className="px-3 py-1 bg-white/10 rounded-full text-[9px] font-black uppercase tracking-tighter border border-white/5">{selectedLoan.employmentStatus}</span>
                         </div>
                      </div>
-                     <div className="text-right">
-                        <p className="text-[10px] font-black text-[#c9a84c] uppercase tracking-widest mb-1">Requested Capital</p>
-                        <h3 className="text-4xl font-black">₹{Number(selectedLoan.amount).toLocaleString()}</h3>
-                     </div>
+                      <div className="text-right space-y-1">
+                         <p className="text-[10px] font-black text-[#c9a84c] uppercase tracking-widest leading-none mb-1">Requested Capital</p>
+                         <h3 className="text-3xl font-black">₹{Number(selectedLoan.amount).toLocaleString()}</h3>
+                         <div className="text-xs text-white/60 space-y-0.5">
+                           <p>Doc. Charge (2.5%): <span className="text-red-400 font-bold">₹{(Number(selectedLoan.amount) * 0.025).toLocaleString()}</span></p>
+                           <p>Net Disbursed: <span className="text-emerald-400 font-bold">₹{(Number(selectedLoan.amount) - (Number(selectedLoan.amount) * 0.025)).toLocaleString()}</span></p>
+                           {selectedLoan.status !== 'PENDING' && (
+                             <p className="text-[10px] font-bold uppercase tracking-wider text-[#c9a84c]">
+                               Pending EMIs: {(selectedLoan.termMonths || 12) - (selectedLoan.emiSchedule?.filter((s: any) => s.isPaid).length || 0)} / {selectedLoan.termMonths || 12}
+                             </p>
+                           )}
+                         </div>
+                      </div>
                   </div>                  <div className="p-10 bg-white grid md:grid-cols-2 gap-10 max-h-[500px] overflow-y-auto">
                      {/* Left Column: Financial Context or Vehicle details */}
                      <div className="space-y-8">

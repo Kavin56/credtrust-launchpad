@@ -319,10 +319,14 @@ const DepositRequestsPage = () => {
           {selectedApp && (
             <div className="space-y-6 py-4">
               {/* Application Summary Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                 <Card className="p-3 bg-slate-50 border-none">
                   <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Principal Amount</p>
                   <p className="text-lg font-black text-slate-900">₹{selectedApp.amount.toLocaleString()}</p>
+                </Card>
+                <Card className="p-3 bg-slate-50 border-none">
+                  <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Doc. Charge (2.5%)</p>
+                  <p className="text-lg font-black text-red-600">₹{(selectedApp.amount * 0.025).toLocaleString()}</p>
                 </Card>
                 <Card className="p-3 bg-slate-50 border-none">
                   <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Interest Rate</p>
@@ -331,6 +335,17 @@ const DepositRequestsPage = () => {
                 <Card className="p-3 bg-slate-50 border-none">
                   <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Tenure (Months)</p>
                   <p className="text-lg font-black text-slate-900">{selectedApp.termMonths} Months</p>
+                </Card>
+                <Card className="p-3 bg-slate-50 border-none">
+                  <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Pending Instalments</p>
+                  <p className="text-lg font-black text-slate-900">
+                    {(() => {
+                      const isFD = selectedApp.type !== 'RD';
+                      const paidInst = isFD ? (selectedApp.status === 'APPROVED' ? 1 : 0) : (selectedApp.transactions?.filter((t: any) => t.type === 'DEPOSIT').length || 0);
+                      const totalInst = isFD ? 1 : selectedApp.termMonths;
+                      return `${Math.max(0, totalInst - paidInst)} / ${totalInst}`;
+                    })()}
+                  </p>
                 </Card>
                 <Card className="p-3 bg-slate-50 border-none">
                   <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Expected Maturity</p>

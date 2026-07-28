@@ -82,13 +82,12 @@ export class LoansService {
     }
 
     // Proportional charges calculation:
-    // Amount = ₹10,000 -> Charges = ₹250 (2.5% of principal)
+    // Documentation charge: ₹250 for every ₹10,000 (2.5% of principal)
     const amount = parseFloat(dto.amount || '0');
-    const totalCharges = amount * 0.025;
-    const processingCharges = totalCharges * 0.5;      // 50% of charges
-    const documentationCharges = totalCharges * 0.4;  // 40% of charges
-    const otherCharges = totalCharges * 0.1;          // 10% of charges
-    const netDisbursed = amount - totalCharges;
+    const documentationCharges = amount * 0.025; 
+    const processingCharges = 0;
+    const otherCharges = 0;
+    const netDisbursed = amount - documentationCharges;
 
     const newLoan = await this.prisma.loan.create({
       data: {

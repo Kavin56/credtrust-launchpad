@@ -758,11 +758,8 @@ const AccountsPage = () => {
 
            {selectedLoanSummary && (() => {
              const amount = Number(selectedLoanSummary.amount || 0);
-             const totalCharges = amount * 0.025;
-             const procCharges = selectedLoanSummary.processingCharges ?? (totalCharges * 0.5);
-             const docCharges = selectedLoanSummary.documentationCharges ?? (totalCharges * 0.4);
-             const othCharges = selectedLoanSummary.otherCharges ?? (totalCharges * 0.1);
-             const netDisbursed = selectedLoanSummary.netDisbursed ?? (amount - totalCharges);
+             const docCharges = selectedLoanSummary.documentationCharges || (amount * 0.025);
+             const netDisbursed = selectedLoanSummary.netDisbursed || (amount - docCharges);
 
              const totalMonths = selectedLoanSummary.termMonths || 12;
              const paidMonths = selectedLoanSummary.emiSchedule?.filter((s: any) => s.isPaid).length || 0;
@@ -897,16 +894,8 @@ const AccountsPage = () => {
                      <div className="border-t border-slate-200/50 my-2" />
                      <div className="space-y-1.5 pl-2 text-slate-500 font-medium">
                        <div className="flex justify-between">
-                         <span>Less: Processing Charges (50%)</span>
-                         <span>- ₹{procCharges.toLocaleString()}</span>
-                       </div>
-                       <div className="flex justify-between">
-                         <span>Less: Documentation Charges (40%)</span>
+                         <span>Less: Documentation Charges (2.5%)</span>
                          <span>- ₹{docCharges.toLocaleString()}</span>
-                       </div>
-                       <div className="flex justify-between">
-                         <span>Less: Other Charges (10%)</span>
-                         <span>- ₹{othCharges.toLocaleString()}</span>
                        </div>
                      </div>
                      <div className="border-t border-slate-200/50 my-2" />
@@ -922,7 +911,7 @@ const AccountsPage = () => {
                    <div className="space-y-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
                      <div className="flex justify-between items-center text-xs">
                        <span className="font-bold uppercase text-slate-500">EMI Progress</span>
-                       <span className="font-black text-[#1a1f36]">{paidMonths} / {totalMonths} Months Completed</span>
+                       <span className="font-black text-[#1a1f36]">Pending EMIs: {(totalMonths - paidMonths)} / {totalMonths}</span>
                      </div>
                      
                      {/* Sleek progress bar */}
@@ -931,8 +920,8 @@ const AccountsPage = () => {
                      </div>
 
                      <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                       <span>Paid: {paidMonths} Months</span>
-                       <span>Remaining: {totalMonths - paidMonths} Months</span>
+                       <span>Paid: {paidMonths}/{totalMonths}</span>
+                       <span>Pending: {(totalMonths - paidMonths)}/{totalMonths}</span>
                      </div>
                    </div>
                  )}
@@ -1079,6 +1068,10 @@ const AccountsPage = () => {
                         <p className="font-black text-slate-900 text-sm">₹{amount.toLocaleString()}</p>
                       </div>
                       <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Documentation Charge (2.5%)</p>
+                        <p className="font-bold text-red-600">₹{(amount * 0.025).toLocaleString()}</p>
+                      </div>
+                      <div>
                         <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Interest Rate</p>
                         <p className="font-black text-slate-900 text-sm">{rate}% p.a.</p>
                       </div>
@@ -1097,6 +1090,20 @@ const AccountsPage = () => {
                       <div>
                         <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Payment Frequency</p>
                         <p className="font-bold text-slate-900">{selectedDepositSummary.type === 'RD' ? 'Monthly' : 'One-time'}</p>
+                      </div>
+                      <div>
+                        {(() => {
+                          const isFD = selectedDepositSummary.type !== 'RD';
+                          const paidInst = isFD ? (selectedDepositSummary.status === 'APPROVED' ? 1 : 0) : (selectedDepositSummary.transactions?.filter((t: any) => t.type === 'DEPOSIT').length || 0);
+                          const totalInst = isFD ? 1 : termMonths;
+                          const pendingInst = Math.max(0, totalInst - paidInst);
+                          return (
+                            <>
+                              <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Pending Instalments</p>
+                              <p className="font-bold text-slate-900">{pendingInst} / {totalInst}</p>
+                            </>
+                          );
+                        })()}
                       </div>
                       <div>
                         <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Current Status</p>

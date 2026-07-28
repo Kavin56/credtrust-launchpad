@@ -315,6 +315,20 @@ const PigmyRequestsPage = () => {
                     <span className="font-bold">₹{selectedApp.scheme?.minAmount?.toLocaleString() || "—"}</span>
                   </div>
                   <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Documentation Charge (2.5%)</span>
+                    <span className="font-bold text-red-600">₹{((selectedApp.scheme?.minAmount || 0) * 0.025).toLocaleString()}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Pending Instalments</span>
+                    <span className="font-bold">
+                      {(() => {
+                        const paidInst = selectedApp.payments?.filter((p: any) => p.status === 'PAID').length || 0;
+                        const totalInst = selectedApp.scheme?.maturityPeriod || 12;
+                        return `${Math.max(0, totalInst - paidInst)} / ${totalInst}`;
+                      })()}
+                    </span>
+                  </div>
+                  <div>
                     <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">Maturity Date</span>
                     <span className="font-bold">
                       {selectedApp.maturityDate ? new Date(selectedApp.maturityDate).toLocaleDateString() : "—"}
