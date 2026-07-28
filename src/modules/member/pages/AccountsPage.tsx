@@ -489,7 +489,7 @@ const AccountsPage = () => {
                       <div className="bg-gradient-to-br from-[#1a1f36] to-[#2d3356] rounded-[40px] p-8 text-white relative overflow-hidden shadow-xl">
                           <div className="relative z-10 space-y-6">
                             <p className="text-[11px] font-bold text-white/40 uppercase tracking-[0.2em] leading-none">Total Invested (FD/RD)</p>
-                            <p className="text-4xl font-black">₹{deposits?.reduce((s:number,d:any)=>s+Number(d.principal),0).toLocaleString()}</p>
+                            <p className="text-4xl font-black">₹{deposits?.reduce((s:number,d:any)=>s+Number(d.amount || d.principal || 0),0).toLocaleString()}</p>
                             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
                                 <div>
                                    <p className="text-[10px] uppercase text-white/40 font-bold mb-1">Maturity Value</p>

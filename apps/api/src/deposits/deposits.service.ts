@@ -138,6 +138,10 @@ export class DepositsService {
         status: 'APPROVED',
         documents: null,
         additionalDetails: null,
+        startDate: acc.startDate,
+        endDate: acc.endDate,
+        maturityDate: acc.maturityDate,
+        monthlyPaymentDate: acc.monthlyPaymentDate,
         transactions: acc.transactions,
         createdAt: acc.createdAt,
         updatedAt: acc.updatedAt
