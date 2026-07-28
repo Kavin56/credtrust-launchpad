@@ -357,6 +357,10 @@ const DepositRequestsPage = () => {
                       <span className="font-bold font-mono">{selectedApp.parsedDetails?.applicant?.memberId || selectedApp.member?.memberId}</span>
                     </div>
                     <div className="flex justify-between border-b border-slate-100/50 pb-1.5">
+                      <span className="font-semibold text-slate-500">Registered ID</span>
+                      <span className="font-bold text-[#c9a84c]">{selectedApp.registeredId || "—"}</span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-100/50 pb-1.5">
                       <span className="font-semibold text-slate-500">Contact / Email</span>
                       <span className="font-bold">{selectedApp.parsedDetails?.applicant?.mobile || selectedApp.member?.contact}</span>
                     </div>
