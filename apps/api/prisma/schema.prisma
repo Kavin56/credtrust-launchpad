@@ -90,6 +90,9 @@ model DepositAccount {
   maturityAmount  Float?
   maturityDate    DateTime?
   isMatured       Boolean          @default(false)
+  startDate       DateTime?
+  endDate         DateTime?
+  monthlyPaymentDate Int?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   transactions    DepositTransaction[]
@@ -129,6 +132,10 @@ model Loan {
   documentationCharges Float?
   otherCharges    Float?
   netDisbursed    Float?
+
+  startDate       DateTime?
+  endDate         DateTime?
+  monthlyPaymentDate Int?
 
   status          String       @default("PENDING")
   termMonths      Int
@@ -235,6 +242,8 @@ model PigmyAccount {
   allocationSequence Int?
   startDate       DateTime @default(now())
   maturityDate    DateTime
+  endDate         DateTime?
+  monthlyPaymentDate Int?
   status          String   @default("ACTIVE") // ACTIVE, MATURED, CLOSED
   registeredId    String?
   balance         Float    @default(0)
@@ -281,6 +290,9 @@ model DepositApplication {
   termMonths      Int
   status          String      @default("PENDING") // PENDING, APPROVED, REJECTED
   registeredId    String?
+  startDate       DateTime?
+  endDate         DateTime?
+  monthlyPaymentDate Int?
   documents       String?     // JSON string of file paths (idProof, incomeProof, applicantPhoto, applicantSignature, panProof)
   additionalDetails String?   // JSON string of nominee, bank, sourceOfFunds, expectedMaturity, etc.
   adminRemarks    String?
