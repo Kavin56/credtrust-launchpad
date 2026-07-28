@@ -275,13 +275,20 @@ const DepositApplicationPage = () => {
     const newErrors: Record<string, string> = {};
 
     if (currentStep === 2) {
-      // Validate Applicant Details
-      const reqApplicantFields = ['fullName', 'memberId', 'dob', 'mobile', 'email', 'aadhaar', 'pan', 'address', 'registeredId'];
+      const reqApplicantFields = ['fullName', 'memberId', 'dob', 'mobile', 'email', 'aadhaar', 'pan', 'address', 'registeredId', 'startDate', 'endDate', 'monthlyPaymentDate'];
       reqApplicantFields.forEach(f => {
-        if (!formData[f] || !formData[f].trim()) {
+        if (!formData[f] || !formData[f].toString().trim()) {
           newErrors[f] = "This field is required";
         }
       });
+
+      if (formData.startDate && formData.endDate) {
+        const start = new Date(formData.startDate);
+        const end = new Date(formData.endDate);
+        if (end < start) {
+          newErrors.endDate = "End Date cannot be earlier than Start Date";
+        }
+      }
 
       const phoneRegex = /^\d{10}$/;
       if (formData.mobile && !phoneRegex.test(formData.mobile)) {
@@ -449,6 +456,9 @@ const DepositApplicationPage = () => {
       payload.append('payoutMode', formData.payoutPreference);
       payload.append('status', 'PENDING');
       payload.append('registeredId', formData.registeredId || '');
+      payload.append('startDate', formData.startDate || '');
+      payload.append('endDate', formData.endDate || '');
+      payload.append('monthlyPaymentDate', formData.monthlyPaymentDate || '');
 
       const additionalDetails = {
         certificateNumber: fdNumber,
@@ -618,6 +628,35 @@ const DepositApplicationPage = () => {
                          <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Registered ID <span className="text-red-500 font-black">*</span></Label>
                          <Input value={formData.registeredId || ""} onChange={(e) => handleInputChange("registeredId", e.target.value)} placeholder="Enter Customer/Member ID (e.g. 001)" className="h-12 rounded-xl" />
                          {errors.registeredId && <p className="text-xs text-red-500 font-bold">{errors.registeredId}</p>}
+                      </div>
+
+                      {/* Start Date & End Date fields */}
+                      <div className="space-y-2">
+                         <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Start Date <span className="text-red-500 font-black">*</span></Label>
+                         <Input type="date" value={formData.startDate || ""} onChange={(e) => handleInputChange("startDate", e.target.value)} className="h-12 rounded-xl" />
+                         {errors.startDate && <p className="text-xs text-red-500 font-bold">{errors.startDate}</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                         <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">End Date <span className="text-red-500 font-black">*</span></Label>
+                         <Input type="date" value={formData.endDate || ""} onChange={(e) => handleInputChange("endDate", e.target.value)} className="h-12 rounded-xl" />
+                         {errors.endDate && <p className="text-xs text-red-500 font-bold">{errors.endDate}</p>}
+                      </div>
+
+                      {/* Monthly Payment Date */}
+                      <div className="space-y-2 md:col-span-2">
+                         <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Monthly Payment Date <span className="text-red-500 font-black">*</span></Label>
+                         <select 
+                           value={formData.monthlyPaymentDate || ""} 
+                           onChange={(e) => handleInputChange("monthlyPaymentDate", e.target.value)} 
+                           className="w-full border border-gray-200 rounded-xl h-12 px-3 text-sm bg-white"
+                         >
+                            <option value="">Select Preferred Monthly Payment Date</option>
+                            {Array.from({ length: 31 }, (_, i) => (i + 1).toString()).map(day => (
+                              <option key={day} value={day}>{day}</option>
+                            ))}
+                         </select>
+                         {errors.monthlyPaymentDate && <p className="text-xs text-red-500 font-bold">{errors.monthlyPaymentDate}</p>}
                       </div>
 
                       {/* Auto-Fetched editable applicant details */}

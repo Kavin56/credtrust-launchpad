@@ -26,9 +26,12 @@ const AddCustomer = () => {
     address: '',
     nominee: '',
     scheme: '',
-    amount: ''
+    amount: '',
+    registeredId: '',
+    startDate: '',
+    endDate: '',
+    monthlyPaymentDate: ''
   });
-  const [id, setId] = useState("PIGMYXXXX");
   const [loading, setLoading] = useState(false);
   const [schemes, setSchemes] = useState<any[]>([]);
 
@@ -52,8 +55,14 @@ const AddCustomer = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (id === "PIGMYXXXX") {
-      toast.error("Please generate a Unique ID first");
+    if (!customerData.registeredId.trim()) {
+      toast.error("Registered ID is required");
+      return;
+    }
+    const start = new Date(customerData.startDate);
+    const end = new Date(customerData.endDate);
+    if (end < start) {
+      toast.error("End Date cannot be earlier than Start Date");
       return;
     }
     setLoading(true);
@@ -77,13 +86,17 @@ const AddCustomer = () => {
       await api.post('/pigmy/enroll', {
         memberId: regRes.data.userId || regRes.data.sub,
         schemeId: customerData.scheme,
-        startDate: new Date(),
+        startDate: customerData.startDate,
+        endDate: customerData.endDate,
+        monthlyPaymentDate: customerData.monthlyPaymentDate,
+        registeredId: customerData.registeredId,
+        status: 'ACTIVE'
       });
 
       toast.success("Customer Enrolled Successfully", {
-        description: `${customerData.fullName} assigned to ${id}`
+        description: `${customerData.fullName} assigned to ${customerData.registeredId}`
       });
-      navigate('/admin/pigmy');
+      navigate('/admin/pigmy/requests');
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to enroll customer");
     } finally {
@@ -139,18 +152,67 @@ const AddCustomer = () => {
               </CardContent>
            </Card>
 
-           <Card className="bg-blue-900 text-white overflow-hidden shadow-xl shadow-blue-200">
-              <CardContent className="p-6">
-                 <div className="flex justify-between items-center mb-4">
-                    <p className="text-[10px] font-black uppercase opacity-60">System Generated ID</p>
-                    <RefreshCw className="h-3 w-3 opacity-60 cursor-pointer hover:opacity-100" onClick={generateId} />
-                 </div>
-                 <div className="text-3xl font-black mb-1">{id}</div>
-                 <Button type="button" variant="ghost" className="w-full mt-4 bg-white/10 hover:bg-white/20 text-white text-xs border-none h-8" onClick={generateId}>
-                    Generate New ID
-                 </Button>
-              </CardContent>
-           </Card>
+            <Card className="border border-slate-100 bg-white shadow-sm rounded-3xl">
+               <CardContent className="p-6 space-y-4 text-slate-800">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Account Scheduling</h3>
+                  
+                  <div className="space-y-2">
+                     <Label className="flex items-center gap-1 font-bold text-xs uppercase tracking-wider text-slate-500">
+                        Registered ID <span className="text-red-500 font-black">*</span>
+                     </Label>
+                     <Input 
+                        required 
+                        placeholder="Enter Registered ID (e.g. 001)" 
+                        value={customerData.registeredId} 
+                        onChange={e => setCustomerData({...customerData, registeredId: e.target.value})} 
+                        className="h-12 rounded-xl"
+                     />
+                  </div>
+
+                  <div className="space-y-2">
+                     <Label className="flex items-center gap-1 font-bold text-xs uppercase tracking-wider text-slate-500">
+                        Start Date <span className="text-red-500 font-black">*</span>
+                     </Label>
+                     <Input 
+                        required 
+                        type="date"
+                        value={customerData.startDate} 
+                        onChange={e => setCustomerData({...customerData, startDate: e.target.value})} 
+                        className="h-12 rounded-xl"
+                     />
+                  </div>
+
+                  <div className="space-y-2">
+                     <Label className="flex items-center gap-1 font-bold text-xs uppercase tracking-wider text-slate-500">
+                        End Date <span className="text-red-500 font-black">*</span>
+                     </Label>
+                     <Input 
+                        required 
+                        type="date"
+                        value={customerData.endDate} 
+                        onChange={e => setCustomerData({...customerData, endDate: e.target.value})} 
+                        className="h-12 rounded-xl"
+                     />
+                  </div>
+
+                  <div className="space-y-2">
+                     <Label className="flex items-center gap-1 font-bold text-xs uppercase tracking-wider text-slate-500">
+                        Monthly Payment Date <span className="text-red-500 font-black">*</span>
+                     </Label>
+                     <select
+                       value={customerData.monthlyPaymentDate}
+                       onChange={e => setCustomerData({...customerData, monthlyPaymentDate: e.target.value})}
+                       className="w-full border border-slate-200 rounded-xl h-12 px-3 text-sm bg-white"
+                       required
+                     >
+                       <option value="">Select Monthly Date</option>
+                       {Array.from({ length: 31 }, (_, i) => (i + 1).toString()).map(day => (
+                         <option key={day} value={day}>{day}</option>
+                       ))}
+                     </select>
+                  </div>
+               </CardContent>
+            </Card>
 
            <div className="grid grid-cols-1 gap-2">
               <Button type="button" variant="outline" className="w-full gap-2 border-slate-200 h-12 text-sm font-bold">

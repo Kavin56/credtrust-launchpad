@@ -53,8 +53,11 @@ export class PigmyService {
       const accountNumber = `PIGMY${nextNumber.toString().padStart(4, '0')}`;
 
       const startDate = dto.startDate ? new Date(dto.startDate) : new Date();
-      const maturityDate = new Date(startDate);
-      maturityDate.setMonth(maturityDate.getMonth() + scheme.maturityPeriod);
+      const endDate = (dto as any).endDate ? new Date((dto as any).endDate) : new Date(startDate);
+      if (!(dto as any).endDate) {
+        endDate.setMonth(endDate.getMonth() + scheme.maturityPeriod);
+      }
+      const maturityDate = endDate;
 
       return await this.prisma.pigmyAccount.create({
         data: {
@@ -64,6 +67,8 @@ export class PigmyService {
           agentId: dto.agentId,
           startDate,
           maturityDate,
+          endDate,
+          monthlyPaymentDate: (dto as any).monthlyPaymentDate ? parseInt((dto as any).monthlyPaymentDate) : null,
           status: (dto as any).status || 'ACTIVE',
           registeredId: (dto as any).registeredId || null,
         },
@@ -74,7 +79,7 @@ export class PigmyService {
     }
   }
 
-  async selfEnroll(userId: string, schemeId: string, registeredId?: string) {
+  async selfEnroll(userId: string, schemeId: string, registeredId?: string, startDateStr?: string, endDateStr?: string, monthlyPaymentDateStr?: string) {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -91,11 +96,26 @@ export class PigmyService {
       }
       const formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
 
+      if (!startDateStr || !endDateStr || !monthlyPaymentDateStr) {
+        throw new BadRequestException('Start Date, End Date, and Monthly Payment Date are mandatory');
+      }
+      const startDate = new Date(startDateStr);
+      const endDate = new Date(endDateStr);
+      if (endDate < startDate) {
+        throw new BadRequestException('End Date cannot be earlier than Start Date');
+      }
+      const monthlyPaymentDate = parseInt(monthlyPaymentDateStr);
+      if (isNaN(monthlyPaymentDate) || monthlyPaymentDate < 1 || monthlyPaymentDate > 31) {
+        throw new BadRequestException('Monthly Payment Date must be between 1 and 31');
+      }
+
       return await this.enrollAccount({
         memberId: member.id,
         schemeId,
         agentId: undefined,
-        startDate: new Date(),
+        startDate,
+        endDate,
+        monthlyPaymentDate,
         registeredId: formattedId,
         status: 'PENDING'
       } as any);

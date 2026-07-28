@@ -47,6 +47,9 @@ export const EnrollPigmyModal = ({ open, onOpenChange, onSuccess, profile }: Enr
   const [selectedSchemeId, setSelectedSchemeId] = useState<string>('');
   const [registeredId, setRegisteredId] = useState('');
   const [registeredIdError, setRegisteredIdError] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [monthlyPaymentDate, setMonthlyPaymentDate] = useState('');
   
   const [kycData, setKycData] = useState({
     aadhaarNumber: profile?.aadhaarNumber || '',
@@ -130,6 +133,17 @@ export const EnrollPigmyModal = ({ open, onOpenChange, onSuccess, profile }: Enr
       return;
     }
 
+    if (!startDate || !endDate || !monthlyPaymentDate) {
+      toast.error("Start Date, End Date, and Monthly Payment Date are required");
+      return;
+    }
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (end < start) {
+      toast.error("End Date cannot be earlier than Start Date");
+      return;
+    }
+
     if (!selectedSchemeId) {
       toast.error("Please select a savings scheme");
       return;
@@ -142,6 +156,9 @@ export const EnrollPigmyModal = ({ open, onOpenChange, onSuccess, profile }: Enr
       await api.post('/pigmy/self-enroll', {
         schemeId: selectedSchemeId,
         registeredId: regId,
+        startDate,
+        endDate,
+        monthlyPaymentDate,
       });
       toast.success("Welcome to Pigmy Savings!", {
         description: "Your account is now active. Start your daily savings today."
@@ -278,6 +295,49 @@ export const EnrollPigmyModal = ({ open, onOpenChange, onSuccess, profile }: Enr
                 {registeredIdError && (
                   <p className="text-xs font-bold text-red-500 mt-1">{registeredIdError}</p>
                 )}
+              </div>
+
+              {/* Start Date & End Date fields */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                    Start Date <span className="text-red-500 font-black">*</span>
+                  </Label>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="bg-slate-50 border-slate-100 h-12 rounded-xl focus:border-[#fcd34d] focus:ring-[#fcd34d]/20 transition-all font-bold text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                    End Date <span className="text-red-500 font-black">*</span>
+                  </Label>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="bg-slate-50 border-slate-100 h-12 rounded-xl focus:border-[#fcd34d] focus:ring-[#fcd34d]/20 transition-all font-bold text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* Monthly Payment Date selection */}
+              <div className="space-y-2">
+                <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                  Monthly Payment Date <span className="text-red-500 font-black">*</span>
+                </Label>
+                <select
+                  value={monthlyPaymentDate}
+                  onChange={(e) => setMonthlyPaymentDate(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 h-12 rounded-xl focus:border-[#fcd34d] focus:ring-[#fcd34d]/20 transition-all font-bold text-sm px-3 bg-white"
+                >
+                  <option value="">Select Preferred Monthly Payment Date</option>
+                  {Array.from({ length: 31 }, (_, i) => (i + 1).toString()).map(day => (
+                    <option key={day} value={day}>{day}</option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-4 py-2">

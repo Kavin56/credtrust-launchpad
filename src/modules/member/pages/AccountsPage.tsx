@@ -784,30 +784,109 @@ const AccountsPage = () => {
              const endDate = new Date(startDate);
              endDate.setMonth(endDate.getMonth() + totalMonths);
              const endStr = endDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+             
+             const formattedStartDate = selectedLoanSummary.startDate ? new Date(selectedLoanSummary.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : startStr;
+             const formattedEndDate = selectedLoanSummary.endDate ? new Date(selectedLoanSummary.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : endStr;
+             const approvedDateVal = selectedLoanSummary.disbursedAt ? new Date(selectedLoanSummary.disbursedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "—";
+             const approvedByVal = ['APPROVED', 'ACTIVE', 'DISBURSED'].includes(selectedLoanSummary.status) ? (selectedLoanSummary.approvedBy || "Admin") : "—";
 
              return (
                <div className="space-y-6 py-4">
-                 {/* 1. Core Identification and Status */}
-                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                   <div className="p-3 bg-slate-50 rounded-2xl">
-                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Registered ID</p>
-                     <p className="text-sm font-black text-slate-900">{getFormattedRegisteredId(selectedLoanSummary)}</p>
-                   </div>
-                   <div className="p-3 bg-slate-50 rounded-2xl">
-                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Applicant Name</p>
-                     <p className="text-sm font-bold text-slate-900">{selectedLoanSummary.member?.fullName || "—"}</p>
-                   </div>
-                   <div className="p-3 bg-slate-50 rounded-2xl">
-                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Interest Rate</p>
-                     <p className="text-sm font-black text-slate-900">{selectedLoanSummary.interestRate}% p.a.</p>
-                   </div>
-                   <div className="p-3 bg-slate-50 rounded-2xl">
-                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Outstanding Balance</p>
-                     <p className="text-sm font-black text-rose-600">₹{outstandingBalance.toLocaleString()}</p>
+                 {/* 1. Common Information */}
+                 <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-5 space-y-4">
+                   <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Common Information</h4>
+                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-xs">
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Registered ID</p>
+                       <p className="font-bold text-slate-900">{getFormattedRegisteredId(selectedLoanSummary)}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Customer Name</p>
+                       <p className="font-bold text-slate-900">{selectedLoanSummary.member?.fullName || "—"}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Application ID</p>
+                       <p className="font-bold text-slate-900">{selectedLoanSummary.loanNumber || selectedLoanSummary.id.slice(0, 8)}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Application Type</p>
+                       <p className="font-bold text-slate-900">Loan</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Application Status</p>
+                       <p className="font-bold text-slate-900">{selectedLoanSummary.status}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Start Date</p>
+                       <p className="font-bold text-slate-900">{formattedStartDate}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">End Date</p>
+                       <p className="font-bold text-slate-900">{formattedEndDate}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Monthly Payment Date</p>
+                       <p className="font-bold text-slate-900">{selectedLoanSummary.monthlyPaymentDate || "—"}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Approval Date</p>
+                       <p className="font-bold text-slate-900">{approvedDateVal}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Approved By</p>
+                       <p className="font-bold text-slate-900">{approvedByVal}</p>
+                     </div>
                    </div>
                  </div>
 
-                 {/* 2. Proportional Charges & Disbursement Calculation */}
+                 {/* 2. Loan Summary */}
+                 <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-5 space-y-4">
+                   <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Loan Summary</h4>
+                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-xs">
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Loan Amount Applied</p>
+                       <p className="font-bold text-slate-950">₹{amount.toLocaleString()}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Loan Amount Approved</p>
+                       <p className="font-bold text-slate-950">₹{amount.toLocaleString()}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Interest Rate</p>
+                       <p className="font-bold text-slate-950">{selectedLoanSummary.interestRate}% p.a.</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Loan Tenure</p>
+                       <p className="font-bold text-slate-950">{totalMonths} Months</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">EMI Amount</p>
+                       <p className="font-bold text-slate-950">₹{emiAmount.toLocaleString()}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Total Interest</p>
+                       <p className="font-bold text-slate-950">₹{Math.round(emiAmount * totalMonths - amount).toLocaleString()}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Total Payable Amount</p>
+                       <p className="font-bold text-slate-950">₹{Math.round(emiAmount * totalMonths).toLocaleString()}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Number of EMIs</p>
+                       <p className="font-bold text-slate-950">{totalMonths}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Remaining EMIs</p>
+                       <p className="font-bold text-slate-950">{totalMonths - paidMonths}</p>
+                     </div>
+                     <div>
+                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Next EMI Date</p>
+                       <p className="font-bold text-slate-950">{nextEmiDate}</p>
+                     </div>
+                   </div>
+                 </div>
+
+                 {/* 3. Proportional Charges & Disbursement Calculation */}
                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 space-y-4">
                    <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Loan Disbursement & Charges Summary</h4>
                    <div className="text-xs space-y-2 text-[#1a1f36]">
@@ -838,7 +917,7 @@ const AccountsPage = () => {
                    </div>
                  </div>
 
-                 {/* 3. EMI Progress Tracker */}
+                 {/* 4. EMI Progress Tracker */}
                  {selectedLoanSummary.status !== 'PENDING' && (
                    <div className="space-y-3 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl">
                      <div className="flex justify-between items-center text-xs">
@@ -857,26 +936,6 @@ const AccountsPage = () => {
                      </div>
                    </div>
                  )}
-
-                 {/* 4. Timeline details */}
-                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-2xl text-xs">
-                   <div>
-                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Approved Date</p>
-                     <p className="font-bold text-[#1a1f36]">{selectedLoanSummary.disbursedAt ? startStr : "Awaiting Approval"}</p>
-                   </div>
-                   <div>
-                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">EMI Start Date</p>
-                     <p className="font-bold text-[#1a1f36]">{selectedLoanSummary.disbursedAt ? startStr : "Awaiting Approval"}</p>
-                   </div>
-                   <div>
-                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">EMI End Date</p>
-                     <p className="font-bold text-[#1a1f36]">{selectedLoanSummary.disbursedAt ? endStr : "Awaiting Approval"}</p>
-                   </div>
-                   <div>
-                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Repayment Duration</p>
-                     <p className="font-bold text-emerald-600">{totalMonths} Months</p>
-                   </div>
-                 </div>
 
                  {/* 5. EMI Payment History Table */}
                  {selectedLoanSummary.status !== 'PENDING' && (
@@ -932,7 +991,125 @@ const AccountsPage = () => {
              );
            })()}
          </DialogContent>
-       </Dialog>
+        </Dialog>
+
+        <Dialog open={selectedDepositSummary !== null} onOpenChange={(open) => !open && setSelectedDepositSummary(null)}>
+          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto rounded-3xl p-6 font-sans">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-xl font-bold text-[#1a1f36] flex items-center gap-2">
+                  <Landmark className="h-5 w-5 text-[#c9a84c]" />
+                  Deposit Account & Investment Summary
+                </DialogTitle>
+                {selectedDepositSummary && (
+                  <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-800`}>
+                    {selectedDepositSummary.status || 'ACTIVE'}
+                  </span>
+                )}
+              </div>
+              <DialogDescription className="text-xs text-slate-500">
+                Complete details and maturity projection for Deposit {selectedDepositSummary?.applicationNo || selectedDepositSummary?.id?.slice(0, 8)}
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedDepositSummary && (() => {
+              const amount = Number(selectedDepositSummary.amount || 0);
+              const rate = Number(selectedDepositSummary.interestRate || 0);
+              const termMonths = selectedDepositSummary.termMonths || 12;
+              const maturityAmount = selectedDepositSummary.maturityAmount || 0;
+              const startDate = selectedDepositSummary.startDate ? new Date(selectedDepositSummary.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "—";
+              const endDate = selectedDepositSummary.endDate ? new Date(selectedDepositSummary.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "—";
+              const approvedDate = selectedDepositSummary.approvedDate ? new Date(selectedDepositSummary.approvedDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "—";
+
+              return (
+                <div className="space-y-6 py-4">
+                  {/* 1. Common Information */}
+                  <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-5 space-y-4">
+                    <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Common Information</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-xs">
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Registered ID</p>
+                        <p className="font-bold text-slate-900">{getFormattedRegisteredId(selectedDepositSummary)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Customer Name</p>
+                        <p className="font-bold text-slate-900">{selectedDepositSummary.member?.fullName || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Application ID</p>
+                        <p className="font-bold text-slate-900">{selectedDepositSummary.applicationNo || selectedDepositSummary.id.slice(0, 8)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Application Type</p>
+                        <p className="font-bold text-slate-900">Deposit ({selectedDepositSummary.type})</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Application Status</p>
+                        <p className="font-bold text-slate-900">{selectedDepositSummary.status || 'ACTIVE'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Start Date</p>
+                        <p className="font-bold text-slate-900">{startDate}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">End Date</p>
+                        <p className="font-bold text-slate-900">{endDate}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Monthly Payment Date</p>
+                        <p className="font-bold text-slate-900">{selectedDepositSummary.monthlyPaymentDate || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Approval Date</p>
+                        <p className="font-bold text-slate-900">{approvedDate}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Approved By</p>
+                        <p className="font-bold text-slate-900">{selectedDepositSummary.approvedBy || "Admin"}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. Deposit Summary */}
+                  <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-5 space-y-4">
+                    <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-500">Deposit Summary</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Deposit Amount</p>
+                        <p className="font-black text-slate-900 text-sm">₹{amount.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Interest Rate</p>
+                        <p className="font-black text-slate-900 text-sm">{rate}% p.a.</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Deposit Period</p>
+                        <p className="font-bold text-slate-900">{termMonths} Months</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Maturity Date</p>
+                        <p className="font-bold text-emerald-600">{selectedDepositSummary.maturityDate ? new Date(selectedDepositSummary.maturityDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Maturity Amount</p>
+                        <p className="font-black text-emerald-600 text-sm">₹{maturityAmount.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Payment Frequency</p>
+                        <p className="font-bold text-slate-900">{selectedDepositSummary.type === 'RD' ? 'Monthly' : 'One-time'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Current Status</p>
+                        <p className="font-bold text-slate-900">{selectedDepositSummary.status || 'ACTIVE'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </DialogContent>
+        </Dialog>
+
       <Footer />
     </div>
   );

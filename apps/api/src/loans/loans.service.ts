@@ -49,6 +49,19 @@ export class LoansService {
     }
     const formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
 
+    if (!dto.startDate || !dto.endDate || !dto.monthlyPaymentDate) {
+      throw new BadRequestException('Start Date, End Date, and Monthly Payment Date are mandatory');
+    }
+    const startDate = new Date(dto.startDate);
+    const endDate = new Date(dto.endDate);
+    if (endDate < startDate) {
+      throw new BadRequestException('End Date cannot be earlier than Start Date');
+    }
+    const monthlyPaymentDate = parseInt(dto.monthlyPaymentDate);
+    if (isNaN(monthlyPaymentDate) || monthlyPaymentDate < 1 || monthlyPaymentDate > 31) {
+      throw new BadRequestException('Monthly Payment Date must be between 1 and 31');
+    }
+
     const loanCount = await this.prisma.loan.count();
     const loanNumber = `L${(loanCount + 1).toString().padStart(8, '0')}`;
 
@@ -90,6 +103,9 @@ export class LoansService {
         monthlyIncome: dto.monthlyIncome ? parseFloat(dto.monthlyIncome) : null,
         documents: JSON.stringify(documentPaths),
         registeredId: formattedId,
+        startDate,
+        endDate,
+        monthlyPaymentDate,
         processingCharges,
         documentationCharges,
         otherCharges,
@@ -143,11 +159,13 @@ export class LoansService {
 
       let currentBalance = amount;
       const schedules = [];
-      const approvalDate = new Date();
+      const baseDate = loan.startDate ? new Date(loan.startDate) : new Date();
+      const paymentDay = loan.monthlyPaymentDate || 5;
 
       for (let i = 0; i < termMonths; i++) {
-        const dueDate = new Date(approvalDate);
+        const dueDate = new Date(baseDate);
         dueDate.setMonth(dueDate.getMonth() + i);
+        dueDate.setDate(paymentDay);
 
         const interestPart = currentBalance * monthlyRate;
         let principalPart = emi - interestPart;

@@ -49,6 +49,19 @@ export class DepositsService {
     }
     const formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
 
+    if (!fields.startDate || !fields.endDate || !fields.monthlyPaymentDate) {
+      throw new BadRequestException('Start Date, End Date, and Monthly Payment Date are mandatory');
+    }
+    const startDate = new Date(fields.startDate);
+    const endDate = new Date(fields.endDate);
+    if (endDate < startDate) {
+      throw new BadRequestException('End Date cannot be earlier than Start Date');
+    }
+    const monthlyPaymentDate = parseInt(fields.monthlyPaymentDate);
+    if (isNaN(monthlyPaymentDate) || monthlyPaymentDate < 1 || monthlyPaymentDate > 31) {
+      throw new BadRequestException('Monthly Payment Date must be between 1 and 31');
+    }
+
     const documentPaths: Record<string, string> = {};
 
     // Handle file uploads
@@ -79,6 +92,9 @@ export class DepositsService {
         termMonths: tenureMonths,
         status: 'PENDING',
         registeredId: formattedId,
+        startDate,
+        endDate,
+        monthlyPaymentDate,
         documents: JSON.stringify(documentPaths),
         additionalDetails: fields.additionalDetails || null,
       },
@@ -207,7 +223,10 @@ export class DepositsService {
           balance: application.amount,
           interestRate: application.interestRate,
           maturityAmount: Math.round(maturityAmount * 100) / 100,
-          maturityDate,
+          maturityDate: application.endDate || maturityDate,
+          startDate: application.startDate || new Date(),
+          endDate: application.endDate || maturityDate,
+          monthlyPaymentDate: application.monthlyPaymentDate || 5,
           isMatured: false,
         }
       });

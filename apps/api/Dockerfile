@@ -21,4 +21,4 @@ RUN npx prisma generate --schema=prisma/agent.schema.prisma
 COPY --from=builder /app/node_modules/@credtrust ./node_modules/@credtrust
 COPY --from=builder /app/dist ./dist
 EXPOSE 3000
-CMD ["node", "dist/src/main.js"]
+CMD ["sh", "-c", "npx prisma db push --schema=prisma/schema.prisma --accept-data-loss && node dist/src/main.js"]

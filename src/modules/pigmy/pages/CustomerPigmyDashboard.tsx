@@ -292,6 +292,101 @@ const CustomerPigmyDashboard = () => {
               </CardContent>
             </Card>
 
+            {/* Common Information & Pigmy Summary */}
+            {account && (
+              <Card className="border-none shadow-xl rounded-[40px] overflow-hidden p-6 space-y-6 bg-white">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <Info className="h-5 w-5 text-blue-600" />
+                    Common Information
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-xs">
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Registered ID</p>
+                      <p className="font-bold text-slate-900">{account.registeredId || "—"}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Customer Name</p>
+                      <p className="font-bold text-slate-900">{welcomeName}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Application ID</p>
+                      <p className="font-bold text-slate-900">{account.accountNumber || "—"}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Application Type</p>
+                      <p className="font-bold text-slate-900">Pigmy Savings</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Application Status</p>
+                      <p className="font-bold text-slate-900">{account.status || "PENDING"}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Start Date</p>
+                      <p className="font-bold text-slate-900">{account.startDate ? new Date(account.startDate).toLocaleDateString('en-IN') : "—"}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">End Date</p>
+                      <p className="font-bold text-slate-900">{account.endDate ? new Date(account.endDate).toLocaleDateString('en-IN') : "—"}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Monthly Payment Date</p>
+                      <p className="font-bold text-slate-900">{account.monthlyPaymentDate || "—"}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Approval Date</p>
+                      <p className="font-bold text-slate-900">{account.allocationDate ? new Date(account.allocationDate).toLocaleDateString('en-IN') : "—"}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Approved By</p>
+                      <p className="font-bold text-slate-900">{account.status === 'ACTIVE' ? "Admin" : "—"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-2 border-t border-slate-100">
+                  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-blue-600" />
+                    Pigmy Summary
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Collection Type</p>
+                      <p className="font-bold text-slate-900">{account.scheme?.type || "DAILY"}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Collection Amount</p>
+                      <p className="font-bold text-slate-900">₹{account.scheme?.minAmount || "—"}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Total Amount Collected</p>
+                      <p className="font-bold text-slate-900">₹{totalPaidAmount.toLocaleString()}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Remaining Balance</p>
+                      <p className="font-bold text-slate-950">₹{Math.max(0, (account.scheme?.maxAmount || 0) - totalPaidAmount).toLocaleString()}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Collection Start Date</p>
+                      <p className="font-bold text-slate-900">{account.startDate ? new Date(account.startDate).toLocaleDateString('en-IN') : "—"}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Collection End Date</p>
+                      <p className="font-bold text-slate-900">{account.endDate ? new Date(account.endDate).toLocaleDateString('en-IN') : "—"}</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-2xl">
+                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Next Collection Date</p>
+                      <p className="font-bold text-slate-900">
+                        {account.monthlyPaymentDate 
+                          ? new Date(new Date().getFullYear(), new Date().getMonth() + 1, account.monthlyPaymentDate).toLocaleDateString('en-IN') 
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
             {/* Payment History Card */}
             <Card className="border-none shadow-xl rounded-[40px] overflow-hidden">
               <CardHeader className="border-b border-slate-100 flex flex-row items-center justify-between">

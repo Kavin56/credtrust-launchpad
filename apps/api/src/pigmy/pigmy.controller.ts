@@ -39,8 +39,8 @@ export class PigmyController {
   @Post('self-enroll')
   @Roles('MEMBER')
   @ApiOperation({ summary: 'Self-enroll into a Pigmy scheme (Member)' })
-  async selfEnroll(@Body() dto: { schemeId: string; registeredId?: string }, @Request() req: any) {
-    return this.pigmyService.selfEnroll(req.user.userId, dto.schemeId, dto.registeredId);
+  async selfEnroll(@Body() dto: { schemeId: string; registeredId?: string; startDate?: string; endDate?: string; monthlyPaymentDate?: string }, @Request() req: any) {
+    return this.pigmyService.selfEnroll(req.user.userId, dto.schemeId, dto.registeredId, dto.startDate, dto.endDate, dto.monthlyPaymentDate);
   }
 
   @Post('collection')

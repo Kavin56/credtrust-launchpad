@@ -248,6 +248,9 @@ const LoanApplicationPage = () => {
   const getRequiredFields = () => {
     const baseFields = [
       { name: 'registeredId', label: 'Registered ID', type: 'text', placeholder: 'Enter Customer/Member ID (e.g. 001)' },
+      { name: 'startDate', label: 'Start Date', type: 'date', placeholder: 'Select Start Date' },
+      { name: 'endDate', label: 'End Date', type: 'date', placeholder: 'Select End Date' },
+      { name: 'monthlyPaymentDate', label: 'Monthly Payment Date', type: 'select', options: Array.from({ length: 31 }, (_, i) => (i + 1).toString()) },
       { name: 'employmentType', label: 'Employment Type', type: 'select', options: [
         'Government Employee',
         'Private Sector Employee',
@@ -436,10 +439,17 @@ const LoanApplicationPage = () => {
       const fields = getRequiredFields();
       fields.forEach(f => {
         const val = formData[f.name];
-        if (!f.optional && (!val || !val.trim())) {
+        if (!f.optional && (!val || !val.toString().trim())) {
           newErrors[f.name] = `${f.label} is required`;
         }
       });
+      if (formData.startDate && formData.endDate) {
+        const start = new Date(formData.startDate);
+        const end = new Date(formData.endDate);
+        if (end < start) {
+          newErrors.endDate = "End Date cannot be earlier than Start Date";
+        }
+      }
       if (selectedLoan.id === 'surety') {
         const phoneRegex = /^\d{10}$/;
         if (formData.applicantPhone && !phoneRegex.test(formData.applicantPhone)) {
@@ -619,6 +629,9 @@ const LoanApplicationPage = () => {
       payload.append('monthlyIncome', formData.monthlySalary || "0");
       payload.append('status', 'PENDING');
       payload.append('registeredId', formData.registeredId || '');
+      payload.append('startDate', formData.startDate || '');
+      payload.append('endDate', formData.endDate || '');
+      payload.append('monthlyPaymentDate', formData.monthlyPaymentDate || '');
 
       const details = {
         applicationId: appID,
