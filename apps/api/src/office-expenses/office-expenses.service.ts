@@ -7,18 +7,18 @@ export class OfficeExpensesService {
 
   async getSummary() {
     // Starting Base Principal (society's starting bank balance/capital)
-    const basePrincipalAmount = 403650;
+    const basePrincipalAmount = 500000;
 
     // 1. Sum of all user investments (Deposits + Pigmy) -> Total Income
     const activeDeposits = await this.prisma.depositAccount.aggregate({
-      where: { status: { in: ['APPROVED', 'ACTIVE'] } },
-      _sum: { amount: true }
+      where: { isMatured: false },
+      _sum: { balance: true }
     });
     const pigmySum = await this.prisma.pigmyAccount.aggregate({
       _sum: { balance: true }
     });
 
-    const userInvestmentsIncome = (activeDeposits._sum.amount || 0) + (pigmySum._sum.balance || 0);
+    const userInvestmentsIncome = (activeDeposits._sum.balance || 0) + (pigmySum._sum.balance || 0);
 
     // 2. Sum of all user loans disbursed -> Total Expenses
     const activeLoans = await this.prisma.loan.aggregate({
@@ -28,7 +28,7 @@ export class OfficeExpensesService {
 
     // 3. Sum of all matured/closed deposits paid out -> Total Expenses
     const maturedDepositsPaid = await this.prisma.depositAccount.aggregate({
-      where: { status: { in: ['CLOSED', 'MATURED'] } },
+      where: { isMatured: true },
       _sum: { maturityAmount: true }
     });
 
