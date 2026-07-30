@@ -131,8 +131,12 @@ export class OfficeExpensesService {
   }
 
   async delete(id: string, adminUser: any) {
-    const existing = await this.prisma.officeExpense.findUnique({ where: { id } });
+    console.log(`Attempting to delete Office Expense with ID: "${id}"`);
+    const existing = await this.prisma.officeExpense.findFirst({ where: { id } });
     if (!existing) {
+      console.log(`Office Expense with ID: "${id}" not found in DB`);
+      const all = await this.prisma.officeExpense.findMany({ select: { id: true } });
+      console.log(`Available IDs in DB:`, all.map(a => a.id));
       throw new NotFoundException('Office expense entry not found');
     }
 
