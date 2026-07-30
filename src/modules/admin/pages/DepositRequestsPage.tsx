@@ -319,14 +319,10 @@ const DepositRequestsPage = () => {
           {selectedApp && (
             <div className="space-y-6 py-4">
               {/* Application Summary Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <Card className="p-3 bg-slate-50 border-none">
                   <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Principal Amount</p>
                   <p className="text-lg font-black text-slate-900">₹{selectedApp.amount.toLocaleString()}</p>
-                </Card>
-                <Card className="p-3 bg-slate-50 border-none">
-                  <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Doc. Charge (2.5%)</p>
-                  <p className="text-lg font-black text-red-600">₹{(selectedApp.amount * 0.025).toLocaleString()}</p>
                 </Card>
                 <Card className="p-3 bg-slate-50 border-none">
                   <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Interest Rate</p>

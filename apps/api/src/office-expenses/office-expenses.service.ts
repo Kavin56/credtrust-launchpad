@@ -6,47 +6,63 @@ export class OfficeExpensesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getSummary() {
-    // 1. Calculate Principal Amount = (Deposits + Pigmy) - Loans
-    const depositsSum = await this.prisma.depositAccount.aggregate({
-      _sum: { balance: true }
+    // Starting Base Principal (society's starting bank balance/capital)
+    const basePrincipalAmount = 403650;
+
+    // 1. Sum of all user investments (Deposits + Pigmy) -> Total Income
+    const activeDeposits = await this.prisma.depositAccount.aggregate({
+      where: { status: { in: ['APPROVED', 'ACTIVE'] } },
+      _sum: { amount: true }
     });
     const pigmySum = await this.prisma.pigmyAccount.aggregate({
       _sum: { balance: true }
     });
-    const loansSum = await this.prisma.loan.aggregate({
+
+    const userInvestmentsIncome = (activeDeposits._sum.amount || 0) + (pigmySum._sum.balance || 0);
+
+    // 2. Sum of all user loans disbursed -> Total Expenses
+    const activeLoans = await this.prisma.loan.aggregate({
       where: { status: { in: ['ACTIVE', 'DISBURSED'] } },
       _sum: { amount: true }
     });
 
-    const totalDeposits = depositsSum._sum.balance || 0;
-    const totalPigmy = pigmySum._sum.balance || 0;
-    const totalLoans = loansSum._sum.amount || 0;
+    // 3. Sum of all matured/closed deposits paid out -> Total Expenses
+    const maturedDepositsPaid = await this.prisma.depositAccount.aggregate({
+      where: { status: { in: ['CLOSED', 'MATURED'] } },
+      _sum: { maturityAmount: true }
+    });
 
-    const basePrincipalAmount = totalDeposits + totalPigmy - totalLoans;
+    const userLoansAndPayoutsExpense = (activeLoans._sum.amount || 0) + (maturedDepositsPaid._sum.maturityAmount || 0);
 
-    // 2. Calculate Office Expenses & Incomes
+    // 4. Calculate Office Expenses & Incomes
     const officeStats = await this.prisma.officeExpense.groupBy({
       by: ['type'],
       _sum: { amount: true }
     });
 
-    let totalIncome = 0;
-    let totalExpense = 0;
+    let officeIncome = 0;
+    let officeExpense = 0;
+    let officeDeposit = 0;
 
     for (const stat of officeStats) {
       if (stat.type === 'INCOME') {
-        totalIncome = stat._sum.amount || 0;
+        officeIncome = stat._sum.amount || 0;
       } else if (stat.type === 'EXPENSE') {
-        totalExpense = stat._sum.amount || 0;
+        officeExpense = stat._sum.amount || 0;
+      } else if (stat.type === 'DEPOSIT') {
+        officeDeposit = stat._sum.amount || 0;
       }
     }
 
-    const additionalAmount = totalIncome - totalExpense;
-    const currentAvailableBalance = basePrincipalAmount + additionalAmount;
+    // Both INCOME and DEPOSIT types count towards Total Income
+    const totalIncome = officeIncome + officeDeposit + userInvestmentsIncome;
+    const totalExpense = officeExpense + userLoansAndPayoutsExpense;
+
+    const currentAvailableBalance = basePrincipalAmount + totalIncome - totalExpense;
 
     return {
       principalAmount: basePrincipalAmount,
-      additionalAmount,
+      additionalAmount: totalIncome - totalExpense,
       currentAvailableBalance,
       totalIncome,
       totalExpenses: totalExpense
@@ -161,7 +177,7 @@ export class OfficeExpensesService {
     // Compute chronological running balance
     const results = [];
     for (const exp of expenses) {
-      if (exp.type === 'INCOME') {
+      if (exp.type === 'INCOME' || exp.type === 'DEPOSIT') {
         currentBal += exp.amount;
       } else {
         currentBal -= exp.amount;

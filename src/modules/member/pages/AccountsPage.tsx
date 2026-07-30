@@ -1068,10 +1068,6 @@ const AccountsPage = () => {
                         <p className="font-black text-slate-900 text-sm">₹{amount.toLocaleString()}</p>
                       </div>
                       <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Documentation Charge (2.5%)</p>
-                        <p className="font-bold text-red-600">₹{(amount * 0.025).toLocaleString()}</p>
-                      </div>
-                      <div>
                         <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Interest Rate</p>
                         <p className="font-black text-slate-900 text-sm">{rate}% p.a.</p>
                       </div>

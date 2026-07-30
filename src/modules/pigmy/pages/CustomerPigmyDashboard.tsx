@@ -359,10 +359,6 @@ const CustomerPigmyDashboard = () => {
                       <p className="font-bold text-slate-900">₹{account.scheme?.minAmount || "—"}</p>
                     </div>
                     <div className="p-3 bg-slate-50 rounded-2xl">
-                      <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Documentation Charge (2.5%)</p>
-                      <p className="font-bold text-red-600">₹{((account.scheme?.minAmount || 0) * 0.025).toLocaleString()}</p>
-                    </div>
-                    <div className="p-3 bg-slate-50 rounded-2xl">
                       <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Total Amount Collected</p>
                       <p className="font-bold text-slate-900">₹{totalPaidAmount.toLocaleString()}</p>
                     </div>
