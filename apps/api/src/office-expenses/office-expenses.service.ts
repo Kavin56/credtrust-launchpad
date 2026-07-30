@@ -30,6 +30,14 @@ export class OfficeExpensesService {
       _sum: { amount: true }
     });
 
+    const loanDocChargesIncome = (activeLoans._sum.amount || 0) * 0.025;
+
+    // Sum of all user paid EMIs (repayments) -> Total Income
+    const repaymentsSum = await this.prisma.loanRepayment.aggregate({
+      _sum: { amount: true }
+    });
+    const paidEmisIncome = repaymentsSum._sum.amount || 0;
+
     // 3. Sum of all matured/closed deposits paid out -> Total Expenses
     const maturedDepositsPaid = await this.prisma.depositAccount.aggregate({
       where: { isMatured: true },
@@ -58,8 +66,8 @@ export class OfficeExpensesService {
       }
     }
 
-    // Both INCOME and DEPOSIT types count towards Total Income
-    const totalIncome = officeIncome + officeDeposit + userInvestmentsIncome;
+    // Both INCOME and DEPOSIT types, user investments, doc charges, and paid EMIs count towards Total Income
+    const totalIncome = officeIncome + officeDeposit + userInvestmentsIncome + loanDocChargesIncome + paidEmisIncome;
     const totalExpense = officeExpense + userLoansAndPayoutsExpense;
 
     const currentAvailableBalance = basePrincipalAmount + totalIncome - totalExpense;
