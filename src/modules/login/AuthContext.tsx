@@ -128,6 +128,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const unsub = onAuthStateChanged(auth, async (fbUser) => {
         if (pauseFirebaseSyncRef.current) return;
+        
+        const currentRole = localStorage.getItem("role");
+        if (currentRole === "ADMIN" || currentRole === "CEO" || currentRole === "AGENT" || currentRole === "TELLER") {
+          const token = localStorage.getItem("accessToken");
+          const email = localStorage.getItem("email");
+          const userId = localStorage.getItem("userId");
+          const hasProfile = localStorage.getItem("hasMemberProfile") === "true";
+          if (token && email && userId) {
+            api.defaults.headers.common.Authorization = `Bearer ${token}`;
+            setUser({ id: userId, email, role: currentRole, hasMemberProfile: hasProfile });
+            setLoading(false);
+            return;
+          }
+        }
+
         try {
           if (fbUser?.email) {
             await syncFirebaseSession(fbUser);
