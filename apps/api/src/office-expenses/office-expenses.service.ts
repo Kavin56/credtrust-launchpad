@@ -89,7 +89,7 @@ export class OfficeExpensesService {
     // Write audit log
     await this.prisma.auditLog.create({
       data: {
-        userId: adminUser.userId || adminUser.id || null,
+        userId: null,
         action: 'CREATE_OFFICE_EXPENSE',
         module: 'OFFICE_EXPENSE',
         details: JSON.stringify(expense),
@@ -120,7 +120,7 @@ export class OfficeExpensesService {
     // Write audit log
     await this.prisma.auditLog.create({
       data: {
-        userId: adminUser.userId || adminUser.id || null,
+        userId: null,
         action: 'UPDATE_OFFICE_EXPENSE',
         module: 'OFFICE_EXPENSE',
         details: JSON.stringify({ before: existing, after: updated }),
@@ -141,7 +141,7 @@ export class OfficeExpensesService {
     // Write audit log
     await this.prisma.auditLog.create({
       data: {
-        userId: adminUser.userId || adminUser.id || null,
+        userId: null,
         action: 'DELETE_OFFICE_EXPENSE',
         module: 'OFFICE_EXPENSE',
         details: JSON.stringify(existing),
