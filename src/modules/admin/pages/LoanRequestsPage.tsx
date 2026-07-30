@@ -436,6 +436,38 @@ const LoanRequestsPage = () => {
 
                                  <div className="space-y-4">
                                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
+                                       <ShieldCheck className="w-4 h-4 text-[#c9a84c]" /> Application Details & Identity
+                                    </h4>
+                                    <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 space-y-3 text-[11px] font-semibold text-slate-600">
+                                       <div>
+                                          <span className="text-slate-400 block text-[9px] uppercase">Registered ID</span>
+                                          <span className="font-bold text-[#c9a84c] text-sm">{selectedLoan.registeredId || "—"}</span>
+                                       </div>
+                                       <div className="grid grid-cols-2 gap-4">
+                                          <div>
+                                             <span className="text-slate-400 block text-[9px] uppercase">Start Date</span>
+                                             <span className="text-slate-800">{selectedLoan.startDate ? new Date(selectedLoan.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}</span>
+                                          </div>
+                                          <div>
+                                             <span className="text-slate-400 block text-[9px] uppercase">End Date</span>
+                                             <span className="text-slate-800">{selectedLoan.endDate ? new Date(selectedLoan.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}</span>
+                                          </div>
+                                       </div>
+                                       <div>
+                                          <span className="text-slate-400 block text-[9px] uppercase">Purpose of Loan</span>
+                                          <span className="text-slate-800">{selectedLoan.purpose || "—"}</span>
+                                       </div>
+                                       {selectedLoan.guarantorDetail && (
+                                          <div>
+                                             <span className="text-slate-400 block text-[9px] uppercase">Guarantor Details</span>
+                                             <span className="text-slate-800">{selectedLoan.guarantorDetail}</span>
+                                          </div>
+                                       )}
+                                    </div>
+                                 </div>
+
+                                 <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
                                        <Wallet className="w-4 h-4 text-[#c9a84c]" /> Income Data
                                     </h4>
                                     <div className="grid grid-cols-2 gap-4">
