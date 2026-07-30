@@ -232,8 +232,8 @@ const LoanRequestsPage = () => {
                              <div>
                                 <h3 className="text-xl font-black text-[#1a1f36]">{loan.member?.fullName}</h3>
                                 <div className="flex items-center gap-2 mt-1">
-                                   <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-[9px] font-black uppercase tracking-tighter">Member</span>
-                                   <p className="text-[10px] text-slate-400 font-bold">{loan.member?.memberId}</p>
+                                   <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-[9px] font-black uppercase tracking-tighter">Registered ID</span>
+                                   <p className="text-[10px] text-amber-600 font-bold">{loan.registeredId || "—"}</p>
                                 </div>
                              </div>
                           </div>
