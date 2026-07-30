@@ -273,7 +273,7 @@ const OfficeExpensePage = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-black text-emerald-700">
-                ₹{totals.income.toLocaleString()}
+                ₹{Number(summary?.totalIncome || 0).toLocaleString()}
               </div>
             </CardContent>
           </Card>
@@ -286,7 +286,7 @@ const OfficeExpensePage = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-black text-rose-700">
-                ₹{totals.expense.toLocaleString()}
+                ₹{Number(summary?.totalExpenses || 0).toLocaleString()}
               </div>
             </CardContent>
           </Card>
