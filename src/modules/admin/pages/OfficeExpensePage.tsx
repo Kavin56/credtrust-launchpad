@@ -338,6 +338,7 @@ const OfficeExpensePage = () => {
                       <option value="EXPENSE">Expense</option>
                       <option value="INCOME">Income</option>
                       <option value="DEPOSIT">Deposit</option>
+                      <option value="SEED_CAPITAL">Seed Capital</option>
                     </select>
                   </div>
 
@@ -510,16 +511,18 @@ const OfficeExpensePage = () => {
                             <td className="p-4">
                               <span className={`px-2 py-0.5 rounded-[6px] text-[9px] font-black uppercase tracking-wider ${
                                 exp.type === 'INCOME' ? 'bg-emerald-50 text-emerald-700' :
-                                exp.type === 'DEPOSIT' ? 'bg-blue-50 text-blue-700' : 'bg-rose-50 text-rose-700'
+                                exp.type === 'DEPOSIT' ? 'bg-blue-50 text-blue-700' :
+                                exp.type === 'SEED_CAPITAL' ? 'bg-[#fef3c7] text-[#92400e]' :
+                                'bg-rose-50 text-rose-700'
                               }`}>
-                                {exp.type}
+                                {exp.type.replace(/_/g, ' ')}
                               </span>
                             </td>
                             <td className="p-4 font-bold max-w-[150px] truncate" title={exp.description}>
                               {exp.description}
                             </td>
-                            <td className={`p-4 font-black ${(exp.type === 'INCOME' || exp.type === 'DEPOSIT') ? 'text-emerald-600' : 'text-slate-800'}`}>
-                              {(exp.type === 'INCOME' || exp.type === 'DEPOSIT') ? '+' : '-'} ₹{exp.amount.toLocaleString()}
+                            <td className={`p-4 font-black ${(exp.type === 'INCOME' || exp.type === 'DEPOSIT' || exp.type === 'SEED_CAPITAL') ? 'text-emerald-600' : 'text-slate-800'}`}>
+                              {(exp.type === 'INCOME' || exp.type === 'DEPOSIT' || exp.type === 'SEED_CAPITAL') ? '+' : '-'} ₹{exp.amount.toLocaleString()}
                             </td>
                             <td className="p-4 text-slate-500 uppercase tracking-wider text-[10px]">
                               {exp.modeOfTransaction.replace(/_/g, ' ')}

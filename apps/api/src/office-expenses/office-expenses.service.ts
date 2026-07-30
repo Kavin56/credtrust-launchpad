@@ -6,8 +6,12 @@ export class OfficeExpensesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getSummary() {
-    // Starting Base Principal (society's starting bank balance/capital)
-    const basePrincipalAmount = 500000;
+    // Starting Base Principal is computed dynamically from SEED_CAPITAL entries
+    const seedCapitalSum = await this.prisma.officeExpense.aggregate({
+      where: { type: 'SEED_CAPITAL' },
+      _sum: { amount: true }
+    });
+    const basePrincipalAmount = seedCapitalSum._sum.amount || 0;
 
     // 1. Sum of all user investments (Deposits + Pigmy) -> Total Income
     const activeDeposits = await this.prisma.depositAccount.aggregate({
@@ -34,7 +38,7 @@ export class OfficeExpensesService {
 
     const userLoansAndPayoutsExpense = (activeLoans._sum.amount || 0) + (maturedDepositsPaid._sum.maturityAmount || 0);
 
-    // 4. Calculate Office Expenses & Incomes
+    // 4. Calculate Office Expenses & Incomes (excluding SEED_CAPITAL since it defines Base Principal)
     const officeStats = await this.prisma.officeExpense.groupBy({
       by: ['type'],
       _sum: { amount: true }
@@ -172,12 +176,12 @@ export class OfficeExpensesService {
     // Compute running balance dynamically
     // Let's get the basePrincipalAmount
     const summary = await this.getSummary();
-    let currentBal = summary.principalAmount; // start with current base principal amount and compute chronological running balance
+    let currentBal = 0; // start from 0 and build running balance chronologically
     
     // Compute chronological running balance
     const results = [];
     for (const exp of expenses) {
-      if (exp.type === 'INCOME' || exp.type === 'DEPOSIT') {
+      if (exp.type === 'INCOME' || exp.type === 'DEPOSIT' || exp.type === 'SEED_CAPITAL') {
         currentBal += exp.amount;
       } else {
         currentBal -= exp.amount;
