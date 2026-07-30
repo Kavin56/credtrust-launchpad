@@ -14,15 +14,15 @@ export class OfficeExpensesService {
     const basePrincipalAmount = seedCapitalSum._sum.amount || 0;
 
     // 1. Sum of all user investments (Deposits + Pigmy) -> Total Income
-    const activeDeposits = await this.prisma.depositAccount.aggregate({
-      where: { isMatured: false },
-      _sum: { balance: true }
+    const activeDeposits = await this.prisma.depositApplication.aggregate({
+      where: { status: 'APPROVED' },
+      _sum: { amount: true }
     });
     const pigmySum = await this.prisma.pigmyAccount.aggregate({
       _sum: { balance: true }
     });
 
-    const userInvestmentsIncome = (activeDeposits._sum.balance || 0) + (pigmySum._sum.balance || 0);
+    const userInvestmentsIncome = (activeDeposits._sum.amount || 0) + (pigmySum._sum.balance || 0);
 
     // 2. Sum of all user loans disbursed -> Total Expenses
     const activeLoans = await this.prisma.loan.aggregate({
