@@ -211,10 +211,10 @@ const OfficeExpensePage = () => {
       return;
     }
 
-    const headers = "S.No.,Date,Type,Description,Amount,Transaction Mode,Added By,Running Balance,Document Proof Link,Remarks\n";
+    const headers = "S.No.,Date,Type,Description,Member ID,Customer Name,Amount,Transaction Mode,Added By,Running Balance,Document Proof Link,Remarks\n";
     const csvContent = expenses.map((e: any, idx: number) => {
       const docLink = e.documentSignedUrl ? e.documentSignedUrl : '';
-      return `${expenses.length - idx},"${new Date(e.date).toLocaleDateString('en-IN')}",${e.type},"${e.description.replace(/"/g, '""')}",${e.amount},${e.modeOfTransaction},"${e.addedBy}",${e.runningBalance || ''},"${docLink}","${(e.remarks || '').replace(/"/g, '""')}"`;
+      return `${expenses.length - idx},"${new Date(e.date).toLocaleDateString('en-IN')}",${e.type},"${e.description.replace(/"/g, '""')}","${e.memberId || '-'}","${e.customerName || '-'}",${e.amount},${e.modeOfTransaction},"${e.addedBy}",${e.runningBalance || ''},"${docLink}","${(e.remarks || '').replace(/"/g, '""')}"`;
     }).join("\n");
 
     const blob = new Blob([headers + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -529,6 +529,8 @@ const OfficeExpensePage = () => {
                         <th className="p-4">Date</th>
                         <th className="p-4">Type</th>
                         <th className="p-4">Description</th>
+                        <th className="p-4">Member ID</th>
+                        <th className="p-4">Customer Name</th>
                         <th className="p-4">Amount</th>
                         <th className="p-4">Mode</th>
                         <th className="p-4">Added By</th>
@@ -539,14 +541,14 @@ const OfficeExpensePage = () => {
                     <tbody className="divide-y divide-slate-100 font-medium text-[#1a1f36]">
                       {isListLoading ? (
                         <tr>
-                          <td colSpan={9} className="p-10 text-center text-slate-400">
+                          <td colSpan={11} className="p-10 text-center text-slate-400">
                             <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
                             Loading Ledger...
                           </td>
                         </tr>
                       ) : !expenses || expenses.length === 0 ? (
                         <tr>
-                          <td colSpan={9} className="p-10 text-center text-slate-400">
+                          <td colSpan={11} className="p-10 text-center text-slate-400">
                             No ledger transactions found matching filters.
                           </td>
                         </tr>
@@ -570,6 +572,12 @@ const OfficeExpensePage = () => {
                             <td className="p-4 font-bold max-w-[150px] truncate" title={exp.description}>
                               {exp.description}
                             </td>
+                            <td className="p-4 font-mono text-slate-500 font-bold">
+                              {exp.memberId || '-'}
+                            </td>
+                            <td className="p-4 text-slate-700 font-bold">
+                              {exp.customerName || '-'}
+                            </td>
                             <td className={`p-4 font-black ${(exp.type === 'INCOME' || exp.type === 'DEPOSIT' || exp.type === 'SEED_CAPITAL') ? 'text-emerald-600' : 'text-slate-800'}`}>
                               {(exp.type === 'INCOME' || exp.type === 'DEPOSIT' || exp.type === 'SEED_CAPITAL') ? '+' : '-'} ₹{exp.amount.toLocaleString()}
                             </td>
@@ -592,22 +600,28 @@ const OfficeExpensePage = () => {
                                   <FileText className="h-3.5 w-3.5" />
                                 </a>
                               )}
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-7 w-7 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg align-middle"
-                                onClick={() => handleEditClick(exp)}
-                              >
-                                <Edit className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-7 w-7 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
-                                onClick={() => handleDeleteClick(exp.id)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
+                              {!exp.isSystem ? (
+                                <>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-7 w-7 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg align-middle"
+                                    onClick={() => handleEditClick(exp)}
+                                  >
+                                    <Edit className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-7 w-7 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg align-middle"
+                                    onClick={() => handleDeleteClick(exp.id)}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </>
+                              ) : (
+                                <span className="text-[9px] text-slate-400 uppercase font-black select-none tracking-wider px-1.5 py-0.5 bg-slate-100 rounded-md">System</span>
+                              )}
                             </td>
                           </tr>
                         ))
