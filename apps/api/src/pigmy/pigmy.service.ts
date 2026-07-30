@@ -90,35 +90,56 @@ export class PigmyService {
         throw new BadRequestException('Member profile not found');
       }
 
+    let formattedId = '';
+    let initialStatus = 'PENDING';
+
+    if (member.kycStatus === 'VERIFIED') {
+      formattedId = member.rojaId || '';
+      initialStatus = 'PENDING';
+    } else {
       const rawId = (registeredId || '').toString().trim();
       if (!rawId) {
         throw new BadRequestException('Registered ID is mandatory');
       }
-      const formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
+      formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
 
-      if (!startDateStr || !endDateStr || !monthlyPaymentDateStr) {
-        throw new BadRequestException('Start Date, End Date, and Monthly Payment Date are mandatory');
-      }
-      const startDate = new Date(startDateStr);
-      const endDate = new Date(endDateStr);
-      if (endDate < startDate) {
-        throw new BadRequestException('End Date cannot be earlier than Start Date');
-      }
-      const monthlyPaymentDate = parseInt(monthlyPaymentDateStr);
-      if (isNaN(monthlyPaymentDate) || monthlyPaymentDate < 1 || monthlyPaymentDate > 31) {
-        throw new BadRequestException('Monthly Payment Date must be between 1 and 31');
+      const existingRojaMember = await this.prisma.member.findFirst({
+        where: { rojaId: formattedId, id: { not: member.id } }
+      });
+      if (existingRojaMember) {
+        throw new BadRequestException('Registered ID already belongs to another member');
       }
 
-      return await this.enrollAccount({
-        memberId: member.id,
-        schemeId,
-        agentId: undefined,
-        startDate,
-        endDate,
-        monthlyPaymentDate,
-        registeredId: formattedId,
-        status: 'PENDING'
-      } as any);
+      await this.prisma.member.update({
+        where: { id: member.id },
+        data: { rojaId: formattedId }
+      });
+      initialStatus = 'PENDING_REGISTERED_ID_APPROVAL';
+    }
+
+    if (!startDateStr || !endDateStr || !monthlyPaymentDateStr) {
+      throw new BadRequestException('Start Date, End Date, and Monthly Payment Date are mandatory');
+    }
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+    if (endDate < startDate) {
+      throw new BadRequestException('End Date cannot be earlier than Start Date');
+    }
+    const monthlyPaymentDate = parseInt(monthlyPaymentDateStr);
+    if (isNaN(monthlyPaymentDate) || monthlyPaymentDate < 1 || monthlyPaymentDate > 31) {
+      throw new BadRequestException('Monthly Payment Date must be between 1 and 31');
+    }
+
+    return await this.enrollAccount({
+      memberId: member.id,
+      schemeId,
+      agentId: undefined,
+      startDate,
+      endDate,
+      monthlyPaymentDate,
+      registeredId: formattedId,
+      status: initialStatus
+    } as any);
     } catch (error: any) {
       console.error('ERROR in selfEnroll:', error);
       // Re-throw as a friendly error if it's a known prisma error

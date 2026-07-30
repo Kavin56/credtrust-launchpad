@@ -43,11 +43,32 @@ export class DepositsService {
       throw new BadRequestException('Member profile not found');
     }
 
-    const rawId = (fields.registeredId || '').toString().trim();
-    if (!rawId) {
-      throw new BadRequestException('Registered ID is mandatory');
+    let formattedId = '';
+    let initialStatus = 'PENDING';
+
+    if (member.kycStatus === 'VERIFIED') {
+      formattedId = member.rojaId || '';
+      initialStatus = 'PENDING';
+    } else {
+      const rawId = (fields.registeredId || '').toString().trim();
+      if (!rawId) {
+        throw new BadRequestException('Registered ID is mandatory');
+      }
+      formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
+
+      const existingRojaMember = await this.prisma.member.findFirst({
+        where: { rojaId: formattedId, id: { not: member.id } }
+      });
+      if (existingRojaMember) {
+        throw new BadRequestException('Registered ID already belongs to another member');
+      }
+
+      await this.prisma.member.update({
+        where: { id: member.id },
+        data: { rojaId: formattedId }
+      });
+      initialStatus = 'PENDING_REGISTERED_ID_APPROVAL';
     }
-    const formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
 
     if (!fields.startDate || !fields.endDate || !fields.monthlyPaymentDate) {
       throw new BadRequestException('Start Date, End Date, and Monthly Payment Date are mandatory');
@@ -74,9 +95,9 @@ export class DepositsService {
       documentPaths[file.fieldname] = `/uploads/deposits/${filename}`;
     }
 
-    const kind = fields.kind || 'FD';
-    const amount = parseFloat(fields.principal || '0');
-    const rate = parseFloat(fields.rate || '0');
+    const kind = fields.type || 'FD';
+    const amount = parseFloat(fields.amount || '0');
+    const rate = parseFloat(fields.interestRate || '10');
     const tenureMonths = parseInt(fields.tenureMonths || '12');
 
     const appCount = await this.prisma.depositApplication.count();
@@ -90,7 +111,7 @@ export class DepositsService {
         amount,
         interestRate: rate,
         termMonths: tenureMonths,
-        status: 'PENDING',
+        status: initialStatus,
         registeredId: formattedId,
         startDate,
         endDate,

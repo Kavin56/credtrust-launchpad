@@ -238,6 +238,187 @@ const ProfilePage = () => {
     }
   };
 
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [uploadingSig, setUploadingSig] = useState(false);
+
+  const handleSignatureUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!signatureFile) return;
+    setUploadingSig(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', signatureFile);
+      await api.post('/members/me/signature', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success("Signature uploaded successfully! Awaiting Admin approval.");
+      setSignatureFile(null);
+      queryClient.invalidateQueries({ queryKey: ["member-profile"] });
+    } catch (err) {
+      toast.error("Failed to upload signature");
+    } finally {
+      setUploadingSig(false);
+    }
+  };
+
+  const handleRequestDownload = async () => {
+    try {
+      await api.post('/members/me/request-card-download');
+      toast.success("Download request submitted successfully!");
+      queryClient.invalidateQueries({ queryKey: ["member-profile"] });
+    } catch (err) {
+      toast.error("Failed to request ID Card download");
+    }
+  };
+
+  const handlePrintCard = () => {
+    const printContent = document.getElementById('printable-membership-card');
+    if (!printContent) return;
+    const windowUrl = 'about:blank';
+    const uniqueName = new Date().getTime();
+    const windowName = `PrintWindow_${uniqueName}`;
+    const printWindow = window.open(windowUrl, windowName, 'left=50,top=50,width=800,height=600');
+    
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Membership ID Card - ${profileView.fullName}</title>
+            <style>
+              body {
+                font-family: system-ui, sans-serif;
+                margin: 0;
+                padding: 40px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: #f1f5f9;
+              }
+              .card {
+                width: 450px;
+                height: 280px;
+                background: #0f172a;
+                color: white;
+                border-radius: 20px;
+                padding: 24px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+              }
+              .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+              }
+              .header h2 {
+                margin: 0;
+                font-size: 14px;
+                letter-spacing: 0.1em;
+                color: #c9a84c;
+              }
+              .header p {
+                margin: 2px 0 0 0;
+                font-size: 8px;
+                opacity: 0.6;
+              }
+              .seal {
+                width: 50px;
+                height: 50px;
+                object-fit: contain;
+              }
+              .body {
+                display: flex;
+                gap: 16px;
+                margin: 16px 0;
+                align-items: center;
+              }
+              .photo {
+                width: 80px;
+                height: 80px;
+                border-radius: 12px;
+                object-fit: cover;
+                border: 2px solid #c9a84c;
+              }
+              .details {
+                font-size: 11px;
+                line-height: 1.4;
+              }
+              .name {
+                font-weight: bold;
+                font-size: 13px;
+                color: #c9a84c;
+              }
+              .footer {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+                border-top: 1px solid rgba(255,255,255,0.1);
+                padding-top: 10px;
+              }
+              .sig-block {
+                text-align: center;
+                font-size: 7px;
+                opacity: 0.7;
+              }
+              .sig-img {
+                height: 25px;
+                max-width: 80px;
+                object-fit: contain;
+              }
+              .qr {
+                width: 45px;
+                height: 45px;
+                background: white;
+                padding: 2px;
+                border-radius: 4px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <div class="header">
+                <div>
+                  <h2>SHARANAM SOCIETY</h2>
+                  <p>MEMBERSHIP CREDENTIALS CARD</p>
+                </div>
+                ${printContent.querySelector('.office-seal-preview') ? `<img class="seal" src="${(printContent.querySelector('.office-seal-preview') as HTMLImageElement).src}" />` : ''}
+              </div>
+              <div class="body">
+                <img class="photo" src="${(printContent.querySelector('.member-photo-preview') as HTMLImageElement).src}" />
+                <div class="details">
+                  <div class="name">${profileView.fullName}</div>
+                  <div>ID: ${profileView.memberId}</div>
+                  <div>ROJA ID: ${profile?.rojaId || '—'}</div>
+                  <div>Date: ${profile?.membershipDate ? new Date(profile.membershipDate).toLocaleDateString('en-IN') : '—'}</div>
+                  <div>Phone: ${profileView.contact}</div>
+                </div>
+              </div>
+              <div class="footer">
+                <div class="sig-block">
+                  <div>USER SIGNATURE</div>
+                  ${printContent.querySelector('.user-sig-preview') ? `<img class="sig-img" src="${(printContent.querySelector('.user-sig-preview') as HTMLImageElement).src}" />` : '<div>—</div>'}
+                </div>
+                <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${profileView.memberId}" />
+                <div class="sig-block">
+                  <div>AUTHORIZED SIGNATURE</div>
+                  ${printContent.querySelector('.admin-sig-preview') ? `<img class="sig-img" src="${(printContent.querySelector('.admin-sig-preview') as HTMLImageElement).src}" />` : '<div>PENDING</div>'}
+                </div>
+              </div>
+            </div>
+            <script>
+              window.onload = function() {
+                window.print();
+                setTimeout(function() { window.close(); }, 500);
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans selection:bg-[#c9a84c]/30">
       <Header />
@@ -292,6 +473,7 @@ const ProfilePage = () => {
              <nav className="bg-white rounded-[40px] border border-gray-100 shadow-sm overflow-hidden py-4">
                 {[
                   { id: 'personal', label: 'Personal Information', icon: User },
+                  { id: 'idcard', label: 'Membership ID Card', icon: Fingerprint },
                   { id: 'kyc', label: 'KYC Documents', icon: ShieldCheck },
                   { id: 'nominee', label: 'Nominee Management', icon: Users },
                   { id: 'security', label: 'Security & Password', icon: Lock }
@@ -488,6 +670,185 @@ const ProfilePage = () => {
                            </div>
                         )}
                      </form>
+                  </motion.div>
+                )}
+
+                {activeView === 'idcard' && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                     <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm p-10 space-y-10">
+                        <div className="space-y-1">
+                           <h3 className="text-2xl font-bold text-[#1a1f36]">Membership Credentials Card</h3>
+                           <p className="text-sm text-gray-400 font-medium">Verify your digital signature and download your official society ID card</p>
+                        </div>
+
+                        <div className="grid lg:grid-cols-[1fr,400px] gap-10">
+                          {/* Left Column: Signature upload and Request controls */}
+                          <div className="space-y-8">
+                            
+                            {/* Signature upload block */}
+                            <div className="p-8 bg-slate-50 border border-slate-100 rounded-[32px] space-y-6">
+                              <div>
+                                <h4 className="text-lg font-bold text-[#1a1f36]">Your Digital Signature</h4>
+                                <p className="text-xs text-gray-400 mt-1 font-medium">Upload your signature to display on your membership card. Supports PNG/JPG/PDF.</p>
+                              </div>
+
+                              <form onSubmit={handleSignatureUpload} className="flex flex-col sm:flex-row gap-4 items-end">
+                                <div className="space-y-2 flex-grow w-full">
+                                  <Label className="text-xs font-black uppercase text-slate-400">Select Signature File</Label>
+                                  <Input 
+                                    type="file" 
+                                    accept="image/*,.pdf" 
+                                    onChange={e => setSignatureFile(e.target.files?.[0] || null)}
+                                    className="h-12 rounded-xl bg-white border-slate-200"
+                                  />
+                                </div>
+                                <Button
+                                  type="submit"
+                                  disabled={uploadingSig || !signatureFile}
+                                  className="h-12 px-8 bg-[#1a1f36] text-white hover:bg-black font-bold rounded-xl w-full sm:w-auto"
+                                >
+                                  {uploadingSig ? "Uploading..." : "Upload"}
+                                </Button>
+                              </form>
+
+                              {/* Status Display */}
+                              <div className="flex items-center justify-between pt-4 border-t border-slate-200/60">
+                                <div>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase">Approval Status</p>
+                                  <div className="mt-1 flex items-center gap-2">
+                                    {profile?.approvedSignatureUrl ? (
+                                      <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold border border-emerald-100">Approved</span>
+                                    ) : profile?.pendingSignatureUrl ? (
+                                      <span className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-xs font-bold border border-amber-100">Pending Review</span>
+                                    ) : (
+                                      <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-bold">No Signature Uploaded</span>
+                                    )}
+                                  </div>
+                                </div>
+                                {profile?.approvedSignatureUrl && (
+                                  <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase text-right">Signature Preview</p>
+                                    <img src={getDocUrl(profile.approvedSignatureUrl)} className="h-8 object-contain mt-1 bg-white p-1 rounded border" alt="Approved Signature" />
+                                  </div>
+                                )}
+                                {!profile?.approvedSignatureUrl && profile?.pendingSignatureUrl && (
+                                  <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase text-right">Uploaded Preview</p>
+                                    <img src={getDocUrl(profile.pendingSignatureUrl)} className="h-8 object-contain mt-1 bg-white p-1 rounded border opacity-50" alt="Pending Signature" />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Download Request Actions */}
+                            <div className="p-8 bg-slate-50 border border-slate-100 rounded-[32px] space-y-6">
+                              <div>
+                                <h4 className="text-lg font-bold text-[#1a1f36]">Card Download Authorization</h4>
+                                <p className="text-xs text-gray-400 mt-1 font-medium">To protect your credentials, downloading your digital card requires a one-time admin approval.</p>
+                              </div>
+
+                              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                                <div>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase">Clearance Status</p>
+                                  <p className="text-sm font-black text-[#1a1f36] mt-0.5">
+                                    {profile?.downloadRequestStatus === 'APPROVED' ? 'Approved (Ready to Download)' : 
+                                     profile?.downloadRequestStatus === 'PENDING' ? 'Awaiting Approval' : 
+                                     profile?.downloadRequestStatus === 'REJECTED' ? 'Rejected' : 'Not Requested'}
+                                  </p>
+                                  {profile?.downloadRequestStatus === 'REJECTED' && (
+                                    <p className="text-xs text-rose-500 font-bold mt-1">Reason: {profile.downloadRequestRemarks || 'Incomplete profile'}</p>
+                                  )}
+                                </div>
+
+                                {(!profile?.downloadRequestStatus || profile?.downloadRequestStatus === 'IDLE' || profile?.downloadRequestStatus === 'REJECTED') ? (
+                                  <Button
+                                    onClick={handleRequestDownload}
+                                    className="bg-[#c9a84c] hover:bg-[#b0903b] text-white font-bold h-11 px-6 rounded-xl w-full sm:w-auto"
+                                  >
+                                    Request Download Access
+                                  </Button>
+                                ) : profile?.downloadRequestStatus === 'APPROVED' ? (
+                                  <Button
+                                    onClick={handlePrintCard}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 px-6 rounded-xl w-full sm:w-auto flex items-center gap-2"
+                                  >
+                                    <Download className="w-4 h-4" /> Download / Print ID Card
+                                  </Button>
+                                ) : (
+                                  <span className="text-xs font-bold text-slate-400 italic">Review in progress</span>
+                                )}
+                              </div>
+                            </div>
+
+                          </div>
+
+                          {/* Right Column: ID Card Preview Container */}
+                          <div className="space-y-4">
+                            <label className="text-xs font-black uppercase text-slate-400 block px-2">Interactive Preview</label>
+                            
+                            {profile?.idCardStatus !== 'GENERATED' ? (
+                              <div className="border-2 border-dashed border-slate-200 rounded-[36px] p-12 text-center text-slate-400 flex flex-col items-center justify-center min-h-[350px] bg-slate-50/50">
+                                <Fingerprint className="w-16 h-16 text-slate-200 mb-4 animate-pulse" />
+                                <p className="font-bold text-[#1a1f36] text-sm">ID Card Not Generated</p>
+                                <p className="text-xs text-slate-400 mt-1 max-w-[200px] mx-auto">Admin must apply the official signature and office seal in the Member Registry.</p>
+                              </div>
+                            ) : (
+                              <div 
+                                id="printable-membership-card"
+                                className="border border-slate-800 rounded-[30px] p-6 bg-slate-950 text-white relative overflow-hidden shadow-2xl min-h-[350px] flex flex-col justify-between"
+                              >
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#c9a84c]/20 to-transparent rounded-full blur-2xl" />
+                                
+                                <div className="flex justify-between items-start gap-4 relative z-10">
+                                  <div>
+                                    <h4 className="text-[11px] font-black tracking-widest text-[#c9a84c] uppercase">SHARANAM SOCIETY</h4>
+                                    <p className="text-[7px] text-white/50">OFFICIAL MEMBERSHIP IDENTITY</p>
+                                  </div>
+                                  {profile?.officeSealUrl && (
+                                    <img src={getDocUrl(profile.officeSealUrl)} className="w-12 h-12 object-contain office-seal-preview" alt="Seal" />
+                                  )}
+                                </div>
+
+                                <div className="flex gap-4 items-center my-4 relative z-10">
+                                  {profileView.photoUrl ? (
+                                    <img src={getDocUrl(profileView.photoUrl)} className="w-20 h-20 rounded-2xl object-cover border-2 border-[#c9a84c] member-photo-preview" alt="Member Photo" />
+                                  ) : (
+                                    <div className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center font-bold text-2xl">M</div>
+                                  )}
+                                  <div className="space-y-1 text-xs">
+                                    <p className="font-bold text-sm text-[#c9a84c]">{profileView.fullName}</p>
+                                    <p className="text-[10px] text-white/60">ID: {profileView.memberId}</p>
+                                    <p className="text-[10px] text-white/60">ROJA ID: {profile?.rojaId || '—'}</p>
+                                    <p className="text-[10px] text-white/60">Date: {profile?.membershipDate ? new Date(profile.membershipDate).toLocaleDateString('en-IN') : '—'}</p>
+                                  </div>
+                                </div>
+
+                                <div className="flex justify-between items-end border-t border-white/10 pt-4 relative z-10">
+                                  <div className="space-y-1 text-center">
+                                    <p className="text-[7px] text-white/40 uppercase font-black">Member Signature</p>
+                                    {profile?.approvedSignatureUrl ? (
+                                      <img src={getDocUrl(profile.approvedSignatureUrl)} className="h-6 object-contain user-sig-preview bg-white/5 rounded px-1" alt="User Signature" />
+                                    ) : (
+                                      <p className="text-[8px] text-white/20 italic">No Signature</p>
+                                    )}
+                                  </div>
+
+                                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${profileView.memberId}`} className="w-10 h-10 bg-white p-0.5 rounded" alt="QR" />
+
+                                  <div className="space-y-1 text-center">
+                                    <p className="text-[7px] text-white/40 uppercase font-black">Authorized Signatory</p>
+                                    {profile?.adminSignatureUrl ? (
+                                      <img src={getDocUrl(profile.adminSignatureUrl)} className="h-6 object-contain admin-sig-preview bg-white/5 rounded px-1" alt="Admin Signature" />
+                                    ) : (
+                                      <div className="h-6 w-16 border border-dashed border-white/20 rounded flex items-center justify-center text-[7px] text-white/30">Pending</div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                     </div>
                   </motion.div>
                 )}
 

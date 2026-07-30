@@ -162,6 +162,14 @@ export class MembersController {
     return this.membersService.uploadDocument(req.user.userId, docType, fileObj);
   }
 
+  @Post('me/signature')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('MEMBER')
+  async uploadSignature(@Req() req: any) {
+    const file = await req.file();
+    return this.membersService.uploadSignature(req.user.userId, file);
+  }
+
   @Get(':userId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'CEO', 'DIRECTOR')
@@ -174,5 +182,74 @@ export class MembersController {
   @Roles('ADMIN', 'CEO', 'DIRECTOR')
   deactivate(@Param('id') id: string, @Body('reason') reason: string) {
     return this.membersService.deactivate(id, reason);
+  }
+
+  @Patch(':id/verify-roja')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
+  verifyRoja(@Param('id') id: string, @Req() req: any) {
+    const adminName = req.user.email || 'Admin';
+    return this.membersService.verifyRojaId(id, adminName);
+  }
+
+  @Post(':id/seal-signature')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
+  async sealSignature(@Param('id') id: string, @Req() req: any) {
+    const parts = req.parts();
+    let adminSignatureFile = null;
+    let officeSealFile = null;
+    for await (const part of parts) {
+      if (part.type === 'file') {
+        const buffer = await part.toBuffer();
+        const fileObj = {
+          fieldname: part.fieldname,
+          filename: part.filename,
+          mimetype: part.mimetype,
+          buffer,
+        };
+        if (part.fieldname === 'adminSignature') {
+          adminSignatureFile = fileObj;
+        } else if (part.fieldname === 'officeSeal') {
+          officeSealFile = fileObj;
+        }
+      }
+    }
+    return this.membersService.applySealSignature(id, adminSignatureFile, officeSealFile);
+  }
+
+  @Patch(':id/approve-profile-changes')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
+  approveProfileChanges(@Param('id') id: string) {
+    return this.membersService.approveProfileChanges(id);
+  }
+
+  @Patch(':id/reject-profile-changes')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
+  rejectProfileChanges(@Param('id') id: string) {
+    return this.membersService.rejectProfileChanges(id);
+  }
+
+  @Post('me/request-card-download')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('MEMBER')
+  requestCardDownload(@Req() req: any) {
+    return this.membersService.requestCardDownload(req.user.userId);
+  }
+
+  @Patch(':id/approve-card-download')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
+  approveCardDownload(@Param('id') id: string) {
+    return this.membersService.approveCardDownload(id);
+  }
+
+  @Patch(':id/reject-card-download')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
+  rejectCardDownload(@Param('id') id: string, @Body('remarks') remarks: string) {
+    return this.membersService.rejectCardDownload(id, remarks || 'Not met requirements');
   }
 }

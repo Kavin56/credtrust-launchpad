@@ -43,11 +43,32 @@ export class LoansService {
       throw new BadRequestException('Member profile not found');
     }
 
-    const rawId = (dto.registeredId || '').toString().trim();
-    if (!rawId) {
-      throw new BadRequestException('Registered ID is mandatory');
+    let formattedId = '';
+    let initialStatus = 'PENDING';
+
+    if (member.kycStatus === 'VERIFIED') {
+      formattedId = member.rojaId || '';
+      initialStatus = 'PENDING';
+    } else {
+      const rawId = (dto.registeredId || '').toString().trim();
+      if (!rawId) {
+        throw new BadRequestException('Registered ID is mandatory');
+      }
+      formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
+
+      const existingRojaMember = await this.prisma.member.findFirst({
+        where: { rojaId: formattedId, id: { not: member.id } }
+      });
+      if (existingRojaMember) {
+        throw new BadRequestException('Registered ID already belongs to another member');
+      }
+
+      await this.prisma.member.update({
+        where: { id: member.id },
+        data: { rojaId: formattedId }
+      });
+      initialStatus = 'PENDING_REGISTERED_ID_APPROVAL';
     }
-    const formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
 
     if (!dto.startDate || !dto.endDate || !dto.monthlyPaymentDate) {
       throw new BadRequestException('Start Date, End Date, and Monthly Payment Date are mandatory');
@@ -109,7 +130,7 @@ export class LoansService {
         documentationCharges,
         otherCharges,
         netDisbursed,
-        status: 'PENDING',
+        status: initialStatus,
       },
       include: {
         member: true

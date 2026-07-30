@@ -169,7 +169,8 @@ export class MembersService {
       }),
       this.prisma.member.count({ where }),
     ]);
-    return { items, total, page, limit };
+    const signedItems = await Promise.all(items.map(item => this.withSignedUrls(item)));
+    return { items: signedItems, total, page, limit };
   }
 
   async getProfile(userId: string) {
@@ -186,10 +187,10 @@ export class MembersService {
         data: { seatBookingNumber },
         include: { user: true, depositAccounts: true, loans: true, shareAccounts: true, pigmyAccounts: true },
       });
-      return this.withSignedPhoto(updated);
+      return this.withSignedUrls(updated);
     }
     
-    return this.withSignedPhoto(member);
+    return this.withSignedUrls(member);
   }
 
   private async generateUniqueId(userId: string): Promise<string> {
@@ -232,7 +233,36 @@ export class MembersService {
     });
     if (!member) throw new NotFoundException('Member not found');
 
-    return this.prisma.member.update({
+    if (member.kycStatus === 'VERIFIED') {
+      const changes: any = {};
+      if (dto.fullName && dto.fullName !== member.fullName) changes.fullName = dto.fullName;
+      if (dto.contact && dto.contact !== member.contact) changes.contact = dto.contact;
+      if (dto.address && dto.address !== member.address) changes.address = dto.address;
+      if (dto.dob && new Date(dto.dob).getTime() !== new Date(member.dob).getTime()) changes.dob = new Date(dto.dob);
+      if (dto.gender && dto.gender !== member.gender) changes.gender = dto.gender;
+      if (dto.bloodGroup && dto.bloodGroup !== member.bloodGroup) changes.bloodGroup = dto.bloodGroup;
+      if (dto.emergencyContact && dto.emergencyContact !== member.emergencyContact) changes.emergencyContact = dto.emergencyContact;
+
+      if (Object.keys(changes).length > 0) {
+        await this.prisma.member.update({
+          where: { id: member.id },
+          data: {
+            pendingProfileChanges: JSON.stringify(changes)
+          }
+        });
+
+        await this.prisma.notification.create({
+          data: {
+            title: 'Profile Update Requested',
+            message: `A profile update request has been submitted for approval.`,
+            type: 'APP'
+          }
+        });
+      }
+      return this.withSignedUrls(member);
+    }
+
+    const updated = await this.prisma.member.update({
       where: { id: member.id },
       data: {
         fullName: dto.fullName ?? member.fullName,
@@ -249,6 +279,7 @@ export class MembersService {
       },
       include: { user: true, depositAccounts: true, loans: true, shareAccounts: true },
     });
+    return this.withSignedUrls(updated);
   }
 
   async dashboardOverview(userId: string) {
@@ -339,9 +370,24 @@ export class MembersService {
         'profile',
       );
 
+      const dataUpdate: any = {};
+      if (member.kycStatus === 'VERIFIED') {
+        dataUpdate.pendingPhotoUrl = photoUrl;
+
+        await this.prisma.notification.create({
+          data: {
+            title: 'Profile Photo Uploaded',
+            message: `User has uploaded a new profile photo pending approval.`,
+            type: 'APP'
+          }
+        });
+      } else {
+        dataUpdate.photoUrl = photoUrl;
+      }
+
       await this.prisma.member.update({
         where: { userId },
-        data: { photoUrl },
+        data: dataUpdate,
       });
 
       return { photoUrl: await this.storage.signedUrl(photoUrl) };
@@ -398,18 +444,279 @@ export class MembersService {
     return { success: true };
   }
 
-  private async withSignedPhoto<T extends { photoUrl?: string | null; aadhaarDocUrl?: string | null; panDocUrl?: string | null }>(member: T): Promise<T> {
-    const updated = { ...member };
-    if (updated.photoUrl?.startsWith('gs://')) {
-      updated.photoUrl = await this.storage.signedUrl(updated.photoUrl);
-    }
-    if (updated.aadhaarDocUrl?.startsWith('gs://')) {
-      updated.aadhaarDocUrl = await this.storage.signedUrl(updated.aadhaarDocUrl);
-    }
-    if (updated.panDocUrl?.startsWith('gs://')) {
-      updated.panDocUrl = await this.storage.signedUrl(updated.panDocUrl);
+  private async withSignedUrls<T extends any>(member: T): Promise<T> {
+    if (!member) return member;
+    const updated = { ...member } as any;
+    const fieldsToSign = [
+      'photoUrl',
+      'aadhaarDocUrl',
+      'panDocUrl',
+      'pendingPhotoUrl',
+      'pendingSignatureUrl',
+      'approvedSignatureUrl',
+      'adminSignatureUrl',
+      'officeSealUrl'
+    ];
+    for (const field of fieldsToSign) {
+      if (updated[field] && (updated[field].startsWith('gs://') || updated[field].startsWith('/uploads/') || updated[field].startsWith('profile/') || updated[field].startsWith('signatures/') || updated[field].startsWith('office/'))) {
+        try {
+          updated[field] = await this.storage.signedUrl(updated[field]);
+        } catch (e) {
+          console.error(`Failed to sign URL for ${field}:`, e);
+        }
+      }
     }
     return updated;
+  }
+
+  async uploadSignature(userId: string, file: any) {
+    if (!file) {
+      throw new BadRequestException('No signature file uploaded.');
+    }
+    const member = await this.prisma.member.findUnique({
+      where: { userId },
+    });
+    if (!member) {
+      throw new NotFoundException('Member profile not found.');
+    }
+
+    const buffer = await file.toBuffer();
+    const signatureUrl = await this.storage.upload(
+      buffer,
+      `${userId}-signature-${file.filename}`,
+      file.mimetype || 'application/octet-stream',
+      'signatures',
+    );
+
+    await this.prisma.member.update({
+      where: { userId },
+      data: { pendingSignatureUrl: signatureUrl },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        title: 'Signature Uploaded',
+        message: `User has uploaded a digital signature pending approval.`,
+        type: 'APP'
+      }
+    });
+
+    return { signatureUrl: await this.storage.signedUrl(signatureUrl) };
+  }
+
+  async verifyRojaId(memberId: string, adminName: string) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const updatedMember = await this.prisma.member.update({
+      where: { id: memberId },
+      data: {
+        kycStatus: 'VERIFIED',
+        membershipDate: member.membershipDate || new Date(),
+        verificationDate: new Date(),
+        verifiedBy: adminName,
+      }
+    });
+
+    // Automatically update all PENDING_REGISTERED_ID_APPROVAL applications to PENDING
+    await this.prisma.loan.updateMany({
+      where: { memberId, status: 'PENDING_REGISTERED_ID_APPROVAL' },
+      data: { status: 'PENDING' }
+    });
+
+    await this.prisma.depositApplication.updateMany({
+      where: { memberId, status: 'PENDING_REGISTERED_ID_APPROVAL' },
+      data: { status: 'PENDING' }
+    });
+
+    await this.prisma.pigmyAccount.updateMany({
+      where: { memberId, status: 'PENDING_REGISTERED_ID_APPROVAL' },
+      data: { status: 'PENDING' }
+    });
+
+    // Send notification to member
+    await this.prisma.notification.create({
+      data: {
+        memberId: member.id,
+        title: 'Registered ID Approved',
+        message: `Your Registered ID (ROJA ID) has been successfully verified!`,
+        type: 'APP'
+      }
+    });
+
+    return { success: true, member: await this.withSignedUrls(updatedMember) };
+  }
+
+  async applySealSignature(memberId: string, adminSignatureFile: any, officeSealFile: any) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const dataUpdate: any = { idCardStatus: 'GENERATED' };
+
+    if (adminSignatureFile) {
+      const buffer = await adminSignatureFile.toBuffer();
+      const adminSignatureUrl = await this.storage.upload(
+        buffer,
+        `admin-sig-${memberId}-${adminSignatureFile.filename}`,
+        adminSignatureFile.mimetype || 'application/octet-stream',
+        'office',
+      );
+      dataUpdate.adminSignatureUrl = adminSignatureUrl;
+    }
+
+    if (officeSealFile) {
+      const buffer = await officeSealFile.toBuffer();
+      const officeSealUrl = await this.storage.upload(
+        buffer,
+        `office-seal-${memberId}-${officeSealFile.filename}`,
+        officeSealFile.mimetype || 'application/octet-stream',
+        'office',
+      );
+      dataUpdate.officeSealUrl = officeSealUrl;
+    }
+
+    const updated = await this.prisma.member.update({
+      where: { id: memberId },
+      data: dataUpdate
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        memberId: member.id,
+        title: 'Digital ID Card Generated',
+        message: `Your Digital Membership ID Card has been generated with official seal and signature.`,
+        type: 'APP'
+      }
+    });
+
+    return { success: true, member: await this.withSignedUrls(updated) };
+  }
+
+  async approveProfileChanges(memberId: string) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const dataUpdate: any = {};
+    if (member.pendingProfileChanges) {
+      try {
+        const changes = JSON.parse(member.pendingProfileChanges);
+        Object.assign(dataUpdate, changes);
+      } catch (e) {}
+      dataUpdate.pendingProfileChanges = null;
+    }
+
+    if (member.pendingPhotoUrl) {
+      dataUpdate.photoUrl = member.pendingPhotoUrl;
+      dataUpdate.pendingPhotoUrl = null;
+    }
+
+    if (member.pendingSignatureUrl) {
+      dataUpdate.approvedSignatureUrl = member.pendingSignatureUrl;
+      dataUpdate.pendingSignatureUrl = null;
+    }
+
+    const updated = await this.prisma.member.update({
+      where: { id: memberId },
+      data: dataUpdate
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        memberId: member.id,
+        title: 'Profile Changes Approved',
+        message: `Your requested profile changes have been approved.`,
+        type: 'APP'
+      }
+    });
+
+    return { success: true, member: await this.withSignedUrls(updated) };
+  }
+
+  async rejectProfileChanges(memberId: string) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const updated = await this.prisma.member.update({
+      where: { id: memberId },
+      data: {
+        pendingProfileChanges: null,
+        pendingPhotoUrl: null,
+        pendingSignatureUrl: null,
+      }
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        memberId: member.id,
+        title: 'Profile Changes Rejected',
+        message: `Your requested profile changes have been rejected.`,
+        type: 'APP'
+      }
+    });
+
+    return { success: true, member: await this.withSignedUrls(updated) };
+  }
+
+  async requestCardDownload(userId: string) {
+    const member = await this.prisma.member.findUnique({ where: { userId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const updated = await this.prisma.member.update({
+      where: { id: member.id },
+      data: { downloadRequestStatus: 'PENDING', downloadRequestRemarks: null }
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        title: 'ID Card Download Requested',
+        message: `Member ${member.fullName} has requested approval to download their ID Card.`,
+        type: 'APP'
+      }
+    });
+
+    return { success: true, member: await this.withSignedUrls(updated) };
+  }
+
+  async approveCardDownload(memberId: string) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const updated = await this.prisma.member.update({
+      where: { id: memberId },
+      data: { downloadRequestStatus: 'APPROVED' }
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        memberId: member.id,
+        title: 'ID Card Download Approved',
+        message: `Your download request has been approved! You can now download your Digital ID card.`,
+        type: 'APP'
+      }
+    });
+
+    return { success: true, member: await this.withSignedUrls(updated) };
+  }
+
+  async rejectCardDownload(memberId: string, remarks: string) {
+    const member = await this.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) throw new NotFoundException('Member not found');
+
+    const updated = await this.prisma.member.update({
+      where: { id: memberId },
+      data: { downloadRequestStatus: 'REJECTED', downloadRequestRemarks: remarks }
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        memberId: member.id,
+        title: 'ID Card Download Rejected',
+        message: `Your download request was rejected: ${remarks}`,
+        type: 'APP'
+      }
+    });
+
+    return { success: true, member: await this.withSignedUrls(updated) };
   }
 
   async validateRegisteredId(id: string) {

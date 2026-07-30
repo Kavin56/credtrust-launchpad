@@ -60,6 +60,21 @@ model Member {
   exitDate          DateTime?
   exitReason        String?
   
+  // Enhanced fields for One-Time Roja ID & ID Card management
+  rojaId               String?      @unique
+  membershipDate       DateTime?
+  verificationDate     DateTime?
+  verifiedBy           String?
+  pendingProfileChanges String?     // JSON string of fields waiting for admin approval
+  pendingSignatureUrl  String?
+  approvedSignatureUrl String?
+  pendingPhotoUrl      String?
+  downloadRequestStatus String?     // IDLE, PENDING, APPROVED, REJECTED
+  downloadRequestRemarks String?
+  adminSignatureUrl    String?
+  officeSealUrl        String?
+  idCardStatus         String?      @default("NOT_GENERATED") // NOT_GENERATED, GENERATED
+
   // Financial relations
   shareAccounts    ShareAccount[]
   depositAccounts  DepositAccount[]
