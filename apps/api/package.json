@@ -11,7 +11,7 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\" --max-warnings=0",
     "test": "jest",
     "postinstall": "npm run prisma:generate",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "prisma generate --schema=prisma/schema.prisma && prisma generate --schema=prisma/admin.schema.prisma && prisma generate --schema=prisma/agent.schema.prisma",
     "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:dev": "prisma migrate dev --name init",

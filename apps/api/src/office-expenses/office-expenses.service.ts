@@ -26,7 +26,7 @@ export class OfficeExpensesService {
 
     // 2. Sum of all user loans disbursed -> Total Expenses
     const activeLoans = await this.prisma.loan.aggregate({
-      where: { status: { in: ['ACTIVE', 'DISBURSED'] } },
+      where: { status: { in: ['APPROVED', 'ACTIVE', 'DISBURSED'] } },
       _sum: { amount: true }
     });
 
