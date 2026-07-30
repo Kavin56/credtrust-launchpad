@@ -25,10 +25,12 @@ const OfficeExpensePage = () => {
     description: '',
     amount: '',
     modeOfTransaction: 'CASH', // CASH, BANK_TRANSFER, UPI, CHEQUE, OTHER
-    remarks: ''
+    remarks: '',
+    documentUrl: ''
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [filterType, setFilterType] = useState('ALL'); // ALL, EXPENSE, INCOME
   const [filterDateRange, setFilterDateRange] = useState({
     startDate: '',
@@ -137,9 +139,31 @@ const OfficeExpensePage = () => {
       description: '',
       amount: '',
       modeOfTransaction: 'CASH',
-      remarks: ''
+      remarks: '',
+      documentUrl: ''
     });
     setIsEditing(false);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const data = new FormData();
+    data.append('file', file);
+
+    setIsUploading(true);
+    try {
+      const res = await api.post('/office-expenses/upload', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setFormData(prev => ({ ...prev, documentUrl: res.data.url }));
+      toast.success("Proof document uploaded successfully");
+    } catch (err: any) {
+      toast.error("Failed to upload proof document");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -168,7 +192,8 @@ const OfficeExpensePage = () => {
       description: exp.description,
       amount: exp.amount.toString(),
       modeOfTransaction: exp.modeOfTransaction,
-      remarks: exp.remarks || ''
+      remarks: exp.remarks || '',
+      documentUrl: exp.documentUrl || ''
     });
     setIsEditing(true);
   };
@@ -186,9 +211,10 @@ const OfficeExpensePage = () => {
       return;
     }
 
-    const headers = "S.No.,Date,Type,Description,Amount,Transaction Mode,Added By,Running Balance,Remarks\n";
+    const headers = "S.No.,Date,Type,Description,Amount,Transaction Mode,Added By,Running Balance,Document Proof Link,Remarks\n";
     const csvContent = expenses.map((e: any, idx: number) => {
-      return `${expenses.length - idx},"${new Date(e.date).toLocaleDateString('en-IN')}",${e.type},"${e.description.replace(/"/g, '""')}",${e.amount},${e.modeOfTransaction},"${e.addedBy}",${e.runningBalance || ''},"${(e.remarks || '').replace(/"/g, '""')}"`;
+      const docLink = e.documentSignedUrl ? e.documentSignedUrl : '';
+      return `${expenses.length - idx},"${new Date(e.date).toLocaleDateString('en-IN')}",${e.type},"${e.description.replace(/"/g, '""')}",${e.amount},${e.modeOfTransaction},"${e.addedBy}",${e.runningBalance || ''},"${docLink}","${(e.remarks || '').replace(/"/g, '""')}"`;
     }).join("\n");
 
     const blob = new Blob([headers + csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -388,6 +414,27 @@ const OfficeExpensePage = () => {
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-1.5">
+                      Upload Document Proof <span className="text-slate-400 font-normal">(Optional)</span>
+                    </Label>
+                    <div className="flex items-center gap-3">
+                      <Input
+                        type="file"
+                        accept=".pdf,.png,.jpg,.jpeg"
+                        onChange={handleFileChange}
+                        disabled={isUploading}
+                        className="h-10 px-3 border border-slate-200 rounded-xl bg-white text-sm outline-none cursor-pointer file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200"
+                      />
+                      {isUploading && <RefreshCw className="h-4 w-4 animate-spin text-[#c9a84c]" />}
+                    </div>
+                    {formData.documentUrl && (
+                      <p className="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
+                        ✓ Document uploaded successfully
+                      </p>
+                    )}
+                  </div>
+
                   <div className="flex gap-2 pt-2">
                     <Button 
                       type="submit" 
@@ -439,6 +486,8 @@ const OfficeExpensePage = () => {
                     <option value="ALL">All Types</option>
                     <option value="EXPENSE">Expense Only</option>
                     <option value="INCOME">Income Only</option>
+                    <option value="DEPOSIT">Deposit Only</option>
+                    <option value="SEED_CAPITAL">Seed Capital Only</option>
                   </select>
 
                   <select
@@ -532,10 +581,21 @@ const OfficeExpensePage = () => {
                               ₹{exp.runningBalance ? exp.runningBalance.toLocaleString() : '—'}
                             </td>
                             <td className="p-4 text-right print:hidden space-x-1">
+                              {exp.documentSignedUrl && (
+                                <a 
+                                  href={exp.documentSignedUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center justify-center h-7 w-7 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg align-middle"
+                                  title="View Proof Document"
+                                >
+                                  <FileText className="h-3.5 w-3.5" />
+                                </a>
+                              )}
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-7 w-7 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg"
+                                className="h-7 w-7 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg align-middle"
                                 onClick={() => handleEditClick(exp)}
                               >
                                 <Edit className="h-3.5 w-3.5" />

@@ -9,7 +9,8 @@ import {
   Query, 
   Req, 
   UseGuards, 
-  ForbiddenException 
+  ForbiddenException,
+  BadRequestException
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt.guard';
@@ -22,6 +23,18 @@ import { OfficeExpensesService } from './office-expenses.service';
 @Controller('office-expenses')
 export class OfficeExpensesController {
   constructor(private readonly service: OfficeExpensesService) {}
+
+  @Post('upload')
+  @Roles('ADMIN')
+  async uploadFile(@Req() req: any) {
+    const file = await req.file();
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    const buffer = await file.toBuffer();
+    const url = await this.service.uploadDocument(buffer, file.filename, file.mimetype);
+    return { url };
+  }
 
   @Get('summary')
   @Roles('ADMIN')

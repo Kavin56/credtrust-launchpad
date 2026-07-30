@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class OfficeExpensesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storage: StorageService
+  ) {}
 
   async getSummary() {
     // Starting Base Principal is computed dynamically from SEED_CAPITAL entries
@@ -91,6 +95,7 @@ export class OfficeExpensesService {
         modeOfTransaction: dto.modeOfTransaction,
         remarks: dto.remarks || '',
         addedBy: adminUser.fullName || adminUser.email || 'Admin',
+        documentUrl: dto.documentUrl || null,
       }
     });
 
@@ -122,6 +127,7 @@ export class OfficeExpensesService {
         amount: dto.amount ? parseFloat(dto.amount) : existing.amount,
         modeOfTransaction: dto.modeOfTransaction || existing.modeOfTransaction,
         remarks: dto.remarks ?? existing.remarks,
+        documentUrl: dto.documentUrl !== undefined ? dto.documentUrl : existing.documentUrl,
       }
     });
 
@@ -198,13 +204,24 @@ export class OfficeExpensesService {
       } else {
         currentBal -= exp.amount;
       }
+
+      let documentSignedUrl = null;
+      if (exp.documentUrl) {
+        documentSignedUrl = await this.storage.signedUrl(exp.documentUrl);
+      }
+
       results.push({
         ...exp,
-        runningBalance: currentBal
+        runningBalance: currentBal,
+        documentSignedUrl
       });
     }
 
     // Return descending for list view display
     return results.reverse();
+  }
+
+  async uploadDocument(buffer: Buffer, filename: string, mimetype: string) {
+    return this.storage.upload(buffer, filename, mimetype, 'office-expenses');
   }
 }

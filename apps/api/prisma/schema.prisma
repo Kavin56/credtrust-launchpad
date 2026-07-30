@@ -329,12 +329,13 @@ model Agent {
 model OfficeExpense {
   id                 String   @id @default(cuid())
   date               DateTime @default(now())
-  type               String   // EXPENSE or INCOME
+  type               String   // EXPENSE, INCOME, DEPOSIT, SEED_CAPITAL
   description        String
   amount             Float
   modeOfTransaction  String   // CASH, BANK_TRANSFER, UPI, CHEQUE, OTHER
   remarks            String?
   addedBy            String   // Logged in admin name
+  documentUrl        String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }
