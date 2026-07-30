@@ -40,6 +40,7 @@ const AdminNavbar = () => {
     { name: "Pigmy Requests", path: "/admin/pigmy/requests", icon: Users },
     { name: "Loan Approvals", path: "/admin/loans", icon: HandCoins },
     { name: "Deposit Approvals", path: "/admin/deposits", icon: PiggyBank },
+    { name: "Office Expense", path: "/admin/office-expenses", icon: HandCoins },
     { name: "Member Registry", path: "/admin/members", icon: Users },
     { name: "System Reports", path: "/admin/reports", icon: BarChart3 },
   ];

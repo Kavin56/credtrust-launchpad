@@ -39,6 +39,7 @@ import SignUpFlowPage from "./modules/member/pages/SignUpFlowPage";
 import AgentLoginPage from "./modules/pigmy/pages/AgentLoginPage";
 import RoleRoute from "./components/RoleRoute";
 import GoogleTranslate from "./components/GoogleTranslate";
+import OfficeExpensePage from "./modules/admin/pages/OfficeExpensePage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,6 +85,7 @@ const App = () => (
           <Route path="/admin/dashboard" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/loans" element={<ProtectedRoute requireAdmin><LoanRequestsPage /></ProtectedRoute>} />
           <Route path="/admin/deposits" element={<ProtectedRoute requireAdmin><DepositRequestsPage /></ProtectedRoute>} />
+          <Route path="/admin/office-expenses" element={<ProtectedRoute requireAdmin><OfficeExpensePage /></ProtectedRoute>} />
           <Route path="/admin/pigmy/requests" element={<ProtectedRoute requireAdmin><PigmyRequestsPage /></ProtectedRoute>} />
           <Route path="/admin/pigmy" element={<ProtectedRoute requireAdmin><PigmyDashboard /></ProtectedRoute>} />
           <Route path="/admin/pigmy/add-customer" element={<ProtectedRoute requireAdmin><AddCustomer /></ProtectedRoute>} />

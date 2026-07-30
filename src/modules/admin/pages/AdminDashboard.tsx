@@ -27,6 +27,14 @@ const AdminDashboard = () => {
       return data;
     },
   });
+  const { data: summary } = useQuery({
+    queryKey: ["office-expenses-summary"],
+    queryFn: async () => {
+      const { data } = await api.get("/office-expenses/summary");
+      return data;
+    },
+  });
+
   const adminStats = [
     { title: "Total Members", value: overview?.members ?? "—", icon: Users, color: "text-blue-600", trend: "" },
     { title: "Total Deposits", value: overview ? overview.deposits : "—", icon: Wallet, color: "text-emerald-600", trend: "" },
@@ -70,6 +78,46 @@ const AdminDashboard = () => {
             </Button>
           </div>
         </div>
+
+        {/* Total Principal Amount Dashboard Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <Card className="border-none bg-gradient-to-br from-[#1a1f36] to-[#2e375c] text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
+            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-1">
+                <span className="text-[10px] uppercase font-black text-white/50 tracking-widest block">Sri Roja Shabarish Guruji Society</span>
+                <h2 className="text-sm font-bold text-[#c9a84c] uppercase tracking-wider">Total Principal Amount</h2>
+                <div className="text-4xl font-black tracking-tight text-white mt-1">
+                  {isLoading || !summary ? (
+                    <Skeleton className="h-10 w-48 bg-white/10" />
+                  ) : (
+                    `₹${Number(summary.currentAvailableBalance || 0).toLocaleString()}`
+                  )}
+                </div>
+                <p className="text-[11px] text-white/40 mt-1 font-medium">Real-time dynamic balance calculated from loans, deposits, collections, and office logs.</p>
+              </div>
+
+              <div className="flex gap-4 text-xs font-semibold">
+                <div className="px-4 py-3 bg-white/5 rounded-2xl border border-white/5 text-left">
+                  <span className="text-white/40 text-[9px] uppercase tracking-wider block mb-1">Base Capital</span>
+                  <span className="text-white font-bold block">
+                    {isLoading || !summary ? "—" : `₹${Number(summary.principalAmount || 0).toLocaleString()}`}
+                  </span>
+                </div>
+                <div className="px-4 py-3 bg-white/5 rounded-2xl border border-white/5 text-left">
+                  <span className="text-white/40 text-[9px] uppercase tracking-wider block mb-1">Office Net Adjustments</span>
+                  <span className={`${(summary?.additionalAmount || 0) >= 0 ? "text-emerald-400" : "text-rose-400"} font-bold block`}>
+                    {isLoading || !summary ? "—" : `${(summary.additionalAmount || 0) >= 0 ? "+" : ""}₹${Number(summary.additionalAmount || 0).toLocaleString()}`}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <Wallet className="absolute -right-8 -bottom-8 w-40 h-40 text-white/5 pointer-events-none" />
+          </Card>
+        </motion.div>
 
         {/* Admin Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">

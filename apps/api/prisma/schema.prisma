@@ -325,3 +325,16 @@ model Agent {
   updatedAt    DateTime @updatedAt
   lastLoginAt  DateTime?
 }
+
+model OfficeExpense {
+  id                 String   @id @default(cuid())
+  date               DateTime @default(now())
+  type               String   // EXPENSE or INCOME
+  description        String
+  amount             Float
+  modeOfTransaction  String   // CASH, BANK_TRANSFER, UPI, CHEQUE, OTHER
+  remarks            String?
+  addedBy            String   // Logged in admin name
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
