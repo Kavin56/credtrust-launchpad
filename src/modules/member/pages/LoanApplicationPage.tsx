@@ -23,6 +23,7 @@ import {
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { QRCodeSVG } from 'qrcode.react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -157,6 +158,7 @@ const LoanApplicationPage = () => {
   const [amount, setAmount] = useState(50000);
   const [tenure, setTenure] = useState(12);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const navigate = useNavigate();
 
   // Dynamic forms values state
@@ -985,15 +987,140 @@ const LoanApplicationPage = () => {
                 <Button 
                    type="button" 
                    disabled={isSubmitting} 
-                   onClick={handleSubmit} 
+                   onClick={() => setShowPaymentModal(true)} 
                    className="h-14 px-12 font-bold bg-[#c9a84c] text-white rounded-2xl hover:bg-[#d4b65c] shadow-lg shadow-amber-900/10 flex items-center gap-2"
                 >
-                   {isSubmitting ? "Submitting Application..." : "Submit Application"}
-                   <CheckCircle2 className="w-4 h-4" />
+                   {isSubmitting ? "Processing..." : "Proceed to Payment"}
+                   <ArrowRight className="w-4 h-4" />
                 </Button>
               )}
            </div>
         </section>
+
+        {/* Razorpay-style Payment Modal */}
+        <AnimatePresence>
+           {showPaymentModal && (
+              <motion.div 
+                 initial={{ opacity: 0 }} 
+                 animate={{ opacity: 1 }} 
+                 exit={{ opacity: 0 }} 
+                 className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+              >
+                 <motion.div 
+                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                    className="bg-white rounded-3xl overflow-hidden shadow-2xl max-w-4xl w-full flex flex-col md:flex-row relative"
+                 >
+                    {/* Left side - Razorpay styling */}
+                    <div className="md:w-1/3 bg-[#528FF0] p-8 text-white flex flex-col justify-between">
+                       <div className="space-y-6">
+                          <div className="flex items-center gap-2 mb-8">
+                             <div className="w-10 h-10 bg-white rounded flex items-center justify-center overflow-hidden p-1">
+                                <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" onError={(e) => e.currentTarget.style.display='none'} />
+                             </div>
+                             <div>
+                                <h3 className="font-bold text-sm leading-tight">Sri Roja Shabarish Guruji</h3>
+                                <p className="text-[10px] text-blue-100 flex items-center gap-1">
+                                   <ShieldCheck className="w-3 h-3" /> Secure Payments
+                                </p>
+                             </div>
+                          </div>
+                          
+                          <div className="bg-white text-black p-4 rounded-xl shadow-lg">
+                             <p className="text-xs text-gray-500 font-bold mb-1">Price Summary</p>
+                             <h2 className="text-3xl font-black">₹{(amount * 0.025).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
+                             <p className="text-[10px] text-gray-400 mt-2 font-medium">2.5% Documentation Charge</p>
+                          </div>
+                          
+                          <div className="bg-white text-black p-3 rounded-xl shadow text-sm font-medium flex justify-between items-center">
+                             <span className="flex items-center gap-2 text-xs text-gray-600">
+                                <Users className="w-4 h-4 text-gray-400" />
+                                {formData.applicantPhone || formData.registeredId || "Guest"}
+                             </span>
+                             <ChevronRight className="w-4 h-4 text-gray-400" />
+                          </div>
+                       </div>
+                       
+                       <div className="mt-12 text-xs text-blue-100/70 font-medium flex items-center gap-1">
+                          Secured by <span className="font-bold text-white italic">CredTrust</span>
+                       </div>
+                    </div>
+
+                    {/* Right side - Payment Options */}
+                    <div className="md:w-2/3 bg-gray-50 p-6 md:p-8 flex flex-col">
+                       <div className="flex justify-between items-center mb-6">
+                          <h3 className="font-bold text-gray-700">Payment Options</h3>
+                          <button onClick={() => setShowPaymentModal(false)} className="text-gray-400 hover:text-gray-600">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                          </button>
+                       </div>
+
+                       <div className="flex gap-6 h-full">
+                          {/* Sidebar options */}
+                          <div className="w-1/3 border-r border-gray-200 pr-4 space-y-1">
+                             <div className="p-3 bg-white border-l-4 border-blue-500 text-blue-600 font-bold text-sm shadow-sm cursor-pointer">
+                                UPI QR
+                             </div>
+                             <div className="p-3 text-gray-500 font-medium text-sm hover:bg-gray-100 rounded cursor-not-allowed opacity-50 flex items-center gap-2">
+                                Cards <div className="flex gap-1"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/200px-Visa_Inc._logo.svg.png" className="h-2" alt="visa" /></div>
+                             </div>
+                             <div className="p-3 text-gray-500 font-medium text-sm hover:bg-gray-100 rounded cursor-not-allowed opacity-50">
+                                Netbanking
+                             </div>
+                             <div className="p-3 text-gray-500 font-medium text-sm hover:bg-gray-100 rounded cursor-not-allowed opacity-50">
+                                Wallet
+                             </div>
+                          </div>
+
+                          {/* QR Code Area */}
+                          <div className="w-2/3 pl-2 flex flex-col">
+                             <div className="flex justify-between items-center mb-4">
+                                <h4 className="font-bold text-gray-700 text-sm">UPI QR</h4>
+                                <span className="text-xs text-gray-400 flex items-center gap-1"><Zap className="w-3 h-3" /> 10:00</span>
+                             </div>
+                             
+                             <div className="flex gap-6 items-center">
+                                <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                                   <QRCodeSVG 
+                                      value={`upi://pay?pa=SRIROJASHABARISHGURUJI@KBL&pn=CredTrust&am=${(amount * 0.025).toFixed(2)}&cu=INR&tn=Documentation%20Charge`}
+                                      size={140}
+                                      level="M"
+                                   />
+                                </div>
+                                <div className="space-y-3">
+                                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Scan with any app</p>
+                                   <div className="flex gap-2 flex-wrap max-w-[120px]">
+                                      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/UPI-Logo.png/640px-UPI-Logo.png" alt="UPI" className="h-5 object-contain" />
+                                      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Google_Pay_Logo.svg/2560px-Google_Pay_Logo.svg.png" alt="GPay" className="h-5 object-contain" />
+                                      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/PhonePe_Logo.png/800px-PhonePe_Logo.png" alt="PhonePe" className="h-5 object-contain" />
+                                   </div>
+                                </div>
+                             </div>
+
+                             <div className="mt-8">
+                                <p className="text-xs font-bold text-gray-500 mb-2">UPI ID / Number</p>
+                                <div className="space-y-4">
+                                   <Input placeholder="Enter UPI ID or Mobile Number" className="h-12 bg-white" />
+                                   <Button 
+                                      onClick={() => {
+                                         setShowPaymentModal(false);
+                                         handleSubmit();
+                                      }}
+                                      disabled={isSubmitting}
+                                      className="w-full h-12 bg-[#1a1f36] hover:bg-[#2d3356] text-white font-bold rounded-xl shadow-lg transition-all"
+                                   >
+                                      {isSubmitting ? "Processing..." : "Verify and Pay"}
+                                   </Button>
+                                </div>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+                 </motion.div>
+              </motion.div>
+           )}
+        </AnimatePresence>
 
         <div className="mt-8 flex items-center justify-center gap-8 text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">
            <div className="flex items-center gap-2"><Star className="w-3.5 h-3.5" /> Fast Underwriting</div>
