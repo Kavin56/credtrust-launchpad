@@ -401,8 +401,7 @@ const LoanRequestsPage = () => {
                                     </h4>
                                     <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 space-y-2 text-[11px] font-semibold text-slate-600">
                                        <div><span className="text-slate-400 text-[9px] uppercase">Full Name:</span> {parsed.profile?.fullName}</div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Member ID:</span> {parsed.profile?.memberId}</div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Registered ID:</span> <span className="font-bold text-[#c9a84c]">{selectedLoan.registeredId || "—"}</span></div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Registered ID:</span> <span className="font-bold text-[#c9a84c]">{parsed.profile?.memberId || selectedLoan.registeredId || "—"}</span></div>
                                        <div><span className="text-slate-400 text-[9px] uppercase">Aadhaar Number:</span> {parsed.profile?.aadhaarNumber}</div>
                                        <div><span className="text-slate-400 text-[9px] uppercase">Phone:</span> {parsed.profile?.mobileNumber}</div>
                                        <div><span className="text-slate-400 text-[9px] uppercase">Email:</span> {parsed.profile?.emailAddress}</div>

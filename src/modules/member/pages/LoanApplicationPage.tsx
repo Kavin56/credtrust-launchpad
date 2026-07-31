@@ -249,7 +249,7 @@ const LoanApplicationPage = () => {
 
   const getRequiredFields = () => {
     const baseFields = [
-      { name: 'registeredId', label: 'Registered ID', type: 'text', placeholder: 'Enter Customer/Member ID (e.g. 001)' },
+      { name: 'registeredId', label: 'Registered ID', type: 'text', placeholder: 'Enter Registered ID (e.g. ROJA-001)' },
       { name: 'startDate', label: 'Start Date', type: 'date', placeholder: 'Select Start Date' },
       { name: 'endDate', label: 'End Date', type: 'date', placeholder: 'Select End Date' },
       { name: 'monthlyPaymentDate', label: 'Monthly Payment Date', type: 'select', options: Array.from({ length: 31 }, (_, i) => (i + 1).toString()) },

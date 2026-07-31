@@ -388,8 +388,7 @@ const ProfilePage = () => {
                 <img class="photo" src="${(printContent.querySelector('.member-photo-preview') as HTMLImageElement).src}" />
                 <div class="details">
                   <div class="name">${profileView.fullName}</div>
-                  <div>ID: ${profileView.memberId}</div>
-                  <div>ROJA ID: ${profile?.rojaId || '—'}</div>
+                  <div>Registered ID: ${profileView.kycStatus === 'VERIFIED' ? profileView.memberId : 'Pending Allocation'}</div>
                   <div>Date: ${profile?.membershipDate ? new Date(profile.membershipDate).toLocaleDateString('en-IN') : '—'}</div>
                   <div>Phone: ${profileView.contact}</div>
                 </div>
@@ -456,7 +455,7 @@ const ProfilePage = () => {
                 </div>
                 <div>
                    <h2 className="text-xl font-bold text-[#1a1f36]">{isLoading ? "Loading profile..." : profileView.fullName}</h2>
-                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">MEMBER ID: {profileView.memberId}</p>
+                   <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">REGISTERED ID: {profileView.kycStatus === 'VERIFIED' ? profileView.memberId : 'PENDING ALLOCATION'}</p>
                 </div>
                 <div className="pt-6 border-t border-gray-50 flex justify-center gap-6">
                    <div className="text-center">
@@ -817,8 +816,7 @@ const ProfilePage = () => {
                                   )}
                                   <div className="space-y-1 text-xs">
                                     <p className="font-bold text-sm text-[#c9a84c]">{profileView.fullName}</p>
-                                    <p className="text-[10px] text-white/60">ID: {profileView.memberId}</p>
-                                    <p className="text-[10px] text-white/60">ROJA ID: {profile?.rojaId || '—'}</p>
+                                    <p className="text-[10px] text-white/60">Registered ID: {profileView.kycStatus === 'VERIFIED' ? profileView.memberId : 'Pending Allocation'}</p>
                                     <p className="text-[10px] text-white/60">Date: {profile?.membershipDate ? new Date(profile.membershipDate).toLocaleDateString('en-IN') : '—'}</p>
                                   </div>
                                 </div>

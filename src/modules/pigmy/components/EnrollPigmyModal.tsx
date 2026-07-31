@@ -289,7 +289,7 @@ export const EnrollPigmyModal = ({ open, onOpenChange, onSuccess, profile }: Enr
                     setRegisteredId(e.target.value);
                     if (registeredIdError) setRegisteredIdError('');
                   }}
-                  placeholder="Enter Customer/Member ID (e.g. 001)"
+                  placeholder="Enter Registered ID (e.g. ROJA-001)"
                   className="bg-slate-50 border-slate-100 h-12 rounded-xl focus:border-[#fcd34d] focus:ring-[#fcd34d]/20 transition-all font-bold text-sm"
                 />
                 {registeredIdError && (

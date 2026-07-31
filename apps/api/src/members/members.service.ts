@@ -559,7 +559,7 @@ export class MembersService {
     const dataUpdate: any = { idCardStatus: 'GENERATED' };
 
     if (adminSignatureFile) {
-      const buffer = await adminSignatureFile.toBuffer();
+      const buffer = adminSignatureFile.buffer;
       const adminSignatureUrl = await this.storage.upload(
         buffer,
         `admin-sig-${memberId}-${adminSignatureFile.filename}`,
@@ -570,7 +570,7 @@ export class MembersService {
     }
 
     if (officeSealFile) {
-      const buffer = await officeSealFile.toBuffer();
+      const buffer = officeSealFile.buffer;
       const officeSealUrl = await this.storage.upload(
         buffer,
         `office-seal-${memberId}-${officeSealFile.filename}`,

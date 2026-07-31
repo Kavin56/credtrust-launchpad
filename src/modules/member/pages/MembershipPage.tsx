@@ -72,7 +72,7 @@ const MembershipPage = () => {
                         <p className="text-[18px] font-bold">{totalShares} Units</p>
                      </div>
                      <div className="space-y-1">
-                        <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Member ID</p>
+                        <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Registered ID</p>
                         <p className="text-[18px] font-bold text-[#c9a84c]">{membershipId}</p>
                      </div>
                   </div>
@@ -153,7 +153,7 @@ const MembershipPage = () => {
 
                      <div className="grid grid-cols-2 gap-x-12 gap-y-4 text-left max-w-md mx-auto">
                         <div className="space-y-0.5">
-                           <p className="text-[8px] text-gray-400 font-bold uppercase leading-none">Member ID</p>
+                           <p className="text-[8px] text-gray-400 font-bold uppercase leading-none">Registered ID</p>
                            <p className="text-[13px] font-bold text-[#1a1f36] tracking-wider">{membershipId}</p>
                         </div>
                         <div className="space-y-0.5">

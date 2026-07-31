@@ -364,7 +364,7 @@ const DepositRequestsPage = () => {
                       <span className="font-bold">{selectedApp.parsedDetails?.applicant?.fullName || selectedApp.member?.fullName}</span>
                     </div>
                     <div className="flex justify-between border-b border-slate-100/50 pb-1.5">
-                      <span className="font-semibold text-slate-500">Member ID</span>
+                      <span className="font-semibold text-slate-500">Registered ID</span>
                       <span className="font-bold font-mono">{selectedApp.parsedDetails?.applicant?.memberId || selectedApp.member?.memberId}</span>
                     </div>
                     <div className="flex justify-between border-b border-slate-100/50 pb-1.5">

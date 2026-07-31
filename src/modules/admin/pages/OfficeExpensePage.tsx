@@ -211,7 +211,7 @@ const OfficeExpensePage = () => {
       return;
     }
 
-    const headers = "S.No.,Date,Type,Description,Member ID,Customer Name,Amount,Transaction Mode,Added By,Running Balance,Document Proof Link,Remarks\n";
+    const headers = "S.No.,Date,Type,Description,Registered ID,Customer Name,Amount,Transaction Mode,Added By,Running Balance,Document Proof Link,Remarks\n";
     const csvContent = expenses.map((e: any, idx: number) => {
       const docLink = e.documentSignedUrl ? e.documentSignedUrl : '';
       return `${expenses.length - idx},"${new Date(e.date).toLocaleDateString('en-IN')}",${e.type},"${e.description.replace(/"/g, '""')}","${e.memberId || '-'}","${e.customerName || '-'}",${e.amount},${e.modeOfTransaction},"${e.addedBy}",${e.runningBalance || ''},"${docLink}","${(e.remarks || '').replace(/"/g, '""')}"`;
@@ -529,7 +529,7 @@ const OfficeExpensePage = () => {
                         <th className="p-4">Date</th>
                         <th className="p-4">Type</th>
                         <th className="p-4">Description</th>
-                        <th className="p-4">Member ID</th>
+                        <th className="p-4">Registered ID</th>
                         <th className="p-4">Customer Name</th>
                         <th className="p-4">Amount</th>
                         <th className="p-4">Mode</th>

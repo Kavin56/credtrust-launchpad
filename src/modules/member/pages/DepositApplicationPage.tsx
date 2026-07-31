@@ -626,7 +626,7 @@ const DepositApplicationPage = () => {
                       {/* Registered ID field */}
                       <div className="space-y-2 md:col-span-2">
                          <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Registered ID <span className="text-red-500 font-black">*</span></Label>
-                         <Input value={formData.registeredId || ""} onChange={(e) => handleInputChange("registeredId", e.target.value)} placeholder="Enter Customer/Member ID (e.g. 001)" className="h-12 rounded-xl" />
+                         <Input value={formData.registeredId || ""} onChange={(e) => handleInputChange("registeredId", e.target.value)} placeholder="Enter Registered ID (e.g. ROJA-001)" className="h-12 rounded-xl" />
                          {errors.registeredId && <p className="text-xs text-red-500 font-bold">{errors.registeredId}</p>}
                       </div>
 
@@ -667,7 +667,7 @@ const DepositApplicationPage = () => {
                       </div>
 
                       <div className="space-y-2">
-                         <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Member ID <span className="text-red-500 font-black">*</span></Label>
+                         <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Registered ID <span className="text-red-500 font-black">*</span></Label>
                          <Input value={formData.memberId} onChange={(e) => handleInputChange("memberId", e.target.value)} className="h-12 rounded-xl" />
                          {errors.memberId && <p className="text-xs text-red-500 font-bold">{errors.memberId}</p>}
                       </div>

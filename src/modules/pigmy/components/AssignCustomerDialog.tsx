@@ -207,7 +207,7 @@ export function AssignCustomerDialog() {
                         )}
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        <span className="font-mono">{acc.accountNumber}</span> · Member ID: {acc.member?.memberId || "N/A"}
+                        <span className="font-mono">{acc.accountNumber}</span> · Registered ID: {acc.member?.memberId || "N/A"}
                       </p>
                     </div>
                   </label>

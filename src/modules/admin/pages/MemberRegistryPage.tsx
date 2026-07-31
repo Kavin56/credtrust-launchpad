@@ -27,9 +27,10 @@ export default function MemberRegistryPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL'); // ALL, PENDING, VERIFIED, REJECTED
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [selectedMember, setSelectedMember] = useState<any | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [registeredIdInput, setRegisteredIdInput] = useState('');
 
   // Seal & Signature States
   const [isApplyingSeal, setIsApplyingSeal] = useState(false);
@@ -87,14 +88,15 @@ export default function MemberRegistryPage() {
   };
 
   const updateKycMutation = useMutation({
-    mutationFn: async ({ memberId, status }: { memberId: string; status: string }) => {
+    mutationFn: async ({ memberId, status, memberIdValue }: { memberId: string; status: string, memberIdValue?: string }) => {
       setIsUpdating(true);
-      const { data } = await api.patch(`/members/${memberId}/kyc`, { kycStatus: status, status });
+      const { data } = await api.patch(`/members/${memberId}/kyc`, { kycStatus: status, status, memberId: memberIdValue });
       return data;
     },
     onSuccess: (_, variables) => {
       toast.success(`Member KYC marked as ${variables.status}!`);
       setSelectedMember(null);
+      setRegisteredIdInput('');
       queryClient.invalidateQueries({ queryKey: ['admin-members-list'] });
     },
     onError: (error) => {
@@ -112,7 +114,6 @@ export default function MemberRegistryPage() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="space-y-8">
           
-          {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
             <div>
               <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
@@ -133,12 +134,11 @@ export default function MemberRegistryPage() {
             </div>
           </div>
 
-          {/* Filters & Search */}
           <div className="bg-white p-6 rounded-[28px] border border-gray-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="relative w-full md:w-96">
               <Search className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
               <Input
-                placeholder="Search by Name, Member ID, or Phone..."
+                placeholder="Search by Name, Registered ID, or Phone..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-11 h-11 rounded-xl border-gray-200 font-medium"
@@ -162,7 +162,6 @@ export default function MemberRegistryPage() {
             </div>
           </div>
 
-          {/* Members Table */}
           <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
             {isLoading ? (
               <div className="p-12 text-center text-slate-400 space-y-3">
@@ -199,8 +198,7 @@ export default function MemberRegistryPage() {
                               </div>
                               <div>
                                 <p className="font-bold text-[#1a1f36]">{m.fullName || 'Unnamed Member'}</p>
-                                <p className="text-xs text-slate-400 font-mono">ID: {m.memberId || m.id}</p>
-                                {m.rojaId && <p className="text-xs text-amber-600 font-black mt-0.5">ROJA ID: {m.rojaId}</p>}
+                                <p className="text-xs text-slate-400 font-mono">Registered ID: {kyc === 'VERIFIED' ? (m.memberId || m.id) : 'Pending Allocation'}</p>
                               </div>
                             </div>
                           </td>
@@ -230,6 +228,7 @@ export default function MemberRegistryPage() {
                                 setOfficeSealFile(null);
                                 setAdminSignaturePreview(null);
                                 setOfficeSealPreview(null);
+                                setRegisteredIdInput(m.memberId || '');
                               }}
                               className="h-9 px-4 bg-[#1a1f36] text-white rounded-xl text-xs font-bold hover:bg-black"
                             >
@@ -248,7 +247,6 @@ export default function MemberRegistryPage() {
         </div>
       </main>
 
-      {/* Review & Verification Dialog */}
       <Dialog open={!!selectedMember} onOpenChange={(val) => !val && setSelectedMember(null)}>
         <DialogContent className="max-w-3xl bg-white rounded-3xl p-8 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -263,12 +261,10 @@ export default function MemberRegistryPage() {
           {selectedMember && (
             <div className="space-y-6 pt-4">
               
-              {/* Profile summary card */}
               <div className="p-6 bg-slate-50 rounded-2xl border border-gray-100 flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-bold text-[#1a1f36]">{selectedMember.fullName}</h3>
-                  <p className="text-xs font-mono text-slate-500">Member ID: {selectedMember.memberId}</p>
-                  {selectedMember.rojaId && <p className="text-xs text-amber-600 font-bold mt-0.5">ROJA ID: {selectedMember.rojaId}</p>}
+                  <p className="text-xs font-mono text-slate-500">Registered ID: {selectedMember.kycStatus === 'VERIFIED' ? selectedMember.memberId : 'Pending Allocation'}</p>
                   <p className="text-xs text-slate-500 mt-1">Contact: {selectedMember.contact || 'N/A'}</p>
                 </div>
                 <div className="text-right">
@@ -278,9 +274,7 @@ export default function MemberRegistryPage() {
               </div>
 
               {isApplyingSeal ? (
-                // Seal & Signature Application Workflow
                 <div className="grid md:grid-cols-2 gap-8">
-                  {/* Left Column: Uploaders */}
                   <div className="space-y-6">
                     <div className="space-y-2">
                       <label className="text-xs font-black uppercase text-slate-400 block">Admin Signature</label>
@@ -332,7 +326,6 @@ export default function MemberRegistryPage() {
                     </div>
                   </div>
 
-                  {/* Right Column: Card Preview */}
                   <div className="border border-slate-200 rounded-[30px] p-6 bg-slate-900 text-white relative overflow-hidden shadow-2xl min-h-[350px] flex flex-col justify-between">
                     <div className="flex justify-between items-start gap-4">
                       <div>
@@ -356,8 +349,7 @@ export default function MemberRegistryPage() {
                       )}
                       <div className="space-y-1 text-xs">
                         <p className="font-bold text-sm text-[#c9a84c]">{selectedMember.fullName}</p>
-                        <p className="text-[10px] text-white/60">ID: {selectedMember.memberId}</p>
-                        <p className="text-[10px] text-white/60">ROJA ID: {selectedMember.rojaId || "Not verified"}</p>
+                        <p className="text-[10px] text-white/60">Registered ID: {selectedMember.memberId}</p>
                         <p className="text-[10px] text-white/60">Date: {selectedMember.membershipDate ? new Date(selectedMember.membershipDate).toLocaleDateString('en-IN') : 'N/A'}</p>
                       </div>
                     </div>
@@ -652,34 +644,41 @@ export default function MemberRegistryPage() {
                     </Button>
 
                     {selectedMember.kycStatus !== 'VERIFIED' && (
-                      <Button
-                        disabled={isUpdating}
-                        onClick={async () => {
-                          const idInput = window.prompt("Enter Registered ID (e.g. 025 to allocate ROJA-025):");
-                          if (idInput === null) return; // User cancelled
-
-                          setIsUpdating(true);
-                          try {
-                            await api.patch(`/members/${selectedMember.id}/verify-roja`, { registeredId: idInput });
-                            toast.success("Registered ID approved & member verified successfully!");
-                            setSelectedMember(null);
-                            queryClient.invalidateQueries({ queryKey: ['admin-members-list'] });
-                          } catch (err: any) {
-                            toast.error(err?.response?.data?.message || 'Failed to verify Registered ID');
-                          } finally {
-                            setIsUpdating(false);
-                          }
-                        }}
-                        className="rounded-xl font-bold bg-[#1a1f36] hover:bg-black text-white px-6"
-                      >
-                        {isUpdating ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <UserCheck className="w-4 h-4 mr-2" /> Approve Registered ID
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="text" 
+                          placeholder="Allocated ROJA ID (e.g. 025)"
+                          value={registeredIdInput}
+                          onChange={(e) => setRegisteredIdInput(e.target.value)}
+                          className="h-10 px-3 text-sm border border-gray-200 rounded-xl focus:border-[#1a1f36] focus:ring-1 focus:ring-[#1a1f36] outline-none"
+                        />
+                        <Button
+                          disabled={isUpdating || !registeredIdInput.trim()}
+                          onClick={async () => {
+                            setIsUpdating(true);
+                            try {
+                              await api.patch(`/members/${selectedMember.id}/verify-roja`, { registeredId: registeredIdInput });
+                              toast.success("Registered ID approved & member verified successfully!");
+                              setSelectedMember(null);
+                              setRegisteredIdInput('');
+                              queryClient.invalidateQueries({ queryKey: ['admin-members-list'] });
+                            } catch (err: any) {
+                              toast.error(err?.response?.data?.message || 'Failed to verify Registered ID');
+                            } finally {
+                              setIsUpdating(false);
+                            }
+                          }}
+                          className="rounded-xl font-bold bg-[#1a1f36] hover:bg-black text-white px-6 h-10"
+                        >
+                          {isUpdating ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <UserCheck className="w-4 h-4 mr-2" /> Approve Registered ID
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     )}
                   </div>
 
