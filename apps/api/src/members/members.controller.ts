@@ -187,9 +187,9 @@ export class MembersController {
   @Patch(':id/verify-roja')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('ADMIN', 'CEO', 'DIRECTOR')
-  verifyRoja(@Param('id') id: string, @Req() req: any) {
+  verifyRoja(@Param('id') id: string, @Req() req: any, @Body('registeredId') registeredId: string) {
     const adminName = req.user.email || 'Admin';
-    return this.membersService.verifyRojaId(id, adminName);
+    return this.membersService.verifyRojaId(id, adminName, registeredId);
   }
 
   @Post(':id/seal-signature')

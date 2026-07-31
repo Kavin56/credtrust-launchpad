@@ -504,9 +504,13 @@ export class MembersService {
     return { signatureUrl: await this.storage.signedUrl(signatureUrl) };
   }
 
-  async verifyRojaId(memberId: string, adminName: string) {
+  async verifyRojaId(memberId: string, adminName: string, registeredId?: string) {
     const member = await this.prisma.member.findUnique({ where: { id: memberId } });
     if (!member) throw new NotFoundException('Member not found');
+
+    const newMemberId = registeredId 
+      ? (registeredId.toUpperCase().startsWith('ROJA-') ? registeredId.toUpperCase() : `ROJA-${registeredId}`)
+      : member.memberId;
 
     const updatedMember = await this.prisma.member.update({
       where: { id: memberId },
@@ -515,6 +519,7 @@ export class MembersService {
         membershipDate: member.membershipDate || new Date(),
         verificationDate: new Date(),
         verifiedBy: adminName,
+        memberId: newMemberId,
       }
     });
 

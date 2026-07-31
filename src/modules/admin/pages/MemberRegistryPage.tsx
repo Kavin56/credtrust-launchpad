@@ -655,9 +655,12 @@ export default function MemberRegistryPage() {
                       <Button
                         disabled={isUpdating}
                         onClick={async () => {
+                          const idInput = window.prompt("Enter Registered ID (e.g. 025 to allocate ROJA-025):");
+                          if (idInput === null) return; // User cancelled
+
                           setIsUpdating(true);
                           try {
-                            await api.patch(`/members/${selectedMember.id}/verify-roja`);
+                            await api.patch(`/members/${selectedMember.id}/verify-roja`, { registeredId: idInput });
                             toast.success("Registered ID approved & member verified successfully!");
                             setSelectedMember(null);
                             queryClient.invalidateQueries({ queryKey: ['admin-members-list'] });
