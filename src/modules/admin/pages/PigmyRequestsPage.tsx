@@ -37,6 +37,7 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import DownloadPaymentHistoryModal from '@/components/DownloadPaymentHistoryModal';
 
 const PigmyRequestsPage = () => {
   const [filter, setFilter] = useState("PENDING");
@@ -45,6 +46,7 @@ const PigmyRequestsPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [remarks, setRemarks] = useState("");
   const [selectedAgentId, setSelectedAgentId] = useState("");
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -131,6 +133,13 @@ const PigmyRequestsPage = () => {
               Verify customer profile information, identity docs and approve/assign agent for PIGMY enrollments
             </p>
           </div>
+          <Button
+            onClick={() => setShowDownloadModal(true)}
+            className="h-12 px-6 bg-[#6b21a8] text-white rounded-2xl font-bold hover:bg-[#581c87] shadow-lg shadow-purple-900/10 flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Download Collection History
+          </Button>
         </div>
 
         {/* Filters and Search */}
@@ -462,7 +471,12 @@ const PigmyRequestsPage = () => {
               </>
             )}
           </DialogFooter>
-        </DialogContent>
+        <DownloadPaymentHistoryModal
+          isOpen={showDownloadModal}
+          onClose={() => setShowDownloadModal(false)}
+          isAdmin={true}
+          defaultProductType="PIGMY"
+        />
       </Dialog>
 
       <Footer />

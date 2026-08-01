@@ -279,7 +279,7 @@ export class LoansService {
     return { eligible: true }; 
   }
 
-  async repay(loanId: string, dto: any) {
+  async repay(loanId: string, dto: any, userId?: string, role?: string) {
     const loan = await this.prisma.loan.findUnique({
       where: { id: loanId },
       include: { emiSchedule: { orderBy: { dueDate: 'asc' } } }
@@ -287,6 +287,14 @@ export class LoansService {
 
     if (!loan) {
       throw new NotFoundException('Loan not found');
+    }
+
+    // Ownership check for MEMBER role
+    if (role === 'MEMBER' && userId) {
+      const member = await this.prisma.member.findFirst({ where: { userId } });
+      if (!member || loan.memberId !== member.id) {
+        throw new BadRequestException('You can only make payments on your own loans');
+      }
     }
 
     // Find the oldest unpaid EMI schedule

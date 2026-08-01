@@ -41,6 +41,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import DownloadPaymentHistoryModal from '@/components/DownloadPaymentHistoryModal';
 import { 
   Dialog, 
   DialogContent, 
@@ -49,7 +51,6 @@ import {
   DialogDescription,
   DialogFooter
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
 const LoanRequestsPage = () => {
@@ -58,6 +59,7 @@ const LoanRequestsPage = () => {
   const [selectedLoan, setSelectedLoan] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [remarks, setRemarks] = useState("");
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
   
   const [repayAmount, setRepayAmount] = useState("");
   const [paymentMode, setPaymentMode] = useState("CASH");
@@ -167,6 +169,13 @@ const LoanRequestsPage = () => {
                    onChange={(e) => setSearchTerm(e.target.value)}
                 />
              </div>
+             <Button
+                onClick={() => setShowDownloadModal(true)}
+                className="h-12 px-6 bg-[#6b21a8] text-white rounded-2xl font-bold hover:bg-[#581c87] shadow-lg shadow-purple-900/10 flex items-center gap-2"
+             >
+                <Download className="w-4 h-4" />
+                Download Payment History
+             </Button>
              <Button className="h-12 px-6 bg-[#1a1f36] text-white rounded-2xl font-bold hover:bg-[#2d3356] shadow-lg shadow-black/5">
                 <Filter className="w-4 h-4 mr-2" />
                 Filters
@@ -673,10 +682,15 @@ const LoanRequestsPage = () => {
                </div>
                )}
            </DialogContent>
-        </Dialog>
-      </main>
+         <DownloadPaymentHistoryModal
+            isOpen={showDownloadModal}
+            onClose={() => setShowDownloadModal(false)}
+            isAdmin={true}
+            defaultProductType="LOAN"
+         />
+       </main>
 
-      <Footer />
+       <Footer />
     </div>
   );
 };

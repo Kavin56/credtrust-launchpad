@@ -1,4 +1,4 @@
-import { Search, ChevronRight, Eye, Home, Smartphone, Info, CreditCard, ChevronDown, Landmark, PiggyBank, CircleDollarSign, Calculator, User, Clock, FileText } from 'lucide-react';
+import { Search, ChevronRight, Eye, Home, Smartphone, Info, CreditCard, ChevronDown, Landmark, PiggyBank, CircleDollarSign, Calculator, User, Clock, FileText, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { QRCodeSVG } from 'qrcode.react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import DownloadPaymentHistoryModal from '@/components/DownloadPaymentHistoryModal';
 
 import { useAuth } from '@/modules/login/AuthContext';
 
@@ -43,6 +44,7 @@ const AccountsPage = () => {
 
   const [selectedLoanSummary, setSelectedLoanSummary] = useState<any>(null);
   const [selectedDepositSummary, setSelectedDepositSummary] = useState<any>(null);
+  const [showDownloadHistoryModal, setShowDownloadHistoryModal] = useState(false);
 
   const getFormattedRegisteredId = (app: any) => {
     const regId = app?.registeredId || app?.member?.memberId || "";
@@ -238,6 +240,14 @@ const AccountsPage = () => {
                             <Eye className="w-4 h-4 opacity-70 cursor-pointer" />
                         </div>
                       </div>
+
+                      <button
+                        onClick={() => setShowDownloadHistoryModal(true)}
+                        className="h-11 px-6 bg-white border-2 border-[#6b21a8]/20 hover:border-[#6b21a8] text-[#6b21a8] font-bold rounded-2xl flex items-center gap-2 text-xs shadow-sm hover:shadow-md transition-all ml-auto"
+                      >
+                        <Download className="w-4 h-4 text-[#6b21a8]" />
+                        Download Payment History
+                      </button>
                   </div>
 
                   {/* Sub Tabs */}
@@ -1111,7 +1121,10 @@ const AccountsPage = () => {
               );
             })()}
           </DialogContent>
-        </Dialog>
+        <DownloadPaymentHistoryModal
+          isOpen={showDownloadHistoryModal}
+          onClose={() => setShowDownloadHistoryModal(false)}
+        />
 
       <Footer />
     </div>

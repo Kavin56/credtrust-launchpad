@@ -17,6 +17,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import api, { getApiErrorMessage, getApiBaseUrl } from '@/lib/api';
+import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -364,7 +365,7 @@ export default function MemberRegistryPage() {
                         )}
                       </div>
 
-                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${selectedMember.memberId}`} className="w-12 h-12 bg-white p-1 rounded" alt="QR" />
+                      <QRCodeSVG value={selectedMember.memberId || 'MEMBER-ID'} size={48} fgColor="#1a1f36" className="bg-white p-1 rounded" />
 
                       <div className="space-y-1 text-center">
                         <p className="text-[7px] text-white/40 uppercase font-black">Authorized Signatory</p>

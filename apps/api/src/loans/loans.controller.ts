@@ -147,15 +147,19 @@ export class LoansController {
   }
 
   @Post(':id/repay')
-  @Roles('MEMBER')
-  repay(@Param('id') id: string, @Body() dto: any) {
-    return this.loansService.repay(id, dto);
+  @Roles('ADMIN', 'CEO', 'MEMBER')
+  repay(@Param('id') id: string, @Body() dto: any, @Req() req: FastifyRequest) {
+    const userId = (req as any).user?.userId ?? (req as any).user?.sub;
+    const role = (req as any).user?.role;
+    return this.loansService.repay(id, dto, userId, role);
   }
 
   @Post('pay')
-  @Roles('MEMBER')
-  pay(@Body() dto: { loanId: string; amount: number; paymentMethod: string; transactionId?: string }) {
+  @Roles('ADMIN', 'CEO', 'MEMBER')
+  pay(@Body() dto: { loanId: string; amount: number; paymentMethod: string; transactionId?: string }, @Req() req: FastifyRequest) {
+    const userId = (req as any).user?.userId ?? (req as any).user?.sub;
+    const role = (req as any).user?.role;
     const { loanId, ...repaymentData } = dto;
-    return this.loansService.repay(loanId, repaymentData);
+    return this.loansService.repay(loanId, repaymentData, userId, role);
   }
 }

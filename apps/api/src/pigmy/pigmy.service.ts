@@ -158,6 +158,14 @@ export class PigmyService {
     });
     if (!account) throw new NotFoundException('Account not found');
 
+    // Ownership check: ensure MEMBER owns this account
+    if (userId) {
+      const member = await this.prisma.member.findFirst({ where: { userId } });
+      if (!member || account.memberId !== member.id) {
+        throw new ForbiddenException('You can only initiate payments on your own accounts');
+      }
+    }
+
     const transactionId = `TXN-PIG-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const receiptNumber = `RCPT${Date.now().toString().slice(-8)}`;
 
@@ -177,14 +185,23 @@ export class PigmyService {
     });
   }
 
-  async confirmPayment(collectionId: string, referenceId?: string) {
+  async confirmPayment(collectionId: string, referenceId?: string, userId?: string) {
     const collection = await this.prisma.pigmyCollection.findUnique({
       where: { id: collectionId },
+      include: { account: true },
     });
 
     if (!collection) throw new NotFoundException('Collection not found');
     if (collection.status !== 'INITIATED') {
       throw new BadRequestException('Can only confirm initiated payments');
+    }
+
+    // Ownership check: ensure MEMBER owns this collection's account
+    if (userId) {
+      const member = await this.prisma.member.findFirst({ where: { userId } });
+      if (!member || collection.account.memberId !== member.id) {
+        throw new ForbiddenException('You can only confirm payments on your own accounts');
+      }
     }
 
     return this.prisma.pigmyCollection.update({
@@ -220,6 +237,14 @@ export class PigmyService {
     if (!account) throw new NotFoundException('Account not found');
     if (actorId) {
       this.assertAgentOwnsAccount(role, actorId, account);
+    }
+
+    // MEMBER ownership check: ensure member can only pay into their own account
+    if (role === 'MEMBER' && actorId) {
+      const member = await this.prisma.member.findFirst({ where: { userId: actorId } });
+      if (!member || account.memberId !== member.id) {
+        throw new ForbiddenException('You can only make payments on your own accounts');
+      }
     }
 
     const transactionId = `TXN-PIG-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -330,7 +355,7 @@ export class PigmyService {
     });
   }
 
-  async getAccountDetails(accountNumber: string) {
+  async getAccountDetails(accountNumber: string, userId?: string, role?: string) {
     const account = await this.prisma.pigmyAccount.findUnique({
       where: { accountNumber },
       include: {
@@ -343,6 +368,14 @@ export class PigmyService {
       },
     });
     if (!account) throw new NotFoundException('Account not found');
+
+    // MEMBER ownership check
+    if (role === 'MEMBER' && userId) {
+      const member = await this.prisma.member.findFirst({ where: { userId } });
+      if (!member || account.memberId !== member.id) {
+        throw new ForbiddenException('You can only view your own accounts');
+      }
+    }
 
     let agent = null;
     if (account.agentId) {

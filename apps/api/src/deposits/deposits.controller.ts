@@ -35,6 +35,7 @@ export class DepositsController {
   constructor(private readonly depositsService: DepositsService) {}
 
   @Get()
+  @Roles('ADMIN', 'CEO', 'DIRECTOR', 'TELLER', 'MEMBER')
   findAll(
     @Req() req: FastifyRequest,
     @Query('memberId') memberId?: string,
@@ -98,12 +99,14 @@ export class DepositsController {
   }
 
   @Patch(':id/approve')
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
   approve(@Param('id') id: string, @Req() req: any) {
     const adminName = req.user?.email || 'Admin';
     return this.depositsService.updateStatus(id, 'APPROVED', 'Approved via manual action', adminName);
   }
 
   @Put(':id/status')
+  @Roles('ADMIN', 'CEO', 'DIRECTOR')
   updateStatus(
     @Param('id') id: string,
     @Body() body: { status: string; remarks?: string },

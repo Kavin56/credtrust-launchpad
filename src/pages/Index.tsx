@@ -5,7 +5,6 @@ import Ticker from "@/components/Ticker";
 import HeroSection from "@/components/HeroSection";
 import GoalsSection from "@/components/GoalsSection";
 import CalculatorSection from "@/components/CalculatorSection";
-import CTABanner from "@/components/CTABanner";
 import TeamSection from "@/components/TeamSection";
 import HighlightsSection from "@/components/HighlightsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
@@ -57,7 +56,6 @@ const Index = () => {
       <HeroSection />
       <GoalsSection />
       <CalculatorSection />
-      <CTABanner />
       <TeamSection />
       <HighlightsSection />
       <TestimonialsSection />

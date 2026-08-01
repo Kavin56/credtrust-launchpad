@@ -286,7 +286,8 @@ export class MembersService {
     const member = await this.prisma.member.findFirst({
       where: { OR: [{ userId }, { id: userId }, { memberId: userId }] },
       include: { 
-        depositAccounts: true, 
+        depositAccounts: true,
+        depositApplications: true, 
         loans: {
           include: { emiSchedule: true }
         }, 
@@ -296,10 +297,20 @@ export class MembersService {
     });
     if (!member) throw new NotFoundException('Member not found');
 
-    const totalBalance = (member.depositAccounts || []).reduce(
+    const activeDepositSum = (member.depositAccounts || []).reduce(
       (sum, a: any) => sum + Number(a.balance || 0),
       0,
     );
+    const pigmyBalanceSum = (member.pigmyAccounts || []).reduce(
+      (sum, a: any) => sum + Number(a.balance || 0),
+      0,
+    );
+    const pendingAppSum = (member.depositApplications || [])
+      .filter((app: any) => app.status !== 'REJECTED')
+      .reduce((sum, app: any) => sum + Number(app.amount || 0), 0);
+
+    const totalBalance = activeDepositSum + pigmyBalanceSum + pendingAppSum;
+
     const sharesOwned = (member.shareAccounts || []).reduce(
       (sum, s: any) => sum + Number(s.sharesOwned || 0),
       0,
@@ -320,13 +331,25 @@ export class MembersService {
       };
     }
 
+    const pendingDepositCount = (member.depositApplications || []).filter(a => a.status === 'PENDING' || a.status === 'PENDING_REGISTERED_ID_APPROVAL').length;
+    const approvedDepositCount = (member.depositAccounts || []).length;
+    const totalDepositCount = (member.depositApplications || []).length + approvedDepositCount;
+
     return {
       name: member.fullName,
+      registeredId: (member as any).rojaId || member.memberId,
       kycStatus: member.kycStatus,
-      totalBalance,
+      totalBalance: Math.round(totalBalance * 100) / 100,
+      activeDepositSum: Math.round(activeDepositSum * 100) / 100,
+      pendingAppSum: Math.round(pendingAppSum * 100) / 100,
+      pigmyBalanceSum: Math.round(pigmyBalanceSum * 100) / 100,
       sharesOwned,
       loans: member.loans || [],
       deposits: member.depositAccounts || [],
+      depositApplications: member.depositApplications || [],
+      totalDepositCount,
+      pendingDepositCount,
+      approvedDepositCount,
       nextEmi,
     };
   }
@@ -764,14 +787,13 @@ export class MembersService {
       }
 
       return {
-        valid: true,
+        exists: true,
         memberId: member.memberId,
         fullName: member.fullName,
-        formattedId,
-        member
+        formattedId
       };
     }
 
-    return { valid: false, message: 'Invalid Registered ID' };
+    return { exists: false, message: 'Invalid Registered ID' };
   }
 }

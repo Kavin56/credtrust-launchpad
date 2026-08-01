@@ -48,6 +48,7 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import DownloadPaymentHistoryModal from '@/components/DownloadPaymentHistoryModal';
 
 const DepositRequestsPage = () => {
   const [filter, setFilter] = useState("PENDING");
@@ -55,6 +56,7 @@ const DepositRequestsPage = () => {
   const [selectedApp, setSelectedApp] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [remarks, setRemarks] = useState("");
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
   
   const [txnAmount, setTxnAmount] = useState("");
   const [txnType, setTxnType] = useState("DEPOSIT");
@@ -184,6 +186,13 @@ const DepositRequestsPage = () => {
               Verify, Approve and Manage Fixed Deposits, Recurring Deposits and Pigmy schemes
             </p>
           </div>
+          <Button
+            onClick={() => setShowDownloadModal(true)}
+            className="h-12 px-6 bg-[#6b21a8] text-white rounded-2xl font-bold hover:bg-[#581c87] shadow-lg shadow-purple-900/10 flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Download Payment History
+          </Button>
         </div>
 
         {/* Filters and Search */}
@@ -646,6 +655,12 @@ const DepositRequestsPage = () => {
             </div>
           )}
         </DialogContent>
+        <DownloadPaymentHistoryModal
+          isOpen={showDownloadModal}
+          onClose={() => setShowDownloadModal(false)}
+          isAdmin={true}
+          defaultProductType="DEPOSIT"
+        />
       </Dialog>
     </div>
   );

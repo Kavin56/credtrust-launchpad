@@ -31,12 +31,14 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
+import DownloadPaymentHistoryModal from "@/components/DownloadPaymentHistoryModal";
 
 const PaymentsPage = () => {
   const [step, setStep] = useState(1);
   const [selectedDues, setSelectedDues] = useState<string[]>([]);
   const [paymentMethod, setPaymentMethod] = useState('internal');
   const [accountId, setAccountId] = useState<string>("");
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -84,8 +86,16 @@ const PaymentsPage = () => {
   const handlePay = async () => {
     try {
       if (selectedDues.length === 0) return;
+      if (paymentMethod === 'upi' && step === 2) {
+        setStep(2.5 as any);
+        return;
+      }
       await Promise.all(selectedDues.map((id) => payMutation.mutateAsync(id)));
-      toast.success("Payment successful! Receipt generated.");
+      queryClient.invalidateQueries({ queryKey: ["emi-due"] });
+      queryClient.invalidateQueries({ queryKey: ["loans"] });
+      queryClient.invalidateQueries({ queryKey: ["member-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
+      toast.success("Payment completed successfully!");
       setStep(3);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Payment failed");
@@ -113,10 +123,20 @@ const PaymentsPage = () => {
               <h2 className="text-2xl font-black text-[#1a1f36]">Unified Payments Hub</h2>
               <p className="text-[13px] text-gray-400 font-bold">Fulfill your monthly obligations in one click</p>
            </div>
-           <Link to="/accounts" className="flex items-center gap-2 text-[12px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-colors">
-              <History className="w-4 h-4" />
-              Payment History
-           </Link>
+           <div className="flex items-center gap-3">
+             <button
+                type="button"
+                onClick={() => setShowHistoryModal(true)}
+                className="flex items-center gap-2 text-[12px] font-bold px-4 py-2 bg-[#6b21a8]/10 text-[#6b21a8] hover:bg-[#6b21a8]/20 rounded-xl transition-all"
+             >
+                <Download className="w-4 h-4" />
+                Download Statement
+             </button>
+             <Link to="/accounts" className="flex items-center gap-2 text-[12px] font-bold text-[#6b21a8] hover:text-[#c9a84c] transition-colors">
+                <History className="w-4 h-4" />
+                Payment History
+             </Link>
+           </div>
         </div>
 
         <section className="bg-white rounded-[40px] border border-gray-100 shadow-xl shadow-black/5 overflow-hidden">
@@ -279,6 +299,33 @@ const PaymentsPage = () => {
                          <Smartphone className="w-4 h-4 ml-2" />
                       </Button>
                    </div>
+                 </motion.div>
+              )}
+
+              {step === 2.5 && (
+                <motion.div
+                   key="step2.5"
+                   initial={{ opacity: 0, x: 20 }}
+                   animate={{ opacity: 1, x: 0 }}
+                   exit={{ opacity: 0, x: -20 }}
+                   className="p-10 space-y-8"
+                >
+                   <div className="text-center space-y-2">
+                      <h2 className="text-2xl font-bold text-[#1a1f36]">Scan & Pay via UPI</h2>
+                      <p className="text-gray-400 text-sm">Scan the QR code to fulfill your loan EMI dues</p>
+                   </div>
+
+                   <UPIPaymentQRCode
+                      amount={totalAmount}
+                      applicationNo={`LOAN-EMI-${selectedDues[0]?.slice(-6) || 'DUES'}`}
+                      registeredId="ROJA-EMI-PAYMENT"
+                      customerName="Loan Applicant"
+                      productType="Loan EMI"
+                      paymentStatus="PENDING"
+                      onPaymentConfirmed={async (refId) => {
+                        await handlePay();
+                      }}
+                   />
                 </motion.div>
               )}
 
@@ -318,9 +365,12 @@ const PaymentsPage = () => {
                    </div>
 
                    <div className="flex flex-col items-center gap-4">
-                      <Button className="h-14 px-12 bg-[#1a1f36] text-white rounded-2xl hover:bg-black font-bold">
+                      <Button 
+                        onClick={() => setShowHistoryModal(true)}
+                        className="h-14 px-12 bg-[#1a1f36] text-white rounded-2xl hover:bg-black font-bold"
+                      >
                          <Download className="w-4 h-4 mr-2" />
-                         Download Receipt
+                         Download Receipt / Statement
                       </Button>
                       <Link to="/accounts" className="text-[13px] font-bold text-gray-400 hover:text-[#1a1f36] transition-colors">
                          View in Dashboard
@@ -330,6 +380,11 @@ const PaymentsPage = () => {
               )}
            </AnimatePresence>
         </section>
+
+        <DownloadPaymentHistoryModal
+          isOpen={showHistoryModal}
+          onClose={() => setShowHistoryModal(false)}
+        />
 
         {/* Support Banner */}
         <div className="mt-12 flex items-center justify-center gap-12 py-8 bg-[#1a1f36]/[0.02] rounded-[32px] border border-gray-100">

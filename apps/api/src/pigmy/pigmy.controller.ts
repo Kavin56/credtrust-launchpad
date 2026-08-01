@@ -70,7 +70,7 @@ export class PigmyController {
   @Roles('MEMBER')
   @ApiOperation({ summary: 'Confirm a Pigmy payment (Member)' })
   async confirmPayment(@Body() dto: ConfirmPaymentDto, @Request() req: any) {
-    return this.pigmyService.confirmPayment(dto.collectionId, dto.referenceId);
+    return this.pigmyService.confirmPayment(dto.collectionId, dto.referenceId, req.user.userId);
   }
 
   @Get('my-collections')
@@ -125,9 +125,11 @@ export class PigmyController {
   }
 
   @Get('account/:number')
+  @Roles('ADMIN', 'CEO', 'AGENT', 'MEMBER')
   @ApiOperation({ summary: 'Get details of a Pigmy account' })
-  async getAccount(@Param('number') accountNumber: string) {
-    return this.pigmyService.getAccountDetails(accountNumber);
+  async getAccount(@Param('number') accountNumber: string, @Request() req: any) {
+    const { role, userId } = this.actor(req);
+    return this.pigmyService.getAccountDetails(accountNumber, userId, role);
   }
 
   @Post('interest/:id')

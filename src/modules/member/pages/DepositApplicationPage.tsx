@@ -28,7 +28,8 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { useAuth } from "@/modules/login/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import UPIPaymentQRCode from "@/components/UPIPaymentQRCode";
 
 
 const schemes = [
@@ -133,8 +134,16 @@ const DepositApplicationPage = () => {
   const [amount, setAmount] = useState(schemes[0].min);
   const [tenure, setTenure] = useState(6);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedAppInfo, setSubmittedAppInfo] = useState<{
+    applicationNo: string;
+    amount: number;
+    registeredId: string;
+    customerName: string;
+    productType: string;
+  } | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   // Dynamic Form Fields State
   const [formData, setFormData] = useState<Record<string, string>>({
@@ -505,12 +514,28 @@ const DepositApplicationPage = () => {
         }
       });
 
-      await api.post("/deposits", payload, {
+      const { data: createdApp } = await api.post("/deposits", payload, {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
-      toast.success(`Deposit request submitted successfully! Temp ID: ${fdNumber}`);
-      navigate("/accounts?tab=deposits");
+      // Invalidate relevant queries so dashboards sync immediately
+      queryClient.invalidateQueries({ queryKey: ["deposits"] });
+      queryClient.invalidateQueries({ queryKey: ["member-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
+
+      const appNo = createdApp?.applicationNo || fdNumber;
+      const regId = createdApp?.registeredId || formData.registeredId || profile?.rojaId || profile?.memberId || 'ROJA-MEMBER';
+
+      setSubmittedAppInfo({
+        applicationNo: appNo,
+        amount: Number(amount),
+        registeredId: regId,
+        customerName: formData.fullName || profile?.fullName || 'Applicant',
+        productType: selectedScheme.name,
+      });
+
+      toast.success(`Deposit request created! Application No: ${appNo}. Please scan the QR Code to complete payment.`);
+      setStep(6);
     } catch (err: any) {
       console.error(err);
       toast.error(err?.response?.data?.message || "Failed to submit deposit request.");
@@ -1067,33 +1092,67 @@ const DepositApplicationPage = () => {
                    </div>
                 </motion.div>
               )}
+
+              {step === 6 && submittedAppInfo && (
+                <motion.div
+                  key="step6"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="p-10 space-y-8"
+                >
+                  <div className="text-center space-y-2">
+                    <h2 className="text-3xl font-black text-[#1a1f36]">Scan & Pay via UPI</h2>
+                    <p className="text-gray-500 text-sm font-medium">
+                      Scan the QR code using GPay, PhonePe, or BHIM to submit your deposit payment.
+                    </p>
+                  </div>
+
+                  <UPIPaymentQRCode
+                    amount={submittedAppInfo.amount}
+                    applicationNo={submittedAppInfo.applicationNo}
+                    registeredId={submittedAppInfo.registeredId}
+                    customerName={submittedAppInfo.customerName}
+                    productType={submittedAppInfo.productType}
+                    paymentStatus="PENDING"
+                    onPaymentConfirmed={async (referenceId) => {
+                      toast.success(`Payment confirmed! Reference: ${referenceId || 'N/A'}`);
+                      queryClient.invalidateQueries({ queryKey: ["deposits"] });
+                      queryClient.invalidateQueries({ queryKey: ["member-overview"] });
+                      queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
+                      navigate("/accounts?tab=deposits");
+                    }}
+                  />
+                </motion.div>
+              )}
            </AnimatePresence>
 
-           <div className="bg-gray-50/50 p-10 flex justify-between items-center border-t border-gray-100">
-              {step > 1 ? (
-                <Button type="button" onClick={handleBack} variant="ghost" className="h-14 px-8 font-bold text-gray-500 rounded-2xl hover:bg-[#1a1f36]/5">
-                   <ArrowLeft className="w-4 h-4 mr-2" />
-                   Back
-                </Button>
-              ) : <div />}
+           {step < 6 && (
+             <div className="bg-gray-50/50 p-10 flex justify-between items-center border-t border-gray-100">
+                {step > 1 ? (
+                  <Button type="button" onClick={handleBack} variant="ghost" className="h-14 px-8 font-bold text-gray-500 rounded-2xl hover:bg-[#1a1f36]/5">
+                     <ArrowLeft className="w-4 h-4 mr-2" />
+                     Back
+                  </Button>
+                ) : <div />}
 
-              {step < 5 ? (
-                <Button type="button" onClick={handleNext} className="h-14 px-12 font-bold bg-[#1a1f36] text-white rounded-2xl hover:bg-[#2d3356] shadow-lg shadow-black/10">
-                   Next Step
-                   <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              ) : (
-                <Button 
-                   type="button" 
-                   disabled={isSubmitting} 
-                   onClick={handleSubmit} 
-                   className="h-14 px-12 font-bold bg-[#c9a84c] text-white rounded-2xl hover:bg-[#d4b65c] shadow-lg shadow-amber-900/10 flex items-center gap-2"
-                >
-                   {isSubmitting ? "Submitting Application..." : "Submit Application"}
-                   <CheckCircle2 className="w-4 h-4" />
-                </Button>
-              )}
-           </div>
+                {step < 5 ? (
+                  <Button type="button" onClick={handleNext} className="h-14 px-12 font-bold bg-[#1a1f36] text-white rounded-2xl hover:bg-[#2d3356] shadow-lg shadow-black/10">
+                     Next Step
+                     <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                ) : (
+                  <Button 
+                     type="button" 
+                     disabled={isSubmitting} 
+                     onClick={handleSubmitApplication} 
+                     className="h-14 px-12 font-black bg-[#c9a84c] text-white rounded-2xl hover:bg-[#d4b65c] shadow-xl shadow-amber-900/10"
+                  >
+                     {isSubmitting ? "Submitting Application..." : "Submit & Generate Payment QR"}
+                  </Button>
+                )}
+             </div>
+           )}
         </section>
         
         {/* Support Banner */}
