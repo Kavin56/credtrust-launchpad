@@ -32,6 +32,21 @@ export interface PaymentHistoryRecord {
   remarks?: string;
 }
 
+export interface PaymentHistoryData {
+  records: PaymentHistoryRecord[];
+  summary: {
+    totalCount: number;
+    totalAmountPaid: number;
+    totalPendingAmount: number;
+    productBreakdown: { loan: number; deposit: number; pigmy: number };
+  };
+  meta: {
+    generatedAt: Date;
+    generatedBy: string;
+    appliedFilters: Record<string, string>;
+  };
+}
+
 @Injectable()
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
@@ -105,20 +120,7 @@ export class ReportsService {
     filters: PaymentHistoryQueryDto,
     requestingUserId?: string,
     requestingUserRole = 'ADMIN',
-  ): Promise<{
-    records: PaymentHistoryRecord[];
-    summary: {
-      totalCount: number;
-      totalAmountPaid: number;
-      totalPendingAmount: number;
-      productBreakdown: { loan: number; deposit: number; pigmy: number };
-    };
-    meta: {
-      generatedAt: Date;
-      generatedBy: string;
-      appliedFilters: Record<string, string>;
-    };
-  }> {
+  ): Promise<PaymentHistoryData> {
     let targetMemberId: string | undefined = filters.memberId;
 
     // Enforce strict data isolation for MEMBER role
@@ -337,14 +339,14 @@ export class ReportsService {
 
   // PDF Generator using PDFKit
   async generatePaymentHistoryPdfBuffer(
-    data: Awaited<ReturnType<ReportsService['prototype']['fetchPaymentHistoryData']>>,
+    data: PaymentHistoryData,
   ): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       try {
         const doc = new PDFDocument({ margin: 30, size: 'A4' });
         const buffers: Buffer[] = [];
 
-        doc.on('data', (chunk) => buffers.push(chunk));
+        doc.on('data', (chunk: any) => buffers.push(chunk));
         doc.on('end', () => resolve(Buffer.concat(buffers)));
 
         // Header
@@ -388,7 +390,7 @@ export class ReportsService {
         let currentY = tableTop + 22;
         doc.font('Helvetica').fontSize(7.5);
 
-        data.records.slice(0, 100).forEach((rec, idx) => {
+        data.records.slice(0, 100).forEach((rec: any, idx: number) => {
           if (currentY > 750) {
             doc.addPage();
             currentY = 40;
@@ -429,7 +431,7 @@ export class ReportsService {
 
   // Excel Generator using ExcelJS
   async generatePaymentHistoryExcelBuffer(
-    data: Awaited<ReturnType<ReportsService['prototype']['fetchPaymentHistoryData']>>,
+    data: PaymentHistoryData,
   ): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook();
     workbook.creator = 'Sharanam Souharada Society';
@@ -485,7 +487,7 @@ export class ReportsService {
     });
 
     // Data Rows
-    data.records.forEach((rec, index) => {
+    data.records.forEach((rec: any, index: number) => {
       const row = sheet.addRow([
         index + 1,
         rec.transactionId,
@@ -500,7 +502,7 @@ export class ReportsService {
         rec.referenceNumber || rec.remarks || '-',
       ]);
 
-      row.getCell(8).numberFormat = '₹#,##0.00';
+      (row.getCell(8) as any).numFmt = '₹#,##0.00';
       if (index % 2 === 1) {
         row.eachCell((cell) => {
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } };
@@ -524,7 +526,7 @@ export class ReportsService {
 
   // CSV Generator
   async generatePaymentHistoryCsvString(
-    data: Awaited<ReturnType<ReportsService['prototype']['fetchPaymentHistoryData']>>,
+    data: PaymentHistoryData,
   ): Promise<string> {
     const headers = [
       'Transaction ID',
@@ -547,7 +549,7 @@ export class ReportsService {
       return str;
     };
 
-    const rows = data.records.map((r) => [
+    const rows = data.records.map((r: any) => [
       escapeCsv(r.transactionId),
       escapeCsv(r.registeredId),
       escapeCsv(r.customerName),
@@ -560,6 +562,6 @@ export class ReportsService {
       escapeCsv(r.referenceNumber || '-'),
     ]);
 
-    return [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+    return [headers.join(','), ...rows.map((row: any) => row.join(','))].join('\n');
   }
 }
