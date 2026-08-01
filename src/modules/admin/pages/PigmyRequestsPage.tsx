@@ -471,6 +471,7 @@ const PigmyRequestsPage = () => {
               </>
             )}
           </DialogFooter>
+        </DialogContent>
         <DownloadPaymentHistoryModal
           isOpen={showDownloadModal}
           onClose={() => setShowDownloadModal(false)}

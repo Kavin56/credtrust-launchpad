@@ -1121,6 +1121,8 @@ const AccountsPage = () => {
               );
             })()}
           </DialogContent>
+        </Dialog>
+
         <DownloadPaymentHistoryModal
           isOpen={showDownloadHistoryModal}
           onClose={() => setShowDownloadHistoryModal(false)}

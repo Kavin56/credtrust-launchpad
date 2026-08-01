@@ -682,6 +682,8 @@ const LoanRequestsPage = () => {
                </div>
                )}
            </DialogContent>
+         </Dialog>
+
          <DownloadPaymentHistoryModal
             isOpen={showDownloadModal}
             onClose={() => setShowDownloadModal(false)}
