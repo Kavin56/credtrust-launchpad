@@ -95,9 +95,9 @@ export class DepositsService {
       documentPaths[file.fieldname] = `/uploads/deposits/${filename}`;
     }
 
-    const kind = fields.type || 'FD';
-    const amount = parseFloat(fields.amount || '0');
-    const rate = parseFloat(fields.interestRate || '10');
+    const kind = fields.type || fields.kind || 'FD';
+    const amount = parseFloat(fields.amount || fields.principal || '0');
+    const rate = parseFloat(fields.interestRate || fields.rate || '10');
     const tenureMonths = parseInt(fields.tenureMonths || '12');
 
     const appCount = await this.prisma.depositApplication.count();
