@@ -18,6 +18,7 @@ import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
 import AdminNavbar from "@/components/AdminNavbar";
+import { formatDistanceToNow } from "date-fns";
 
 const AdminDashboard = () => {
   const { data: overview, isLoading } = useQuery({
@@ -31,6 +32,13 @@ const AdminDashboard = () => {
     queryKey: ["office-expenses-summary"],
     queryFn: async () => {
       const { data } = await api.get("/office-expenses/summary");
+      return data;
+    },
+  });
+  const { data: pendingApprovals, isLoading: isLoadingPending } = useQuery({
+    queryKey: ["admin-pending-approvals"],
+    queryFn: async () => {
+      const { data } = await api.get("/admin/pending-approvals");
       return data;
     },
   });
@@ -152,35 +160,45 @@ const AdminDashboard = () => {
                   <CardDescription>KYC and Loan requests awaiting verification</CardDescription>
                 </div>
                 <div className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full">
-                  12 Pending
+                  {pendingApprovals?.length ?? 0} Pending
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {[
-                    { name: "Suresh Kumar", type: "KYC Verification", date: "2 hours ago", priority: "High" },
-                    { name: "Priya Murugan", type: "Gold Loan", date: "5 hours ago", priority: "Medium" },
-                    { name: "Velu Pillai", type: "KYC Verification", date: "1 day ago", priority: "Low" },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center justify-between p-4 border border-slate-100 rounded-xl hover:bg-slate-50 transition-all cursor-pointer group">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500">
-                           {item.name.charAt(0)}
-                        </div>
-                        <div>
-                          <div className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{item.name}</div>
-                          <div className="text-xs text-slate-400">{item.type} • {item.date}</div>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-900" />
+                  {isLoadingPending ? (
+                    <div className="space-y-4 py-4">
+                      <Skeleton className="h-16 w-full rounded-2xl" />
+                      <Skeleton className="h-16 w-full rounded-2xl" />
+                      <Skeleton className="h-16 w-full rounded-2xl" />
                     </div>
-                  ))}
+                  ) : pendingApprovals?.length > 0 ? (
+                    pendingApprovals.map((req: any, i: number) => (
+                      <Link to={req.link} key={i}>
+                        <div className="flex items-center justify-between p-4 rounded-2xl border border-gray-100 hover:bg-slate-50 transition-colors cursor-pointer group mb-3">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold group-hover:bg-white transition-colors">
+                              {req.initial}
+                            </div>
+                            <div>
+                              <p className="font-bold text-sm text-[#1a1f36]">{req.name}</p>
+                              <p className="text-xs text-slate-400">{req.type} • {formatDistanceToNow(new Date(req.time), { addSuffix: true })}</p>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500" />
+                        </div>
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-slate-400">
+                      No pending approvals at the moment.
+                    </div>
+                  )}
+                  <div className="text-center pt-4">
+                    <Link to="/admin/members" className="text-xs font-semibold text-slate-400 hover:text-[#1a1f36] transition-colors">
+                      Manage all applications
+                    </Link>
+                  </div>
                 </div>
-                <Link to="/admin/loans">
-                  <Button variant="ghost" className="w-full mt-4 text-slate-400 text-xs hover:bg-transparent hover:text-slate-900">
-                    Manage all applications
-                  </Button>
-                </Link>
               </CardContent>
             </Card>
 

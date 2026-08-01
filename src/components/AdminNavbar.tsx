@@ -42,7 +42,7 @@ const AdminNavbar = () => {
     { name: "Deposit Approvals", path: "/admin/deposits", icon: PiggyBank },
     { name: "Office Expense", path: "/admin/office-expenses", icon: HandCoins },
     { name: "Member Registry", path: "/admin/members", icon: Users },
-    { name: "System Reports", path: "/admin/reports", icon: BarChart3 },
+
   ];
 
   const userInitials = user?.email?.substring(0, 2).toUpperCase() || "AD";
@@ -63,7 +63,7 @@ const AdminNavbar = () => {
                    <h1 className="text-[11px] md:text-[12px] font-extrabold text-white tracking-tight leading-none uppercase">
                      Sri Roja Shabarish Guruji Souharada Sahakara Niyamitha
                    </h1>
-                   <span className="text-[#c9a84c] text-[10px] block tracking-widest font-black opacity-80 uppercase mt-0.5">Sharanam Management</span>
+
                 </div>
             </div>
 
