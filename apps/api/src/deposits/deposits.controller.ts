@@ -36,9 +36,16 @@ export class DepositsController {
 
   @Get()
   findAll(
+    @Req() req: FastifyRequest,
     @Query('memberId') memberId?: string,
     @Query('status') status?: string,
   ) {
+    const role = (req as any).user?.role;
+    const userId = (req as any).user?.userId ?? (req as any).user?.sub;
+
+    if (role === 'MEMBER') {
+      return this.depositsService.listForMember(userId);
+    }
     return this.depositsService.list(memberId, status);
   }
 

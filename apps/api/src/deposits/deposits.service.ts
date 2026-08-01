@@ -205,6 +205,16 @@ export class DepositsService {
     return apps;
   }
 
+  async listForMember(userId: string) {
+    if (!userId) return [];
+    const member = await this.prisma.member.findFirst({
+      where: { OR: [{ userId }, { id: userId }, { memberId: userId }] },
+    });
+    if (!member) return [];
+
+    return this.list(member.id);
+  }
+
   async updateStatus(id: string, status: string, remarks?: string, adminName?: string) {
     const application = await this.prisma.depositApplication.findUnique({
       where: { id },

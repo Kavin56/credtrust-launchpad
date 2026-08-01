@@ -293,7 +293,7 @@ const LoanRequestsPage = () => {
 
         {/* Detailed Review Modal */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-           <DialogContent className="max-w-4xl p-0 overflow-hidden border-none rounded-[40px]">
+           <DialogContent className="max-w-4xl p-0 overflow-hidden border-none rounded-[40px] max-h-[90vh] flex flex-col">
               <DialogHeader className="sr-only">
                 <DialogTitle>
                   {selectedLoan
@@ -307,7 +307,7 @@ const LoanRequestsPage = () => {
                 </DialogDescription>
               </DialogHeader>
               {selectedLoan && (
-                <div className="flex flex-col">
+                <div className="flex flex-col h-full overflow-hidden">
                   {/* Header */}
                   <div className="bg-[#1a1f36] p-10 text-white flex justify-between items-start">
                      <div className="space-y-4">
@@ -338,7 +338,7 @@ const LoanRequestsPage = () => {
                            )}
                          </div>
                       </div>
-                  </div>                  <div className="p-10 bg-white grid md:grid-cols-2 gap-10 max-h-[500px] overflow-y-auto">
+                  </div>                  <div className="p-10 bg-white grid md:grid-cols-2 gap-10 overflow-y-auto flex-1 custom-scrollbar">
                      {/* Left Column: Financial Context or Vehicle details */}
                      <div className="space-y-8">
                         {(() => {

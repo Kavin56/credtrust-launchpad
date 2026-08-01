@@ -38,7 +38,7 @@ export class LoansController {
   @Get('my')
   @Roles('MEMBER', 'ADMIN', 'CEO', 'DIRECTOR', 'TELLER')
   findMyLoans(@Req() req: FastifyRequest) {
-    const userId = (req as any).user?.userId;
+    const userId = (req as any).user?.userId ?? (req as any).user?.sub;
     return this.loansService.listForMember(userId);
   }
 
@@ -50,7 +50,7 @@ export class LoansController {
     @Query('status') status?: string,
   ) {
     const role = (req as any).user?.role;
-    const userId = (req as any).user?.userId;
+    const userId = (req as any).user?.userId ?? (req as any).user?.sub;
     if (role === 'MEMBER') {
       return this.loansService.listForMember(userId);
     }

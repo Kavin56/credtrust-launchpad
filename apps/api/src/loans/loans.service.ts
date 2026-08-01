@@ -257,6 +257,8 @@ export class LoansService {
   }
 
   async listForMember(userId: string) {
+    if (!userId) return [];
+    
     const member = await this.prisma.member.findFirst({
       where: { OR: [{ userId }, { id: userId }, { memberId: userId }] },
     });
