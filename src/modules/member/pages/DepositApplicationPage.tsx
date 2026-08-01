@@ -449,9 +449,9 @@ const DepositApplicationPage = () => {
       const fdNumber = `SHR-DP-${selectedScheme.short}-${Math.floor(100000 + Math.random() * 900000)}`;
 
       const payload = new FormData();
-      payload.append('kind', selectedScheme.type === "Recurring" ? "RD" : selectedScheme.type === "Pigmy" ? "PIGMY" : "FD");
-      payload.append('principal', amount.toString());
-      payload.append('rate', getDynamicRate().toString());
+      payload.append('type', selectedScheme.type === "Recurring" ? "RD" : selectedScheme.type === "Pigmy" ? "PIGMY" : "FD");
+      payload.append('amount', amount.toString());
+      payload.append('interestRate', getDynamicRate().toString());
       payload.append('tenureMonths', tenure.toString());
       payload.append('payoutMode', formData.payoutPreference);
       payload.append('status', 'PENDING');
