@@ -379,11 +379,15 @@ const LoanRequestsPage = () => {
                       </div>
                       <div className="flex justify-between border-b border-slate-100/50 pb-1.5">
                         <span className="font-semibold text-slate-500">Aadhaar No.</span>
-                        <span className="font-bold">{selectedLoan.member?.aadhaarNumber || "—"}</span>
+                        <span className="font-bold">
+                          {selectedLoan.member?.aadhaarNumber?.startsWith('v1:') ? 'Encrypted (Secured)' : (selectedLoan.member?.aadhaarNumber || "—")}
+                        </span>
                       </div>
                       <div className="flex justify-between pb-1">
                         <span className="font-semibold text-slate-500">PAN Card No.</span>
-                        <span className="font-bold uppercase">{selectedLoan.member?.panNumber || "—"}</span>
+                        <span className="font-bold uppercase">
+                          {selectedLoan.member?.panNumber?.startsWith('v1:') ? 'ENCRYPTED (SECURED)' : (selectedLoan.member?.panNumber || "—")}
+                        </span>
                       </div>
                     </div>
                   </div>
