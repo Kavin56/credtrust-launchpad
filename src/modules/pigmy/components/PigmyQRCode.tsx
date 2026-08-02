@@ -13,7 +13,7 @@ interface QRProps {
 export const PigmyQRCode: React.FC<QRProps> = ({ 
   accountNumber, 
   customerName, 
-  upiId = "srirojashabarishguruji@kbl",
+  upiId = "SRIROJASHABARISHGURUJI@KBL",
   amount
 }) => {
   // UPI URL format: upi://pay?pa=upi_id&pn=name&am=amount&cu=INR&tn=note
