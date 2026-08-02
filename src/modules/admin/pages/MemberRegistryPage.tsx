@@ -147,7 +147,7 @@ export default function MemberRegistryPage() {
             </div>
 
             <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
-              {['ALL', 'PENDING', 'VERIFIED', 'REJECTED'].map((st) => (
+              {['ALL', 'PENDING', 'UPDATES', 'VERIFIED', 'REJECTED'].map((st) => (
                 <button
                   key={st}
                   onClick={() => setStatusFilter(st)}
@@ -157,7 +157,7 @@ export default function MemberRegistryPage() {
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
-                  {st === 'ALL' ? 'All Members' : st}
+                  {st === 'ALL' ? 'All Members' : st === 'UPDATES' ? 'Updates Pending' : st}
                 </button>
               ))}
             </div>

@@ -150,14 +150,36 @@ export class MembersService {
     const skip = (page - 1) * limit;
     const search = (query.search || '').toString().trim();
     const where: any = {};
-    if (query.kycStatus) where.kycStatus = query.kycStatus;
-    if (query.status) where.status = query.status;
+    const andConditions: any[] = [];
+    
+    if (query.kycStatus === 'UPDATES') {
+      andConditions.push({
+        OR: [
+          { pendingSignatureUrl: { not: null } },
+          { pendingProfileChanges: { not: null } },
+          { downloadRequestStatus: 'PENDING' },
+        ]
+      });
+    } else if (query.kycStatus) {
+      andConditions.push({ kycStatus: query.kycStatus });
+    }
+    
+    if (query.status) {
+      andConditions.push({ status: query.status });
+    }
+    
     if (search) {
-      where.OR = [
-        { fullName: { contains: search, mode: 'insensitive' } },
-        { memberId: { contains: search, mode: 'insensitive' } },
-        { contact: { contains: search, mode: 'insensitive' } },
-      ];
+      andConditions.push({
+        OR: [
+          { fullName: { contains: search, mode: 'insensitive' } },
+          { memberId: { contains: search, mode: 'insensitive' } },
+          { contact: { contains: search, mode: 'insensitive' } },
+        ]
+      });
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions;
     }
     const [items, total] = await Promise.all([
       this.prisma.member.findMany({
