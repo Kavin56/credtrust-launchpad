@@ -207,9 +207,15 @@ export default function MemberRegistryPage() {
                           <td className="py-4 px-6 text-slate-600 text-xs">{m.district || m.address || 'Chennai'}</td>
                           <td className="py-4 px-6">
                             {kyc === 'VERIFIED' ? (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold border border-emerald-100">
-                                <CheckCircle2 className="w-3.5 h-3.5" /> Verified
-                              </span>
+                              (m.pendingSignatureUrl || m.pendingProfileChanges || m.downloadRequestStatus === 'PENDING') ? (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-xs font-bold border border-amber-100">
+                                  <Clock className="w-3.5 h-3.5" /> Updates Pending
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold border border-emerald-100">
+                                  <CheckCircle2 className="w-3.5 h-3.5" /> Verified
+                                </span>
+                              )
                             ) : kyc === 'REJECTED' ? (
                               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 text-rose-600 rounded-full text-xs font-bold border border-rose-100">
                                 <XCircle className="w-3.5 h-3.5" /> Rejected

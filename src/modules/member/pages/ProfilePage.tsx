@@ -888,13 +888,6 @@ const ProfilePage = () => {
                           <div className="space-y-4">
                             <label className="text-xs font-black uppercase text-slate-400 block px-2">Interactive Preview</label>
                             
-                            {profile?.idCardStatus !== 'GENERATED' ? (
-                              <div className="border-2 border-dashed border-slate-200 rounded-[36px] p-12 text-center text-slate-400 flex flex-col items-center justify-center min-h-[350px] bg-slate-50/50">
-                                <Fingerprint className="w-16 h-16 text-slate-200 mb-4 animate-pulse" />
-                                <p className="font-bold text-[#1a1f36] text-sm">ID Card Not Generated</p>
-                                <p className="text-xs text-slate-400 mt-1 max-w-[200px] mx-auto">Admin must apply the official signature and office seal in the Member Registry.</p>
-                              </div>
-                            ) : (
                               <div 
                                 id="printable-membership-card"
                                 className="border border-slate-800 rounded-[30px] p-6 bg-slate-950 text-white relative overflow-hidden shadow-2xl min-h-[350px] flex flex-col justify-between"
@@ -946,7 +939,6 @@ const ProfilePage = () => {
                                   </div>
                                 </div>
                               </div>
-                            )}
                           </div>
                         </div>
                      </div>
