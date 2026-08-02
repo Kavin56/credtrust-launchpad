@@ -242,7 +242,7 @@ const LoanRequestsPage = () => {
                                 <h3 className="text-xl font-black text-[#1a1f36]">{loan.member?.fullName}</h3>
                                 <div className="flex items-center gap-2 mt-1">
                                    <span className="px-2 py-0.5 bg-amber-50 text-amber-700 rounded text-[9px] font-black uppercase tracking-tighter">Registered ID</span>
-                                   <p className="text-[10px] text-amber-600 font-bold">{loan.registeredId || "—"}</p>
+                                   <p className="text-[10px] text-amber-600 font-bold">{loan.member?.memberId || loan.registeredId || "—"}</p>
                                 </div>
                              </div>
                           </div>
@@ -409,12 +409,11 @@ const LoanRequestsPage = () => {
                                        <User className="w-4 h-4 text-[#c9a84c]" /> Applicant Profile (Auto-fetched)
                                     </h4>
                                     <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 space-y-2 text-[11px] font-semibold text-slate-600">
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Full Name:</span> {parsed.profile?.fullName}</div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Registered ID:</span> <span className="font-bold text-[#c9a84c]">{parsed.profile?.memberId || selectedLoan.registeredId || "—"}</span></div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Aadhaar Number:</span> {parsed.profile?.aadhaarNumber}</div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Phone:</span> {parsed.profile?.mobileNumber}</div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Email:</span> {parsed.profile?.emailAddress}</div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Address:</span> {parsed.profile?.residentialAddress}</div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Full Name:</span> {selectedLoan.member?.fullName}</div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Registered ID:</span> <span className="font-bold text-[#c9a84c]">{selectedLoan.member?.memberId || selectedLoan.registeredId || "—"}</span></div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Aadhaar Number:</span> {selectedLoan.member?.aadhaarNumber || "—"}</div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">PAN Number:</span> {selectedLoan.member?.panNumber || "—"}</div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Phone:</span> {selectedLoan.member?.contact || "—"}</div>
                                     </div>
                                  </div>
                               );
@@ -444,12 +443,25 @@ const LoanRequestsPage = () => {
 
                                  <div className="space-y-4">
                                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
+                                       <User className="w-4 h-4 text-[#c9a84c]" /> Applicant Profile (Auto-fetched)
+                                    </h4>
+                                    <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 space-y-2 text-[11px] font-semibold text-slate-600">
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Full Name:</span> {selectedLoan.member?.fullName}</div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Registered ID:</span> <span className="font-bold text-[#c9a84c]">{selectedLoan.member?.memberId || selectedLoan.registeredId || "—"}</span></div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Aadhaar Number:</span> {selectedLoan.member?.aadhaarNumber || "—"}</div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">PAN Number:</span> {selectedLoan.member?.panNumber || "—"}</div>
+                                       <div><span className="text-slate-400 text-[9px] uppercase">Phone:</span> {selectedLoan.member?.contact || "—"}</div>
+                                    </div>
+                                 </div>
+
+                                 <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
                                        <ShieldCheck className="w-4 h-4 text-[#c9a84c]" /> Application Details & Identity
                                     </h4>
                                     <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 space-y-3 text-[11px] font-semibold text-slate-600">
                                        <div>
                                           <span className="text-slate-400 block text-[9px] uppercase">Registered ID</span>
-                                          <span className="font-bold text-[#c9a84c] text-sm">{selectedLoan.registeredId || "—"}</span>
+                                          <span className="font-bold text-[#c9a84c] text-sm">{selectedLoan.member?.memberId || selectedLoan.registeredId || "—"}</span>
                                        </div>
                                        <div className="grid grid-cols-2 gap-4">
                                           <div>

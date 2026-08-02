@@ -73,6 +73,13 @@ export class PigmyController {
     return this.pigmyService.confirmPayment(dto.collectionId, dto.referenceId, req.user.userId);
   }
 
+  @Post('pay/cancel')
+  @Roles('MEMBER')
+  @ApiOperation({ summary: 'Cancel an initiated Pigmy payment (Member)' })
+  async cancelPayment(@Body() dto: { collectionId: string }, @Request() req: any) {
+    return this.pigmyService.cancelPayment(dto.collectionId, req.user.userId);
+  }
+
   @Get('my-collections')
   @Roles('MEMBER')
   @ApiOperation({ summary: 'Get personal collection history' })

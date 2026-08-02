@@ -437,11 +437,11 @@ const CustomerPigmyDashboard = () => {
                             <div className="flex items-center gap-2">
                               <div className={`w-1.5 h-1.5 rounded-full ${
                                 item.status === 'COMPLETED' ? 'bg-emerald-500' : 
-                                item.status === 'REJECTED' ? 'bg-rose-500' : 'bg-amber-500 animate-pulse'
+                                item.status === 'REJECTED' || item.status === 'CANCELLED' ? 'bg-rose-500' : 'bg-amber-500 animate-pulse'
                               }`} />
                               <span className={`text-[10px] font-black uppercase tracking-widest ${
                                 item.status === 'COMPLETED' ? 'text-emerald-600' : 
-                                item.status === 'REJECTED' ? 'text-rose-600' : 'text-amber-600'
+                                item.status === 'REJECTED' || item.status === 'CANCELLED' ? 'text-rose-600' : 'text-amber-600'
                               }`}>{item.status}</span>
                             </div>
                           </TableCell>

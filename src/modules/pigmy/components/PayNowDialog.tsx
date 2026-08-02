@@ -35,6 +35,18 @@ export const PayNowDialog: React.FC<PayNowDialogProps> = ({ accountId, customerN
   const [referenceId, setReferenceId] = React.useState('');
   const [selectedMethod, setSelectedMethod] = React.useState('UPI');
 
+  const handleOpenChange = async (openVal: boolean) => {
+    setOpen(openVal);
+    if (!openVal && collectionId) {
+      try {
+        await api.post('/pigmy/pay/cancel', { collectionId });
+        onSuccess();
+      } catch (err) {
+        console.error("Failed to cancel initiated payment:", err);
+      }
+    }
+  };
+
   // Reset state when dialog opens/closes
   React.useEffect(() => {
     if (open) {
@@ -91,6 +103,8 @@ export const PayNowDialog: React.FC<PayNowDialogProps> = ({ accountId, customerN
         description: `₹${formData.amount} is now PENDING for admin approval.`
       });
       
+      // Clear collectionId so handleOpenChange doesn't cancel it
+      setCollectionId('');
       onSuccess();
       setOpen(false);
     } catch (error: any) {
@@ -104,7 +118,7 @@ export const PayNowDialog: React.FC<PayNowDialogProps> = ({ accountId, customerN
   const upiUrl = `upi://pay?pa=SRIROJASHABARISHGURUJI@KBL&pn=CredTrust&am=${formData.amount}&cu=INR`;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="flex-1 md:flex-none bg-[#fcd34d] hover:bg-[#fbbf24] text-[#1a1f36] font-black gap-2 shadow-xl shadow-[#fcd34d]/20 h-11 rounded-2xl px-8 transition-all">
           <CreditCard className="h-4 w-4" /> Pay Now

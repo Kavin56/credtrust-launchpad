@@ -213,6 +213,32 @@ export class PigmyService {
     });
   }
 
+  async cancelPayment(collectionId: string, userId?: string) {
+    const collection = await this.prisma.pigmyCollection.findUnique({
+      where: { id: collectionId },
+      include: { account: true },
+    });
+
+    if (!collection) throw new NotFoundException('Collection not found');
+    if (collection.status !== 'INITIATED') {
+      throw new BadRequestException('Can only cancel initiated payments');
+    }
+
+    if (userId) {
+      const member = await this.prisma.member.findFirst({ where: { userId } });
+      if (!member || collection.account.memberId !== member.id) {
+        throw new ForbiddenException('You can only cancel payments on your own accounts');
+      }
+    }
+
+    return this.prisma.pigmyCollection.update({
+      where: { id: collectionId },
+      data: {
+        status: 'CANCELLED',
+      },
+    });
+  }
+
   private assertAgentOwnsAccount(
     role: string,
     actorId: string,
