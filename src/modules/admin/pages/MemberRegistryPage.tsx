@@ -54,11 +54,8 @@ export default function MemberRegistryPage() {
   const getDocUrl = (url: string | null) => {
     if (!url) return '#';
     if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
-    if (url.startsWith('gs://')) {
-      return url.replace('gs://', 'https://storage.googleapis.com/');
-    }
     const baseUrl = getApiBaseUrl();
-    if (url.startsWith('/uploads/') || url.startsWith('profile/') || url.startsWith('signatures/') || url.startsWith('office/')) {
+    if (url.startsWith('gs://') || url.startsWith('/uploads/') || url.startsWith('profile/') || url.startsWith('signatures/') || url.startsWith('office/')) {
       return `${baseUrl}/storage/view?path=${encodeURIComponent(url)}`;
     }
     const origin = baseUrl.replace('/api/v1', '');
