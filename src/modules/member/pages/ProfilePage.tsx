@@ -143,7 +143,7 @@ const ProfilePage = () => {
       emergencyContact: profile?.emergencyContact || "",
       issueDate: profile?.issueDate ? new Date(profile.issueDate).toLocaleDateString("en-IN") : new Date().toLocaleDateString("en-IN"),
       expiryDate: profile?.expiryDate ? new Date(profile.expiryDate).toLocaleDateString("en-IN") : "Permanent",
-      photoUrl: profile?.photoUrl || null,
+      photoUrl: profile?.pendingPhotoUrl || profile?.photoUrl || null,
       kycStatus: profile?.kycStatus,
     };
   }, [profile]);
