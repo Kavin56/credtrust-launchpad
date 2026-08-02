@@ -538,7 +538,7 @@ const AccountsPage = () => {
                                     <p className="text-[10px] font-bold text-emerald-600 tracking-tighter uppercase">{new Date(dep.maturityDate).toDateString()}</p>
                                  </div>
                                  <Link 
-                                   to="/payments" 
+                                   to="/deposit-apply" 
                                    onClick={(e) => {
                                      e.stopPropagation();
                                    }}
