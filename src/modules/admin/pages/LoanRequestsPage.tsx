@@ -302,398 +302,347 @@ const LoanRequestsPage = () => {
 
         {/* Detailed Review Modal */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-           <DialogContent className="max-w-4xl p-0 overflow-hidden border-none rounded-[40px] max-h-[90vh] flex flex-col">
-              <DialogHeader className="sr-only">
-                <DialogTitle>
-                  {selectedLoan
-                    ? `Review loan ${selectedLoan.loanNumber}`
-                    : "Review loan application"}
+          <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto rounded-3xl p-6 font-sans">
+            <DialogHeader className="border-b border-gray-100 pb-4">
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-xl font-bold text-[#1a1f36] flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-[#c9a84c]" />
+                  Loan Application Details
                 </DialogTitle>
-                <DialogDescription>
-                  {selectedLoan
-                    ? `Review documents and decide whether to approve or reject the application for ${selectedLoan.member?.fullName || "the selected member"}.`
-                    : "Loan application review dialog."}
-                </DialogDescription>
-              </DialogHeader>
-              {selectedLoan && (
-                <div className="flex flex-col h-full overflow-hidden">
-                  {/* Header */}
-                  <div className="bg-[#1a1f36] p-10 text-white flex justify-between items-start">
-                     <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                           <div className="w-12 h-12 rounded-2xl bg-[#c9a84c] text-[#1a1f36] flex items-center justify-center font-black text-xl">
-                              {selectedLoan.member?.fullName?.charAt(0)}
-                           </div>
-                           <div>
-                              <h2 className="text-2xl font-black leading-tight">{selectedLoan.member?.fullName}</h2>
-                              <p className="text-white/40 text-[10px] font-black uppercase tracking-widest">Application ID: {selectedLoan.loanNumber}</p>
-                           </div>
-                        </div>
-                        <div className="flex gap-2">
-                           <span className="px-3 py-1 bg-white/10 rounded-full text-[9px] font-black uppercase tracking-tighter border border-white/5">{selectedLoan.type}</span>
-                           <span className="px-3 py-1 bg-white/10 rounded-full text-[9px] font-black uppercase tracking-tighter border border-white/5">{selectedLoan.employmentStatus}</span>
-                        </div>
-                     </div>
-                      <div className="text-right space-y-1">
-                         <p className="text-[10px] font-black text-[#c9a84c] uppercase tracking-widest leading-none mb-1">Requested Capital</p>
-                         <h3 className="text-3xl font-black">₹{Number(selectedLoan.amount).toLocaleString()}</h3>
-                         <div className="text-xs text-white/60 space-y-0.5">
-                           <p>Doc. Charge (2.5%): <span className="text-red-400 font-bold">₹{(Number(selectedLoan.amount) * 0.025).toLocaleString()}</span></p>
-                           <p>Net Disbursed: <span className="text-emerald-400 font-bold">₹{(Number(selectedLoan.amount) - (Number(selectedLoan.amount) * 0.025)).toLocaleString()}</span></p>
-                           {selectedLoan.status !== 'PENDING' && (
-                             <p className="text-[10px] font-bold uppercase tracking-wider text-[#c9a84c]">
-                               Pending EMIs: {(selectedLoan.termMonths || 12) - (selectedLoan.emiSchedule?.filter((s: any) => s.isPaid).length || 0)} / {selectedLoan.termMonths || 12}
-                             </p>
-                           )}
-                         </div>
+                {selectedLoan && (
+                  <span className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${
+                    selectedLoan.status === 'PENDING' ? 'bg-amber-100 text-amber-800' :
+                    selectedLoan.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' :
+                    'bg-rose-100 text-rose-800'
+                  }`}>
+                    {selectedLoan.status}
+                  </span>
+                )}
+              </div>
+            </DialogHeader>
+            {selectedLoan && (
+              <div className="space-y-6 py-4">
+                {/* Application Summary Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  <Card className="p-3 bg-slate-50 border-none">
+                    <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Loan Amount</p>
+                    <p className="text-lg font-black text-slate-900">₹{selectedLoan.amount.toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-3 bg-slate-50 border-none">
+                    <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Interest Rate</p>
+                    <p className="text-lg font-black text-slate-900">{selectedLoan.roi || "13"}% p.a.</p>
+                  </Card>
+                  <Card className="p-3 bg-slate-50 border-none">
+                    <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Tenure (Months)</p>
+                    <p className="text-lg font-black text-slate-900">{selectedLoan.termMonths} Months</p>
+                  </Card>
+                  <Card className="p-3 bg-slate-50 border-none">
+                    <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Documentation Charges</p>
+                    <p className="text-lg font-black text-red-600">₹{(selectedLoan.amount * 0.025).toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-3 bg-slate-50 border-none">
+                    <p className="text-[10px] uppercase font-bold text-slate-400 leading-none mb-1">Monthly EMI</p>
+                    <p className="text-lg font-black text-emerald-600">
+                      ₹{(() => {
+                        const principal = selectedLoan.amount;
+                        const roi = selectedLoan.roi || 13;
+                        const months = selectedLoan.termMonths || 12;
+                        const r = roi / 12 / 100;
+                        const emi = (principal * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1);
+                        return Math.round(emi).toLocaleString();
+                      })()}
+                    </p>
+                  </Card>
+                </div>
+
+                {/* Applicant & Guarantor Info */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Applicant Info */}
+                  <div className="space-y-3">
+                    <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                      <User className="h-4 w-4" /> Applicant Information
+                    </h4>
+                    <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 text-xs space-y-2 text-[#1a1f36]">
+                      <div className="flex justify-between border-b border-slate-100/50 pb-1.5">
+                        <span className="font-semibold text-slate-500">Full Name</span>
+                        <span className="font-bold">{selectedLoan.member?.fullName}</span>
                       </div>
-                  </div>                  <div className="p-10 bg-white grid md:grid-cols-2 gap-10 overflow-y-auto flex-1 custom-scrollbar">
-                     {/* Left Column: Financial Context or Vehicle details */}
-                     <div className="space-y-8">
-                        {(() => {
-                           let parsed: any = null;
-                           if (selectedLoan.additionalDetails) {
-                              try { parsed = JSON.parse(selectedLoan.additionalDetails); } catch(e) {}
-                           }
-                           if (parsed && parsed.formData) {
-                              return (
-                                 <div className="space-y-6">
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                                       <ShieldCheck className="w-4 h-4 text-[#c9a84c]" /> Application Attributes
-                                    </h4>
-                                    <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 grid grid-cols-2 gap-4 text-[11px] font-semibold text-slate-600">
-                                       {Object.entries(parsed.formData).map(([key, val]: [string, any]) => {
-                                          if (!val || typeof val !== 'string' || !val.trim()) return null;
-                                          const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-                                          return (
-                                             <div key={key} className="col-span-2 sm:col-span-1">
-                                                <span className="text-slate-400 block text-[9px] uppercase">{label}</span>
-                                                {val}
-                                             </div>
-                                          );
-                                       })}
-                                    </div>
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                                       <ShieldCheck className="w-4 h-4 text-[#c9a84c]" /> Credit Bureau Assessment
-                                    </h4>
-                                    <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 space-y-2 text-[11px] font-semibold text-slate-600">
-                                       <div>
-                                          <span className="text-slate-400 block text-[9px] uppercase">Simulated Credit Score</span>
-                                          <span className="text-lg font-black text-emerald-600">{getCibilScore(selectedLoan.id)} (Verified)</span>
-                                       </div>
-                                    </div>
-                                 </div>
-                              );
-                           }
-                           if (parsed && parsed.vehicle) {
-                              return (
-                                 <div className="space-y-6">
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                                       <Car className="w-4 h-4 text-[#c9a84c]" /> Vehicle Specifications
-                                    </h4>
-                                    <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 grid grid-cols-2 gap-4 text-[11px] font-semibold text-slate-600">
-                                       <div><span className="text-slate-400 block text-[9px] uppercase">Type</span> {parsed.vehicle.vehicleType}</div>
-                                       <div><span className="text-slate-400 block text-[9px] uppercase">Category</span> {parsed.vehicle.vehicleCategory}</div>
-                                       <div><span className="text-slate-400 block text-[9px] uppercase">Brand & Model</span> {parsed.vehicle.brand} {parsed.vehicle.model}</div>
-                                       <div><span className="text-slate-400 block text-[9px] uppercase">Variant</span> {parsed.vehicle.variant || "—"}</div>
-                                       <div><span className="text-slate-400 block text-[9px] uppercase">Year & Color</span> {parsed.vehicle.manufacturingYear} ({parsed.vehicle.color || "—"})</div>
-                                       <div><span className="text-slate-400 block text-[9px] uppercase">Purpose</span> {parsed.vehicle.purposeOfPurchase}</div>
-                                       <div><span className="text-slate-400 block text-[9px] uppercase">Ex-Showroom Price</span> ₹{Number(parsed.vehicle.exShowroomPrice || 0).toLocaleString()}</div>
-                                       <div><span className="text-slate-400 block text-[9px] uppercase">On-Road Cost</span> ₹{Number(parsed.vehicle.onRoadPrice || 0).toLocaleString()}</div>
-                                       <div className="col-span-2"><span className="text-slate-400 block text-[9px] uppercase">Dealer Details</span> {parsed.vehicle.dealerName} ({parsed.vehicle.dealerAddress || "—"})</div>
-                                       <div><span className="text-slate-400 block text-[9px] uppercase">Down Payment</span> ₹{Number(parsed.vehicle.downPayment || 0).toLocaleString()}</div>
-                                       <div><span className="text-slate-400 block text-[9px] uppercase">Requested Loan Amount</span> ₹{Number(parsed.vehicle.loanAmount || 0).toLocaleString()}</div>
-                                    </div>
-
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-3">
-                                       <User className="w-4 h-4 text-[#c9a84c]" /> Applicant Profile (Auto-fetched)
-                                    </h4>
-                                    <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 space-y-2 text-[11px] font-semibold text-slate-600">
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Full Name:</span> {selectedLoan.member?.fullName}</div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Registered ID:</span> <span className="font-bold text-[#c9a84c]">{selectedLoan.member?.memberId || selectedLoan.registeredId || "—"}</span></div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Aadhaar Number:</span> {selectedLoan.member?.aadhaarNumber || "—"}</div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">PAN Number:</span> {selectedLoan.member?.panNumber || "—"}</div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Phone:</span> {selectedLoan.member?.contact || "—"}</div>
-                                    </div>
-                                 </div>
-                              );
-                           }
-                           return (
-                              <>
-                                 <div>
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
-                                       <Activity className="w-4 h-4 text-[#c9a84c]" /> Risk Assessment
-                                    </h4>
-                                    <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 relative overflow-hidden">
-                                       <div className="relative z-10">
-                                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Credit Score (Simulated)</p>
-                                          <div className="flex items-baseline gap-2">
-                                             <span className="text-5xl font-black text-[#1a1f36]">{getCibilScore(selectedLoan.id)}</span>
-                                             <span className="text-xs font-bold text-emerald-500 uppercase tracking-widest">Excellent</span>
-                                          </div>
-                                          <div className="w-full h-1.5 bg-slate-200 rounded-full mt-6 overflow-hidden">
-                                             <div 
-                                               className="h-full bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500 transition-all duration-1000"
-                                               style={{ width: `${((getCibilScore(selectedLoan.id) - 300) / 600) * 100}%` }}
-                                             />
-                                          </div>
-                                       </div>
-                                    </div>
-                                 </div>
-
-                                 <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
-                                       <User className="w-4 h-4 text-[#c9a84c]" /> Applicant Profile (Auto-fetched)
-                                    </h4>
-                                    <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 space-y-2 text-[11px] font-semibold text-slate-600">
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Full Name:</span> {selectedLoan.member?.fullName}</div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Registered ID:</span> <span className="font-bold text-[#c9a84c]">{selectedLoan.member?.memberId || selectedLoan.registeredId || "—"}</span></div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Aadhaar Number:</span> {selectedLoan.member?.aadhaarNumber || "—"}</div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">PAN Number:</span> {selectedLoan.member?.panNumber || "—"}</div>
-                                       <div><span className="text-slate-400 text-[9px] uppercase">Phone:</span> {selectedLoan.member?.contact || "—"}</div>
-                                    </div>
-                                 </div>
-
-                                 <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
-                                       <ShieldCheck className="w-4 h-4 text-[#c9a84c]" /> Application Details & Identity
-                                    </h4>
-                                    <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 space-y-3 text-[11px] font-semibold text-slate-600">
-                                       <div>
-                                          <span className="text-slate-400 block text-[9px] uppercase">Registered ID</span>
-                                          <span className="font-bold text-[#c9a84c] text-sm">{selectedLoan.member?.memberId || selectedLoan.registeredId || "—"}</span>
-                                       </div>
-                                       <div className="grid grid-cols-2 gap-4">
-                                          <div>
-                                             <span className="text-slate-400 block text-[9px] uppercase">Start Date</span>
-                                             <span className="text-slate-800">{selectedLoan.startDate ? new Date(selectedLoan.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}</span>
-                                          </div>
-                                          <div>
-                                             <span className="text-slate-400 block text-[9px] uppercase">End Date</span>
-                                             <span className="text-slate-800">{selectedLoan.endDate ? new Date(selectedLoan.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : "—"}</span>
-                                          </div>
-                                       </div>
-                                       <div>
-                                          <span className="text-slate-400 block text-[9px] uppercase">Purpose of Loan</span>
-                                          <span className="text-slate-800">{selectedLoan.purpose || "—"}</span>
-                                       </div>
-                                       {selectedLoan.guarantorDetail && (
-                                          <div>
-                                             <span className="text-slate-400 block text-[9px] uppercase">Guarantor Details</span>
-                                             <span className="text-slate-800">{selectedLoan.guarantorDetail}</span>
-                                          </div>
-                                       )}
-                                    </div>
-                                 </div>
-
-                                 <div className="space-y-4">
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3">
-                                       <Wallet className="w-4 h-4 text-[#c9a84c]" /> Income Data
-                                    </h4>
-                                    <div className="grid grid-cols-2 gap-4">
-                                       <div className="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
-                                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Monthly Income</p>
-                                          <p className="text-lg font-black text-[#1a1f36]">₹{Number(selectedLoan.monthlyIncome || 0).toLocaleString()}</p>
-                                       </div>
-                                       <div className="p-5 bg-white border border-slate-100 rounded-2xl shadow-sm">
-                                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-1">Service Tenure</p>
-                                          <p className="text-lg font-black text-[#1a1f36]">{selectedLoan.termMonths} Mo.</p>
-                                       </div>
-                                    </div>
-                                 </div>
-                              </>
-                           );
-                        })()}
-                        
-                        {selectedLoan.status !== 'PENDING' && (
-                           <div className="mt-6 space-y-3">
-                              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">EMI Repayment Schedule</h4>
-                              <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-sm max-h-[300px] overflow-y-auto">
-                                 <table className="w-full text-left border-collapse text-[11px]">
-                                    <thead>
-                                       <tr className="bg-slate-50 border-b border-slate-100 font-bold text-slate-400">
-                                          <th className="p-3">Inst. #</th>
-                                          <th className="p-3">Due Date</th>
-                                          <th className="p-3 text-right">Amount</th>
-                                          <th className="p-3 text-center">Status</th>
-                                       </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 font-medium text-[#1a1f36]">
-                                       {selectedLoan.emiSchedule?.map((emi: any, idx: number) => (
-                                          <tr key={emi.id} className="hover:bg-slate-50/50">
-                                             <td className="p-3 font-bold">{idx + 1}</td>
-                                             <td className="p-3">{new Date(emi.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                                             <td className="p-3 text-right font-bold">₹{Number(emi.totalEmi).toLocaleString()}</td>
-                                             <td className="p-3 text-center">
-                                                <span className={`px-2 py-0.5 rounded-[6px] text-[9px] font-black uppercase tracking-wider ${
-                                                   emi.isPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'
-                                                }`}>
-                                                   {emi.isPaid ? 'Paid' : 'Pending'}
-                                                </span>
-                                             </td>
-                                          </tr>
-                                       ))}
-                                    </tbody>
-                                 </table>
-                              </div>
-                           </div>
-                        )}
-                     </div>
-
-                     {/* Right Column: Documents & Decision */}
-                     <div className="space-y-8">
-                        <div>
-                           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
-                              <FileText className="w-4 h-4 text-[#c9a84c]" /> Verification Dossier
-                           </h4>
-                           <div className="space-y-3">
-                              {(() => {
-                                 let docs = selectedLoan.documents;
-                                 if (typeof docs === 'string') {
-                                    try { docs = JSON.parse(docs); } catch (e) { docs = {}; }
-                                 }
-                                 // Add static demo files if it is a Vehicle Loan
-                                 if (selectedLoan.type === "Vehicle Loan" && (!docs || Object.keys(docs).length === 0)) {
-                                    docs = {
-                                       vehicleQuotation: "/uploads/quotation.pdf",
-                                       dealerQuotationLetter: "/uploads/dealer_quotation.pdf",
-                                       incomeVerification: "/uploads/salary_slip.pdf",
-                                       bankStatement: "/uploads/bank_statement.pdf",
-                                       drivingLicense: "/uploads/dl.png",
-                                       photograph: "/uploads/photo.jpg"
-                                    };
-                                 }
-                                 return docs && Object.entries(docs).map(([key, path]: [string, any]) => {
-                                    const fullUrl = getDocUrl(path);
-                                    return (
-                                       <a 
-                                          key={key} 
-                                          href={fullUrl} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl hover:border-[#1a1f36] transition-all group"
-                                       >
-                                          <div className="flex items-center gap-3">
-                                             <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-[#c9a84c]">
-                                                <Download className="w-4 h-4" />
-                                             </div>
-                                             <span className="text-xs font-bold text-slate-600 capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                                          </div>
-                                          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#1a1f36]" />
-                                       </a>
-                                    );
-                                 });
-                              })()}
-                            </div>
-                        </div>
-
-                        {selectedLoan.status === 'PENDING' ? (
-                           <div className="space-y-4">
-                              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Underwriting Action</h4>
-                              <textarea 
-                                 placeholder="Add internal review remarks..."
-                                 className="w-full h-24 p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-[#1a1f36]/5 outline-none resize-none"
-                                 value={remarks}
-                                 onChange={(e) => setRemarks(e.target.value)}
-                              />
-                           </div>
-                        ) : (['APPROVED', 'ACTIVE', 'DISBURSED'].includes(selectedLoan.status)) ? (
-                           <form onSubmit={handleRecordRepayment} className="space-y-4 p-5 bg-slate-50/80 rounded-2xl border border-slate-100/50">
-                              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Record Repayment</h4>
-                              
-                              <div className="space-y-3">
-                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Repayment Amount (₹)</label>
-                                    <Input 
-                                       type="number"
-                                       placeholder="e.g. 5000"
-                                       value={repayAmount}
-                                       onChange={(e) => setRepayAmount(e.target.value)}
-                                       className="h-10 border-slate-200"
-                                       required
-                                    />
-                                 </div>
-                                 
-                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Payment Mode</label>
-                                    <select
-                                       value={paymentMode}
-                                       onChange={(e) => setPaymentMode(e.target.value)}
-                                       className="w-full h-10 border border-slate-200 bg-white px-3 rounded-md text-xs font-medium outline-none"
-                                    >
-                                       <option value="CASH">CASH</option>
-                                       <option value="UPI">UPI</option>
-                                       <option value="CHEQUE">CHEQUE</option>
-                                       <option value="BANK_TRANSFER">BANK TRANSFER</option>
-                                    </select>
-                                 </div>
-
-                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Reference / Txn ID</label>
-                                    <Input 
-                                       placeholder="Optional ref number"
-                                       value={refNo}
-                                       onChange={(e) => setRefNo(e.target.value)}
-                                       className="h-10 border-slate-200"
-                                    />
-                                 </div>
-
-                                 <Button 
-                                    type="submit"
-                                    disabled={isRepaying}
-                                    className="w-full h-11 bg-[#1a1f36] hover:bg-[#2d3356] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md"
-                                 >
-                                    {isRepaying ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
-                                    Submit Repayment
-                                 </Button>
-                              </div>
-                           </form>
-                        ) : null}
-                     </div>
+                      <div className="flex justify-between border-b border-slate-100/50 pb-1.5">
+                        <span className="font-semibold text-slate-500">Registered ID</span>
+                        <span className="font-bold font-mono">{selectedLoan.member?.memberId || selectedLoan.registeredId || "—"}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-slate-100/50 pb-1.5">
+                        <span className="font-semibold text-slate-500">Contact / Email</span>
+                        <span className="font-bold">{selectedLoan.member?.contact}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-slate-100/50 pb-1.5">
+                        <span className="font-semibold text-slate-500">Aadhaar No.</span>
+                        <span className="font-bold">{selectedLoan.member?.aadhaarNumber || "—"}</span>
+                      </div>
+                      <div className="flex justify-between pb-1">
+                        <span className="font-semibold text-slate-500">PAN Card No.</span>
+                        <span className="font-bold uppercase">{selectedLoan.member?.panNumber || "—"}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <DialogFooter className="p-8 bg-slate-50/50 border-t border-slate-100 sm:justify-between flex flex-wrap gap-4">
-                     {selectedLoan.status === 'PENDING' ? (
-                        <>
-                           <div className="flex gap-2">
-                              <Button 
-                                 disabled={updateStatusMutation.isPending}
-                                 onClick={() => handleAction(selectedLoan.id, "REJECTED")}
-                                 variant="outline" 
-                                 className="h-14 px-8 border-red-100 text-red-600 hover:bg-red-50 font-black text-xs uppercase tracking-widest rounded-2xl"
-                              >
-                                 Reject Application
-                              </Button>
-                              <Button 
-                                 disabled={updateStatusMutation.isPending}
-                                 onClick={() => handleAction(selectedLoan.id, "ADDITIONAL_DOCUMENTS_REQUIRED")}
-                                 variant="outline" 
-                                 className="h-14 px-8 border-amber-200 text-amber-600 hover:bg-amber-50 font-black text-xs uppercase tracking-widest rounded-2xl"
-                              >
-                                 Request Info
-                              </Button>
-                           </div>
-                           <Button 
-                              disabled={updateStatusMutation.isPending}
-                              onClick={() => handleAction(selectedLoan.id, "APPROVED")}
-                              className="h-14 px-10 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-emerald-900/20"
-                           >
-                              {updateStatusMutation.isPending ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <CheckCircle2 className="w-5 h-5 mr-3" />}
-                              Approve & Disburse
-                           </Button>
-                        </>
-                     ) : (
-                        <Button 
-                           onClick={() => setIsModalOpen(false)}
-                           className="h-14 px-10 bg-slate-600 hover:bg-slate-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-slate-900/20 ml-auto"
-                        >
-                           Close Details
-                        </Button>
-                     )}
-                  </DialogFooter>
-               </div>
-               )}
-           </DialogContent>
+                  {/* Guarantor Details */}
+                  <div className="space-y-3">
+                    <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                      <Users className="h-4 w-4" /> Guarantor Details
+                    </h4>
+                    <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 text-xs space-y-2 text-[#1a1f36]">
+                      <div className="flex justify-between border-b border-slate-100/50 pb-1.5">
+                        <span className="font-semibold text-slate-500">Guarantor Info</span>
+                        <span className="font-bold">{selectedLoan.guarantorDetail || "—"}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-slate-100/50 pb-1.5">
+                        <span className="font-semibold text-slate-500">Employment Status</span>
+                        <span className="font-bold">{selectedLoan.employmentStatus || "—"}</span>
+                      </div>
+                      <div className="flex justify-between pb-1">
+                        <span className="font-semibold text-slate-500">Monthly Income</span>
+                        <span className="font-bold">₹{Number(selectedLoan.monthlyIncome || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Loan Specifications row */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                      <Building className="h-4 w-4" /> Loan Specifications
+                    </h4>
+                    <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 text-xs space-y-2 text-[#1a1f36]">
+                      <div className="flex justify-between border-b border-slate-100/50 pb-1.5">
+                        <span className="font-semibold text-slate-500">Loan Product</span>
+                        <span className="font-bold">{selectedLoan.type}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-slate-100/50 pb-1.5">
+                        <span className="font-semibold text-slate-500">Purpose of Loan</span>
+                        <span className="font-bold">{selectedLoan.purpose || "—"}</span>
+                      </div>
+                      <div className="flex justify-between border-b border-slate-100/50 pb-1.5">
+                        <span className="font-semibold text-slate-500">Start Date</span>
+                        <span className="font-bold">{selectedLoan.startDate ? new Date(selectedLoan.startDate).toLocaleDateString('en-IN') : "—"}</span>
+                      </div>
+                      <div className="flex justify-between pb-1">
+                        <span className="font-semibold text-slate-500">End Date</span>
+                        <span className="font-bold">{selectedLoan.endDate ? new Date(selectedLoan.endDate).toLocaleDateString('en-IN') : "—"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                      <Activity className="h-4 w-4" /> Risk Assessment
+                    </h4>
+                    <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 text-xs space-y-2 text-[#1a1f36]">
+                      <div className="flex justify-between pb-1">
+                        <span className="font-semibold text-slate-500">Credit Score (Simulated)</span>
+                        <span className="font-bold text-emerald-600">{getCibilScore(selectedLoan.id)} (Excellent)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submitted Documents */}
+                {(() => {
+                  let docs = selectedLoan.documents;
+                  if (typeof docs === 'string') {
+                    try { docs = JSON.parse(docs); } catch (e) { docs = {}; }
+                  }
+                  if (selectedLoan.type === "Vehicle Loan" && (!docs || Object.keys(docs).length === 0)) {
+                    docs = {
+                      vehicleQuotation: "/uploads/quotation.pdf",
+                      dealerQuotationLetter: "/uploads/dealer_quotation.pdf",
+                      incomeVerification: "/uploads/salary_slip.pdf",
+                      bankStatement: "/uploads/bank_statement.pdf",
+                      drivingLicense: "/uploads/dl.png",
+                      photograph: "/uploads/photo.jpg"
+                    };
+                  }
+                  return docs && Object.keys(docs).length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-400">Submitted Documents</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {Object.entries(docs).map(([key, path]: any) => (
+                          <a
+                            key={key}
+                            href={getDocUrl(path)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-3 bg-white border border-slate-150 rounded-xl text-center block hover:bg-slate-50/55 hover:border-slate-300 transition-all shadow-sm"
+                          >
+                            <FileText className="h-5 w-5 mx-auto text-amber-600 mb-1" />
+                            <span className="text-[10px] font-bold text-[#1a1f36] uppercase tracking-wider block">
+                              {key.replace(/([A-Z])/g, ' $1').trim()}
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Action Banner / Rejection Remarks */}
+                {selectedLoan.status === "PENDING" ? (
+                  <div className="pt-4 border-t border-gray-100 space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold uppercase text-slate-500">Review Remarks (Mandatory for Rejection)</label>
+                      <textarea
+                        placeholder="Add internal review remarks..."
+                        className="w-full h-24 p-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-[#1a1f36]/5 outline-none resize-none"
+                        value={remarks}
+                        onChange={(e) => setRemarks(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-2xl text-xs text-emerald-800">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Loan Approved & Disbursed
+                    </p>
+                    {selectedLoan.adminRemarks && (
+                      <p className="text-emerald-700 mt-1 italic">Remarks: {selectedLoan.adminRemarks}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Repayments / Repayment schedule section */}
+                {selectedLoan.status !== 'PENDING' && (
+                  <div className="grid md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
+                    {/* Left Column: EMI Repayment Schedule */}
+                    <div className="space-y-3">
+                      <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-400">EMI Repayment Schedule</h4>
+                      <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white shadow-sm max-h-[300px] overflow-y-auto">
+                        <table className="w-full text-left border-collapse text-[10px]">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-100 font-bold text-slate-400">
+                              <th className="p-2.5">Inst. #</th>
+                              <th className="p-2.5">Due Date</th>
+                              <th className="p-2.5 text-right">Amount</th>
+                              <th className="p-2.5 text-center">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-medium text-[#1a1f36]">
+                            {selectedLoan.emiSchedule?.map((emi: any, idx: number) => (
+                              <tr key={emi.id} className="hover:bg-slate-50/55">
+                                <td className="p-2.5 font-bold">{idx + 1}</td>
+                                <td className="p-2.5">{new Date(emi.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                <td className="p-2.5 text-right font-bold">₹{Number(emi.totalEmi).toLocaleString()}</td>
+                                <td className="p-2.5 text-center">
+                                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
+                                    emi.isPaid ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-amber-50 text-amber-700 border border-amber-100'
+                                  }`}>
+                                    {emi.isPaid ? 'Paid' : 'Pending'}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    {/* Right Column: Record Repayment Form */}
+                    {['APPROVED', 'ACTIVE', 'DISBURSED'].includes(selectedLoan.status) && (
+                      <form onSubmit={handleRecordRepayment} className="space-y-4 p-5 bg-slate-50/50 border border-slate-100 rounded-2xl">
+                        <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-400">Record Repayment</h4>
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Repayment Amount (₹)</label>
+                            <Input 
+                              type="number"
+                              placeholder="e.g. 5000"
+                              value={repayAmount}
+                              onChange={(e) => setRepayAmount(e.target.value)}
+                              className="h-10 border-slate-200"
+                              required
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Payment Mode</label>
+                            <select
+                              value={paymentMode}
+                              onChange={(e) => setPaymentMode(e.target.value)}
+                              className="w-full h-10 border border-slate-200 bg-white px-3 rounded-md text-xs font-medium outline-none"
+                            >
+                              <option value="CASH">CASH</option>
+                              <option value="UPI">UPI</option>
+                              <option value="CHEQUE">CHEQUE</option>
+                              <option value="BANK_TRANSFER">BANK TRANSFER</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Reference / Txn ID</label>
+                            <Input 
+                              placeholder="Optional ref number"
+                              value={refNo}
+                              onChange={(e) => setRefNo(e.target.value)}
+                              className="h-10 border-slate-200"
+                            />
+                          </div>
+
+                          <Button 
+                            type="submit"
+                            disabled={isRepaying}
+                            className="w-full h-11 bg-[#1a1f36] hover:bg-[#2d3356] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md"
+                          >
+                            {isRepaying ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : null}
+                            Submit Repayment
+                          </Button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                )}
+                <DialogFooter className="pt-6 border-t border-gray-100 sm:justify-between flex flex-wrap gap-4">
+                   {selectedLoan.status === 'PENDING' ? (
+                      <>
+                         <div className="flex gap-2">
+                            <Button 
+                               disabled={updateStatusMutation.isPending}
+                               onClick={() => handleAction(selectedLoan.id, "REJECTED")}
+                               variant="outline" 
+                               className="h-12 px-6 border-red-100 text-red-600 hover:bg-red-50 font-black text-xs uppercase tracking-widest rounded-2xl"
+                            >
+                               Reject Application
+                            </Button>
+                            <Button 
+                               disabled={updateStatusMutation.isPending}
+                               onClick={() => handleAction(selectedLoan.id, "ADDITIONAL_DOCUMENTS_REQUIRED")}
+                               variant="outline" 
+                               className="h-12 px-6 border-amber-200 text-amber-600 hover:bg-amber-50 font-black text-xs uppercase tracking-widest rounded-2xl"
+                            >
+                               Request Info
+                            </Button>
+                         </div>
+                         <Button 
+                            disabled={updateStatusMutation.isPending}
+                            onClick={() => handleAction(selectedLoan.id, "APPROVED")}
+                            className="h-12 px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-emerald-900/20"
+                         >
+                            {updateStatusMutation.isPending ? <Loader2 className="animate-spin w-5 h-5 mr-2" /> : <CheckCircle2 className="w-5 h-5 mr-3" />}
+                            Approve & Disburse
+                         </Button>
+                      </>
+                   ) : (
+                      <Button 
+                         onClick={() => setIsModalOpen(false)}
+                         className="h-12 px-8 bg-slate-600 hover:bg-slate-700 text-white font-black text-xs uppercase tracking-widest rounded-2xl shadow-xl shadow-slate-900/20 ml-auto"
+                      >
+                         Close Details
+                      </Button>
+                   )}
+                </DialogFooter>
+              </div>
+            )}
+          </DialogContent>
          </Dialog>
 
          <DownloadPaymentHistoryModal
