@@ -443,7 +443,7 @@ const DepositApplicationPage = () => {
 
   const handleBack = () => setStep(step - 1);
 
-  const handleSubmit = async () => {
+  const handleSubmitApplication = async () => {
     if (formData.declarationAccepted !== "true") {
       toast.error("Please accept the declaration before submitting.");
       return;
