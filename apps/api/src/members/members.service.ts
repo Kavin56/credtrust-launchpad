@@ -462,17 +462,51 @@ export class MembersService {
         'kyc',
       );
 
-      const updateData: any = {};
-      if (docType === 'panDoc' || docType === 'pan') {
-        updateData.panDocUrl = fileUrl;
-      } else {
-        updateData.aadhaarDocUrl = fileUrl;
-      }
+      const fieldName = (docType === 'panDoc' || docType === 'pan') ? 'panDocUrl' : 'aadhaarDocUrl';
+      
+      if (member.kycStatus === 'VERIFIED') {
+        let existingChanges: any = {};
+        if (member.pendingProfileChanges) {
+          try {
+            existingChanges = JSON.parse(member.pendingProfileChanges);
+          } catch (e) {}
+        }
+        existingChanges[fieldName] = fileUrl;
 
-      await this.prisma.member.update({
-        where: { id: member.id },
-        data: updateData,
-      });
+        await this.prisma.member.update({
+          where: { id: member.id },
+          data: {
+            kycStatus: 'PENDING',
+            pendingProfileChanges: JSON.stringify(existingChanges),
+          },
+        });
+
+        await this.prisma.notification.create({
+          data: {
+            title: 'KYC Document Updated',
+            message: `Member ${member.fullName} uploaded a new ${docType === 'panDoc' || docType === 'pan' ? 'PAN' : 'Aadhaar'} document pending approval.`,
+            type: 'APP'
+          }
+        });
+      } else {
+        const updateData: any = {
+          kycStatus: 'PENDING',
+        };
+        updateData[fieldName] = fileUrl;
+
+        await this.prisma.member.update({
+          where: { id: member.id },
+          data: updateData,
+        });
+
+        await this.prisma.notification.create({
+          data: {
+            title: 'KYC Document Uploaded',
+            message: `Member ${member.fullName} uploaded a ${docType === 'panDoc' || docType === 'pan' ? 'PAN' : 'Aadhaar'} document.`,
+            type: 'APP'
+          }
+        });
+      }
 
       return { success: true, url: await this.storage.signedUrl(fileUrl) };
     } catch (error) {
@@ -646,7 +680,9 @@ export class MembersService {
     const member = await this.prisma.member.findUnique({ where: { id: memberId } });
     if (!member) throw new NotFoundException('Member not found');
 
-    const dataUpdate: any = {};
+    const dataUpdate: any = {
+      kycStatus: 'VERIFIED',
+    };
     if (member.pendingProfileChanges) {
       try {
         const changes = JSON.parse(member.pendingProfileChanges);

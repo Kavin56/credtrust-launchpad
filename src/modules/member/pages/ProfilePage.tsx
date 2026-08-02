@@ -206,7 +206,7 @@ const ProfilePage = () => {
       await api.post("/members/me/document", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      toast.success("KYC Document uploaded successfully!");
+      toast.success("KYC Document uploaded successfully! Awaiting Admin approval.");
       setShowUploadModal(false);
       setUploadFile(null);
       queryClient.invalidateQueries({ queryKey: ["member-profile"] });

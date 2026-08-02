@@ -457,11 +457,20 @@ export default function MemberRegistryPage() {
                                   if (field === 'dob' && prevVal) prevVal = new Date(prevVal).toLocaleDateString('en-IN');
                                   let formattedNewVal = newVal;
                                   if (field === 'dob' && newVal) formattedNewVal = new Date(newVal).toLocaleDateString('en-IN');
+                                  const isDoc = field === 'aadhaarDocUrl' || field === 'panDocUrl';
                                   return (
                                     <tr key={field} className="text-slate-700">
                                       <td className="py-2 font-bold uppercase text-[9px]">{field.replace(/([A-Z])/g, ' $1')}</td>
-                                      <td className="py-2 line-through text-slate-400">{prevVal || '—'}</td>
-                                      <td className="py-2 text-amber-700 font-black">{formattedNewVal || '—'}</td>
+                                      <td className="py-2 line-through text-slate-400">
+                                        {isDoc && prevVal ? (
+                                          <a href={getDocUrl(prevVal)} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">View Old Doc</a>
+                                        ) : (prevVal || '—')}
+                                      </td>
+                                      <td className="py-2 text-amber-700 font-black">
+                                        {isDoc && newVal ? (
+                                          <a href={getDocUrl(newVal)} target="_blank" rel="noopener noreferrer" className="text-amber-800 underline font-bold">View New Doc</a>
+                                        ) : (formattedNewVal || '—')}
+                                      </td>
                                     </tr>
                                   );
                                })}
