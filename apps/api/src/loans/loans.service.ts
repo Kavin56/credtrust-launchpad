@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { StorageService } from '../storage/storage.service';
+import { EncryptionService } from '../common/utils/encryption.util';
 
 const LOAN_STATUSES = [
   'PENDING',
@@ -31,6 +32,7 @@ export class LoansService {
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
     private readonly storage: StorageService,
+    private readonly encryption: EncryptionService,
   ) {}
 
   async apply(dto: any, files: UploadedLoanFile[]) {
@@ -226,6 +228,15 @@ export class LoansService {
     return this.updateStatus(loanId, 'APPROVED', 'Approved via manual action');
   }
 
+  private decryptMember(member: any) {
+    if (!member) return member;
+    return {
+      ...member,
+      aadhaarNumber: member.aadhaarNumber ? this.encryption.decrypt(member.aadhaarNumber) : null,
+      panNumber: member.panNumber ? this.encryption.decrypt(member.panNumber) : null,
+    };
+  }
+
   async getLoan(id: string) {
     const loan = await this.prisma.loan.findUnique({
       where: { id },
@@ -236,11 +247,14 @@ export class LoansService {
       }
     });
     if (!loan) throw new NotFoundException('Loan not found');
+    if (loan.member) {
+      loan.member = this.decryptMember(loan.member) as any;
+    }
     return loan;
   }
 
   async list(memberId?: string, status?: string) {
-    return this.prisma.loan.findMany({
+    const loans = await this.prisma.loan.findMany({
       where: {
         memberId,
         status: status as any
@@ -254,6 +268,10 @@ export class LoansService {
         createdAt: 'desc'
       }
     });
+    return loans.map(loan => ({
+      ...loan,
+      member: loan.member ? this.decryptMember(loan.member) : null
+    })) as any;
   }
 
   async listForMember(userId: string) {
@@ -264,7 +282,7 @@ export class LoansService {
     });
     if (!member) return [];
 
-    return this.prisma.loan.findMany({
+    const loans = await this.prisma.loan.findMany({
       where: { memberId: member.id },
       include: { 
         member: true,
@@ -273,6 +291,10 @@ export class LoansService {
       },
       orderBy: { createdAt: 'desc' },
     });
+    return loans.map(loan => ({
+      ...loan,
+      member: loan.member ? this.decryptMember(loan.member) : null
+    })) as any;
   }
 
   async checkEligibility(memberId: string, amount: number) {
