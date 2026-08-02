@@ -284,7 +284,7 @@ const DepositApplicationPage = () => {
     const newErrors: Record<string, string> = {};
 
     if (currentStep === 2) {
-      const reqApplicantFields = ['fullName', 'memberId', 'dob', 'mobile', 'email', 'aadhaar', 'pan', 'address', 'registeredId', 'startDate', 'endDate', 'monthlyPaymentDate'];
+      const reqApplicantFields = ['fullName', 'memberId', 'dob', 'mobile', 'email', 'aadhaar', 'pan', 'address', 'startDate', 'endDate', 'monthlyPaymentDate'];
       reqApplicantFields.forEach(f => {
         if (!formData[f] || !formData[f].toString().trim()) {
           newErrors[f] = "This field is required";
@@ -418,26 +418,6 @@ const DepositApplicationPage = () => {
       return;
     }
 
-    if (step === 2) {
-      const regId = (formData.registeredId || '').toString().trim();
-      if (!regId) {
-        setErrors(prev => ({ ...prev, registeredId: "Registered ID is required" }));
-        toast.error("Registered ID is required");
-        return;
-      }
-
-      // Format registered ID (e.g. ROJA-001) directly without backend database check
-      const formatted = regId.toUpperCase().startsWith('ROJA-') ? regId.toUpperCase() : `ROJA-${regId}`;
-      setFormData(prev => ({ ...prev, registeredId: formatted }));
-
-      // Clear error
-      setErrors(prev => {
-        const updated = { ...prev };
-        delete updated.registeredId;
-        return updated;
-      });
-    }
-
     setStep(step + 1);
   };
 
@@ -464,7 +444,7 @@ const DepositApplicationPage = () => {
       payload.append('tenureMonths', tenure.toString());
       payload.append('payoutMode', formData.payoutPreference);
       payload.append('status', 'PENDING');
-      payload.append('registeredId', formData.registeredId || '');
+
       payload.append('startDate', formData.startDate || '');
       payload.append('endDate', formData.endDate || '');
       payload.append('monthlyPaymentDate', formData.monthlyPaymentDate || '');
@@ -524,7 +504,7 @@ const DepositApplicationPage = () => {
       queryClient.invalidateQueries({ queryKey: ["admin-overview"] });
 
       const appNo = createdApp?.applicationNo || fdNumber;
-      const regId = createdApp?.registeredId || formData.registeredId || profile?.rojaId || profile?.memberId || 'ROJA-MEMBER';
+      const regId = createdApp?.registeredId || profile?.rojaId || profile?.memberId || 'ROJA-MEMBER';
 
       setSubmittedAppInfo({
         applicationNo: appNo,
@@ -648,13 +628,6 @@ const DepositApplicationPage = () => {
                    </div>
 
                    <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-                      {/* Registered ID field */}
-                      <div className="space-y-2 md:col-span-2">
-                         <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Registered ID <span className="text-red-500 font-black">*</span></Label>
-                         <Input value={formData.registeredId || ""} onChange={(e) => handleInputChange("registeredId", e.target.value)} placeholder="Enter Registered ID (e.g. ROJA-001)" className="h-12 rounded-xl" />
-                         {errors.registeredId && <p className="text-xs text-red-500 font-bold">{errors.registeredId}</p>}
-                      </div>
-
                       {/* Start Date & End Date fields */}
                       <div className="space-y-2">
                          <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Start Date <span className="text-red-500 font-black">*</span></Label>

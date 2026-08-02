@@ -591,12 +591,19 @@ const ProfilePage = () => {
                              className={`h-14 rounded-2xl border-gray-100 transition-all ${isEditing ? "bg-white ring-2 ring-[#6b21a8]/10" : "bg-gray-50/50"}`}
                            />
                         </div>
-                        <div className="space-y-4">
                            <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Unique ID</Label>
                            <Input
                              value={profileView.seatBookingNumber}
                              disabled
                              className="h-14 rounded-2xl border-gray-100 bg-gray-50/50"
+                           />
+                        </div>
+                        <div className="space-y-4">
+                           <Label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Registered ID</Label>
+                           <Input
+                             value={profileView.kycStatus === 'VERIFIED' ? profileView.memberId : 'PENDING ALLOCATION'}
+                             disabled
+                             className="h-14 rounded-2xl border-gray-100 bg-gray-50/50 font-bold"
                            />
                         </div>
                         <div className="space-y-4">

@@ -249,7 +249,7 @@ const LoanApplicationPage = () => {
 
   const getRequiredFields = () => {
     const baseFields = [
-      { name: 'registeredId', label: 'Registered ID', type: 'text', placeholder: 'Enter Registered ID (e.g. ROJA-001)' },
+
       { name: 'startDate', label: 'Start Date', type: 'date', placeholder: 'Select Start Date' },
       { name: 'endDate', label: 'End Date', type: 'date', placeholder: 'Select End Date' },
       { name: 'monthlyPaymentDate', label: 'Monthly Payment Date', type: 'select', options: Array.from({ length: 31 }, (_, i) => (i + 1).toString()) },
@@ -591,26 +591,6 @@ const LoanApplicationPage = () => {
       return;
     }
 
-    if (step === 2) {
-      const regId = (formData.registeredId || '').toString().trim();
-      if (!regId) {
-        setErrors(prev => ({ ...prev, registeredId: "Registered ID is required" }));
-        toast.error("Registered ID is required");
-        return;
-      }
-
-      // Format registered ID (e.g. ROJA-001) directly without backend database check
-      const formatted = regId.toUpperCase().startsWith('ROJA-') ? regId.toUpperCase() : `ROJA-${regId}`;
-      setFormData(prev => ({ ...prev, registeredId: formatted }));
-
-      // Clear error
-      setErrors(prev => {
-        const updated = { ...prev };
-        delete updated.registeredId;
-        return updated;
-      });
-    }
-
     setStep(step + 1);
   };
 
@@ -630,7 +610,7 @@ const LoanApplicationPage = () => {
       payload.append('employmentStatus', formData.employmentType || "Self-Declared");
       payload.append('monthlyIncome', formData.monthlySalary || "0");
       payload.append('status', 'PENDING');
-      payload.append('registeredId', formData.registeredId || '');
+
       payload.append('startDate', formData.startDate || '');
       payload.append('endDate', formData.endDate || '');
       payload.append('monthlyPaymentDate', formData.monthlyPaymentDate || '');
@@ -927,10 +907,6 @@ const LoanApplicationPage = () => {
                          <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Estimated Monthly EMI</span>
                          <h3 className="text-4xl font-black">₹{Math.round(calculateEMI()).toLocaleString()}</h3>
                          <div className="pt-4 border-t border-white/10 flex flex-col gap-3 text-[11px] font-bold text-white/60 uppercase">
-                             <div className="flex justify-between border-b border-white/5 pb-1 text-[#c9a84c]">
-                                <span>Registered ID</span>
-                                <span className="font-mono">{formData.registeredId || "—"}</span>
-                             </div>
                              <div className="flex justify-between">
                                 <span>Rate of Interest</span>
                                 <span className="text-white">{selectedLoan.rate}% p.a.</span>
@@ -1036,7 +1012,7 @@ const LoanApplicationPage = () => {
                           <div className="bg-white text-black p-3 rounded-xl shadow text-sm font-medium flex justify-between items-center">
                              <span className="flex items-center gap-2 text-xs text-gray-600">
                                 <Users className="w-4 h-4 text-gray-400" />
-                                {formData.applicantPhone || formData.registeredId || "Guest"}
+                                {formData.applicantPhone || "Guest"}
                              </span>
                              <ChevronRight className="w-4 h-4 text-gray-400" />
                           </div>
