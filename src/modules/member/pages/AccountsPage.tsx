@@ -142,7 +142,6 @@ const AccountsPage = () => {
   }, [searchParams]);
 
   const accountTabs = ["Transaction Accounts", "Deposits", "Loans"];
-  const subTabs = ["Account Summary", "Transactions", "Statements", "Spend Analysis"];
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans selection:bg-[#c9a84c]/30">
@@ -250,39 +249,8 @@ const AccountsPage = () => {
                       </button>
                   </div>
 
-                  {/* Sub Tabs */}
-                  <div className="flex items-center border-b border-gray-100 max-w-full overflow-x-auto no-scrollbar">
-                      {subTabs.map((tab, idx) => (
-                        <button 
-                          key={idx}
-                          className={`px-6 py-4 text-[13px] font-bold transition-all whitespace-nowrap ${
-                            idx === 0 ? "text-[#6b21a8] border-b-2 border-[#6b21a8]" : "text-gray-400 hover:text-gray-600"
-                          }`}
-                        >
-                          {tab}
-                        </button>
-                      ))}
-                  </div>
-
-                  {/* Summary Grid */}
-                  <div className="space-y-8">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-                      <div className="space-y-1.5">
-                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Account Description</p>
-                          <p className="text-[13px] font-bold text-[#1a1f36]">LOTUS SAVINGS SOCIETY-ADHAAR- CHQ</p>
-                      </div>
-                      <div className="space-y-1.5">
-                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Currency</p>
-                          <p className="text-[13px] font-bold text-[#1a1f36]">Rupees</p>
-                      </div>
-                      <div className="space-y-1.5">
-                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest leading-none">Rate of Interest</p>
-                          <p className="text-[13px] font-bold text-[#1a1f36]">2.50%</p>
-                      </div>
-                    </div>
-
-                    {/* Government ID Card */}
-                    <div className="pt-8 border-t border-gray-100">
+                  {/* Government ID Card */}
+                    <div className="pt-2">
                       <div className="flex items-center justify-between mb-6">
                         <h4 className="text-[14px] font-bold text-[#1a1f36]">Society ID card</h4>
                         <button 
@@ -310,8 +278,8 @@ const AccountsPage = () => {
                               {/* Photo & QR Code Placeholder */}
                               <div className="flex flex-col gap-2 shrink-0 items-center justify-between py-0.5">
                                 <div className="w-[85px] h-[100px] border-2 border-[#1E3A8A] flex flex-col items-center justify-center bg-gray-50 rounded shrink-0 overflow-hidden relative">
-                                  {getPhotoUrl(profile?.photoUrl) ? (
-                                    <img src={getPhotoUrl(profile.photoUrl)!} alt="Photo" className="w-full h-full object-cover" />
+                                  {getPhotoUrl(profile?.pendingPhotoUrl || profile?.photoUrl) ? (
+                                    <img src={getPhotoUrl(profile?.pendingPhotoUrl || profile?.photoUrl)!} alt="Photo" className="w-full h-full object-cover" />
                                   ) : (
                                     <div className="text-center p-0.5">
                                       <User className="w-8 h-8 text-gray-400 mx-auto" />
@@ -359,9 +327,9 @@ const AccountsPage = () => {
                                   </span>
                                 </div>
                                 <div className="flex items-end">
-                                  <span className="font-bold shrink-0">Unique ID:&nbsp;</span>
+                                  <span className="font-bold shrink-0">Registered ID:&nbsp;</span>
                                   <span className="border-b border-dotted border-[#1E3A8A] flex-1 px-1 font-semibold text-black overflow-hidden truncate">
-                                    {profile?.seatBookingNumber || "......................................."}
+                                    {profile?.kycStatus === 'VERIFIED' ? profile?.memberId : "PENDING ALLOCATION"}
                                   </span>
                                 </div>
                               </div>
