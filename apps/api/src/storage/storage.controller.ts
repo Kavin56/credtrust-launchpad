@@ -11,6 +11,13 @@ export class StorageController {
       throw new HttpException('Path parameter is required', HttpStatus.BAD_REQUEST);
     }
     try {
+      if (storagePath.startsWith('gs://')) {
+        const signedUrl = await this.storageService.signedUrl(storagePath);
+        if (signedUrl) {
+          return res.redirect(302, signedUrl);
+        }
+      }
+
       const fileData = await this.storageService.getFileBuffer(storagePath);
       if (!fileData) {
         throw new HttpException('File not found', HttpStatus.NOT_FOUND);
