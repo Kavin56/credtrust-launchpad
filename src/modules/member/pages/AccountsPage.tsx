@@ -452,8 +452,7 @@ const AccountsPage = () => {
                           )}
                         </div>
                       </div>
-                    </div>
-                  </>
+                   </>
              ) : activeTabIndex === 1 ? (
                 <div className="space-y-8">
                    <div className="flex items-center justify-between">
