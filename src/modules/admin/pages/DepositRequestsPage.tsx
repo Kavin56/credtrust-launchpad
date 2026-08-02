@@ -5,8 +5,11 @@ import api, { getApiBaseUrl } from "@/lib/api";
 const getDocUrl = (url: string | null) => {
   if (!url) return '#';
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('gs://')) {
+    return url.replace('gs://', 'https://storage.googleapis.com/');
+  }
   const baseUrl = getApiBaseUrl();
-  if (url.startsWith('gs://') || url.startsWith('/uploads/')) {
+  if (url.startsWith('/uploads/')) {
     return `${baseUrl}/storage/view?path=${encodeURIComponent(url)}`;
   }
   const origin = baseUrl.replace('/api/v1', '');
