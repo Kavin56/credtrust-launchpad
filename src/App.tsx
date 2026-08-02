@@ -1,4 +1,3 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -41,15 +40,6 @@ import RoleRoute from "./components/RoleRoute";
 import GoogleTranslate from "./components/GoogleTranslate";
 import OfficeExpensePage from "./modules/admin/pages/OfficeExpensePage";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 2 * 60 * 1000, // 2 minutes cache to avoid repeat fetches
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
 const ProtectedRoute = ({ children, requireAdmin = false }: { children: React.ReactNode, requireAdmin?: boolean }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -71,7 +61,6 @@ const ProtectedRoute = ({ children, requireAdmin = false }: { children: React.Re
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -118,7 +107,6 @@ const App = () => (
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
 );
 
 export default App;
