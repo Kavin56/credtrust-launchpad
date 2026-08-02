@@ -100,6 +100,9 @@ const PigmyRequestsPage = () => {
   const getDocUrl = (url: string | null) => {
     if (!url) return '#';
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('gs://')) {
+      return url.replace('gs://', 'https://storage.googleapis.com/');
+    }
     const baseUrl = getApiBaseUrl();
     return `${baseUrl}/storage/view?path=${encodeURIComponent(url)}`;
   };
