@@ -115,7 +115,7 @@ export const PayNowDialog: React.FC<PayNowDialogProps> = ({ accountId, customerN
   };
 
   // Generate UPI URL
-  const upiUrl = `upi://pay?pa=SRIROJASHABARISHGURUJI@KBL&pn=CredTrust&am=${formData.amount}&cu=INR`;
+  const upiUrl = `upi://pay?pa=srirojashabarishgurujigmail.com@kbl&pn=CredTrust&am=${formData.amount}&cu=INR`;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

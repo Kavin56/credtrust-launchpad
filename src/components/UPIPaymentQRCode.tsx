@@ -32,7 +32,7 @@ export interface UPIPaymentQRCodeProps {
 
 export const UPIPaymentQRCode: React.FC<UPIPaymentQRCodeProps> = ({
   amount,
-  payeeVpa = 'SRIROJASHABARISHGURUJI@KBL',
+  payeeVpa = 'srirojashabarishgurujigmail.com@kbl',
   payeeName = 'Sri Roja Shabarish Guruji',
   transactionNote = 'Deposit Payment',
   applicationNo = 'DEP-REF-001',

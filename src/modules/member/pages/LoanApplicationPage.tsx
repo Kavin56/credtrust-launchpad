@@ -1059,7 +1059,7 @@ const LoanApplicationPage = () => {
                              <div className="flex gap-6 items-center">
                                 <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
                                    <QRCodeSVG 
-                                      value={`upi://pay?pa=SRIROJASHABARISHGURUJI@KBL&pn=CredTrust&am=${(amount * 0.025).toFixed(2)}&cu=INR&tn=Documentation%20Charge`}
+                                      value={`upi://pay?pa=srirojashabarishgurujigmail.com@kbl&pn=CredTrust&am=${(amount * 0.025).toFixed(2)}&cu=INR&tn=Documentation%20Charge`}
                                       size={140}
                                       level="M"
                                    />
