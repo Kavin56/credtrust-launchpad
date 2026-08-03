@@ -230,7 +230,7 @@ const AccountsPage = () => {
                   {/* Account Header */}
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-100">
                       <div className="bg-[#6b21a8] py-2.5 px-6 rounded-full inline-flex items-center gap-4 text-white shadow-lg shadow-purple-900/10">
-                        <span className="text-[13px] font-bold uppercase tracking-widest whitespace-nowrap">SAVINGS A/C</span>
+                        <span className="text-[13px] font-bold uppercase tracking-widest whitespace-nowrap">DETAILS OF THE ACCOUNT</span>
                         <div className="w-px h-3 bg-white/20" />
                         <div className="flex items-center gap-2">
                             <span className="text-[14px] font-bold font-sans tracking-widest">
