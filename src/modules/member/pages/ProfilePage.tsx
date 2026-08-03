@@ -24,6 +24,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import api, { getApiErrorMessage, getApiBaseUrl } from "@/lib/api";
 import { QRCodeSVG } from 'qrcode.react';
+import html2canvas from 'html2canvas';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -263,6 +264,40 @@ const ProfilePage = () => {
       toast.error("Failed to upload signature");
     } finally {
       setUploadingSig(false);
+    }
+  };
+
+  const [isDownloadingCard, setIsDownloadingCard] = useState(false);
+
+  const handleDownloadIDCard = async () => {
+    const cardElement = document.getElementById('printable-membership-card');
+    if (!cardElement) {
+      toast.error("ID Card preview not found");
+      return;
+    }
+    setIsDownloadingCard(true);
+    try {
+      // Create high resolution canvas download
+      const canvas = await html2canvas(cardElement, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#020617",
+      });
+      const dataUrl = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `Membership_ID_Card_${profileView.memberId || 'ROJA-MEMBER'}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.success("ID Card downloaded successfully!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Direct image download failed, opening print view...");
+      handlePrintCard();
+    } finally {
+      setIsDownloadingCard(false);
     }
   };
 
@@ -772,23 +807,26 @@ const ProfilePage = () => {
                                   )}
                                 </div>
 
-                                {(!profile?.downloadRequestStatus || profile?.downloadRequestStatus === 'IDLE' || profile?.downloadRequestStatus === 'REJECTED') ? (
+                                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                                   <Button
-                                    onClick={handleRequestDownload}
-                                    className="bg-[#c9a84c] hover:bg-[#b0903b] text-white font-bold h-11 px-6 rounded-xl w-full sm:w-auto"
+                                    disabled={isDownloadingCard}
+                                    onClick={handleDownloadIDCard}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 px-6 rounded-xl flex items-center gap-2 shadow-md shadow-emerald-900/10"
                                   >
-                                    Request Download Access
+                                    <Download className="w-4 h-4" />
+                                    {isDownloadingCard ? "Generating Image..." : "Download ID Card (PNG)"}
                                   </Button>
-                                ) : profile?.downloadRequestStatus === 'APPROVED' ? (
-                                  <Button
-                                    onClick={handlePrintCard}
-                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 px-6 rounded-xl w-full sm:w-auto flex items-center gap-2"
-                                  >
-                                    <Download className="w-4 h-4" /> Download / Print ID Card
-                                  </Button>
-                                ) : (
-                                  <span className="text-xs font-bold text-slate-400 italic">Review in progress</span>
-                                )}
+
+                                  {(!profile?.downloadRequestStatus || profile?.downloadRequestStatus === 'IDLE' || profile?.downloadRequestStatus === 'REJECTED') && (
+                                    <Button
+                                      onClick={handleRequestDownload}
+                                      variant="outline"
+                                      className="border-slate-200 text-slate-700 hover:bg-slate-50 font-bold h-11 px-5 rounded-xl"
+                                    >
+                                      Request Admin Clearance
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             </div>
 
