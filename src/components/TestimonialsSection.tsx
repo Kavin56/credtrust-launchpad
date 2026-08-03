@@ -11,16 +11,10 @@ const testimonials = [
   {
     image: testimonial1,
     quote: "I just wanted to open a new personal account. My business partner recommended Sharanam and I am quite happy with my decision. The staff is very kind, very supportive and they attend to you very well.",
-    name: "Karan Deodatta Pradeshi",
-    product: "Savings Account",
-    date: "02 Nov, 2023",
   },
   {
     image: testimonial2,
     quote: "Sharanam's digital services have completely changed how I manage my finances. The app is intuitive, fast, and I can do everything from my phone. Truly impressed by the experience.",
-    name: "Priya Mehra",
-    product: "Digital Services",
-    date: "15 Jan, 2024",
   },
 ];
 
@@ -49,7 +43,7 @@ const TestimonialsSection = () => {
         >
           <div className="relative">
             <div className="absolute -inset-3 rounded-3xl border-2 border-secondary/40 hidden md:block" style={{ borderRadius: "40% 60% 50% 50% / 50% 50% 60% 40%" }} />
-            <img src={t.image} alt={t.name} className="rounded-2xl w-full aspect-square object-cover" loading="lazy" width={400} height={400} />
+            <img src={t.image} alt="Testimonial" className="rounded-2xl w-full aspect-square object-cover" loading="lazy" width={400} height={400} />
             <button className="absolute bottom-4 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full bg-foreground/80 text-background flex items-center justify-center hover:scale-110 transition-transform">
               <Play className="w-5 h-5 ml-0.5" />
             </button>
@@ -59,9 +53,6 @@ const TestimonialsSection = () => {
             <blockquote className="text-lg md:text-xl text-foreground/80 leading-relaxed mb-6">
               "{t.quote}"
             </blockquote>
-            <p className="font-semibold text-foreground">{t.name}</p>
-            <p className="text-sm text-primary mt-1">{t.product}</p>
-            <p className="text-xs text-muted-foreground mt-1">{t.date}</p>
 
             <div className="flex gap-3 mt-6">
               <button
