@@ -105,6 +105,26 @@ export class DepositsService {
   }
 
   async list(memberId?: string, status?: string) {
+    // Helper to process documents JSON and sign any URLs
+    const processAppDocs = async (app: any) => {
+      if (!app.documents) return app;
+      try {
+        let docs = typeof app.documents === 'string' ? JSON.parse(app.documents) : app.documents;
+        if (docs && typeof docs === 'object') {
+          const updatedDocs: Record<string, string> = {};
+          for (const [key, val] of Object.entries(docs)) {
+            if (typeof val === 'string') {
+              updatedDocs[key] = await this.storage.signedUrl(val) || val;
+            } else {
+              updatedDocs[key] = val as string;
+            }
+          }
+          return { ...app, documents: JSON.stringify(updatedDocs) };
+        }
+      } catch (e) {}
+      return app;
+    };
+
     // If querying as a member, list BOTH approved active accounts AND pending/rejected applications
     if (memberId) {
       const applications = await this.prisma.depositApplication.findMany({
@@ -115,6 +135,8 @@ export class DepositsService {
         include: { member: true },
         orderBy: { createdAt: 'desc' }
       });
+
+      const processedApps = await Promise.all(applications.map(app => processAppDocs(app)));
 
       // Active approved deposit accounts
       const activeAccounts = await this.prisma.depositAccount.findMany({
@@ -146,7 +168,7 @@ export class DepositsService {
       }));
 
       // Combine both lists
-      return [...applications, ...mappedAccounts].sort(
+      return [...processedApps, ...mappedAccounts].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
     }
@@ -164,9 +186,11 @@ export class DepositsService {
       }
     });
 
+    const processedApps = await Promise.all(apps.map(app => processAppDocs(app)));
+
     if (status === 'APPROVED') {
       const appsWithTxns = [];
-      for (const app of apps) {
+      for (const app of processedApps) {
         const account = await this.prisma.depositAccount.findFirst({
           where: { memberId: app.memberId, type: app.type },
           include: { transactions: { orderBy: { createdAt: 'desc' } } }
@@ -179,7 +203,7 @@ export class DepositsService {
       }
       return appsWithTxns;
     }
-    return apps;
+    return processedApps;
   }
 
   async listForMember(userId: string) {
