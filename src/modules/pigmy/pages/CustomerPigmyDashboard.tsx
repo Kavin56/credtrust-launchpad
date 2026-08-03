@@ -184,10 +184,7 @@ const CustomerPigmyDashboard = () => {
           
           {/* Left Column */}
           <div className="lg:col-span-1 space-y-6">
-            <PigmyQRCode 
-              accountNumber={displayAccountNumber} 
-              customerName={welcomeName} 
-            />
+
             
             <Card className="bg-blue-900 text-white border-none shadow-2xl shadow-blue-200 overflow-hidden relative rounded-[32px]">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl" />
