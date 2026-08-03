@@ -5,8 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import * as fs from 'fs';
-import { resolve } from 'path';
+import { StorageService } from '../storage/storage.service';
 
 type UploadedDepositFile = {
   fieldname: string;
@@ -18,66 +17,42 @@ type UploadedDepositFile = {
 
 @Injectable()
 export class DepositsService {
-  private readonly uploadDir = resolve(
-    process.cwd(),
-    process.env.LOCAL_UPLOAD_DIR || '../../uploads',
-    'deposits',
-  );
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly notificationsService: NotificationsService
-  ) {
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
-    }
-  }
+    private readonly notificationsService: NotificationsService,
+    private readonly storage: StorageService,
+  ) {}
 
   async apply(userId: string, fields: any, files: UploadedDepositFile[]) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { member: true }
     });
-    const member = user?.member;
-    if (!member) {
-      throw new BadRequestException('Member profile not found');
+
+    if (!user || !user.member) {
+      throw new NotFoundException('Member profile not found.');
     }
+    const member = user.member;
 
-    let formattedId = '';
     let initialStatus = 'PENDING';
+    let formattedId: string | null = null;
+    if (fields.registeredId) {
+      const cleanInputId = fields.registeredId.trim();
+      formattedId = cleanInputId.toUpperCase().startsWith('ROJA-')
+        ? cleanInputId.toUpperCase()
+        : `ROJA-${cleanInputId}`;
 
-    if (member.kycStatus === 'VERIFIED') {
-      formattedId = member.rojaId || '';
-      initialStatus = 'PENDING';
-    } else {
-      const rawId = (fields.registeredId || '').toString().trim();
-      if (!rawId) {
-        throw new BadRequestException('Registered ID is mandatory');
-      }
-      formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
-
-      const existingRojaMember = await this.prisma.member.findFirst({
-        where: { rojaId: formattedId, id: { not: member.id } }
+      const registeredIdExists = await this.prisma.member.findFirst({
+        where: { rojaId: formattedId },
       });
-      if (existingRojaMember) {
-        throw new BadRequestException('Registered ID already belongs to another member');
-      }
 
-      await this.prisma.member.update({
-        where: { id: member.id },
-        data: { rojaId: formattedId }
-      });
+      if (!registeredIdExists) {
+        throw new BadRequestException('ROJA ID not registered. Please enter a valid registered ID or proceed without it.');
+      }
       initialStatus = 'PENDING_REGISTERED_ID_APPROVAL';
     }
 
-    if (!fields.startDate || !fields.endDate || !fields.monthlyPaymentDate) {
-      throw new BadRequestException('Start Date, End Date, and Monthly Payment Date are mandatory');
-    }
-    const startDate = new Date(fields.startDate);
-    const endDate = new Date(fields.endDate);
-    if (endDate < startDate) {
-      throw new BadRequestException('End Date cannot be earlier than Start Date');
-    }
     const monthlyPaymentDate = parseInt(fields.monthlyPaymentDate);
     if (isNaN(monthlyPaymentDate) || monthlyPaymentDate < 1 || monthlyPaymentDate > 31) {
       throw new BadRequestException('Monthly Payment Date must be between 1 and 31');
@@ -85,20 +60,22 @@ export class DepositsService {
 
     const documentPaths: Record<string, string> = {};
 
-    // Handle file uploads
+    // Handle file uploads using GCS Storage Service
     for (const file of files) {
-      const filename = `${Date.now()}-${file.filename}`;
-      const filePath = resolve(this.uploadDir, filename);
-      await fs.promises.writeFile(filePath, file.buffer);
-      
-      // Store relative path for frontend access
-      documentPaths[file.fieldname] = `/uploads/deposits/${filename}`;
+      documentPaths[file.fieldname] = await this.storage.upload(
+        file.buffer,
+        file.filename,
+        file.mimetype || 'application/octet-stream',
+        'deposit-documents',
+      );
     }
 
     const kind = fields.type || fields.kind || 'FD';
     const amount = parseFloat(fields.amount || fields.principal || '0');
     const rate = parseFloat(fields.interestRate || fields.rate || '10');
     const tenureMonths = parseInt(fields.tenureMonths || '12');
+    const startDate = fields.startDate ? new Date(fields.startDate) : new Date();
+    const endDate = fields.endDate ? new Date(fields.endDate) : new Date(Date.now() + tenureMonths * 30 * 24 * 60 * 60 * 1000);
 
     const appCount = await this.prisma.depositApplication.count();
     const applicationNo = `DEP-${kind}-${(appCount + 1).toString().padStart(6, '0')}`;
