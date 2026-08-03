@@ -36,7 +36,7 @@ const loanTypes = [
     id: 'surety', 
     name: 'Surety Loan', 
     rate: 13, 
-    max: 500000, 
+    max: 23000, 
     desc: 'Affordable credit backed by trusted sureties. Dynamic verification depending on amount.',
     icon: ShieldCheck,
     color: 'border-blue-200 bg-blue-50/30 text-blue-600',
@@ -46,7 +46,7 @@ const loanTypes = [
     id: 'unsecured', 
     name: 'Unsecured Loan', 
     rate: 13, 
-    max: 1000000, 
+    max: 23000, 
     desc: 'No collateral required. Standard personal credit backed by two security guarantors.',
     icon: Landmark,
     color: 'border-purple-200 bg-purple-50/30 text-purple-600',
@@ -56,7 +56,7 @@ const loanTypes = [
     id: 'business', 
     name: 'Business Loan', 
     rate: 14, 
-    max: 2000000, 
+    max: 23000, 
     desc: 'Fuel your enterprise growth. Supports NGO/Darpan registered institutions.',
     icon: Briefcase,
     color: 'border-purple-200 bg-purple-50/30 text-purple-600',
@@ -66,7 +66,7 @@ const loanTypes = [
     id: 'salary', 
     name: 'Salary Loan / Personal Loan', 
     rate: 13, 
-    max: 1000000, 
+    max: 23000, 
     desc: 'Instant personal loan matching your monthly salary slips and credit score.',
     icon: Landmark,
     color: 'border-emerald-200 bg-emerald-50/30 text-emerald-600',
@@ -76,7 +76,7 @@ const loanTypes = [
     id: 'vehicle', 
     name: 'Vehicle Loan', 
     rate: 14, 
-    max: 1500000, 
+    max: 23000, 
     desc: 'Fulfill your transit needs. Competitive rates on cars, commercial, or two-wheelers with manual uploading.',
     icon: Car,
     color: 'border-amber-200 bg-amber-50/30 text-amber-600',
@@ -86,7 +86,7 @@ const loanTypes = [
     id: 'home', 
     name: 'Home Loan', 
     rate: 9.5, 
-    max: 5000000, 
+    max: 23000, 
     desc: 'Build your dream home with low interest rates. Flexible property valuations.',
     icon: Home,
     color: 'border-rose-200 bg-rose-50/30 text-rose-600',
@@ -222,13 +222,13 @@ const LoanApplicationPage = () => {
   useEffect(() => {
     if (selectedLoan.id === 'home') {
       setTenure(60); // Max 5 Years
-      setAmount(100000);
+      setAmount(23000);
     } else if (selectedLoan.id === 'surety') {
       setTenure(12);
       setAmount(5000);
     } else {
       setTenure(12);
-      setAmount(50000);
+      setAmount(23000);
     }
     setUploadedFiles({});
     setUploadProgress({});

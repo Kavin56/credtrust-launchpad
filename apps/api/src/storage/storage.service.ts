@@ -57,11 +57,14 @@ export class StorageService {
         });
         return url;
       } catch (err: any) {
-        console.warn('GCS V4 getSignedUrl fallback to view endpoint:', err?.message || err);
+        console.warn('GCS V4 getSignedUrl fallback to direct URL:', err?.message || err);
+        const [, , bucketName, ...keyParts] = storagePath.split('/');
+        const key = keyParts.join('/');
+        return `https://storage.googleapis.com/${bucketName || this.bucket.name}/${key}`;
       }
     }
 
-    // Fallback relative stream URL for local storage or fallback environments
+    // Fallback relative stream URL for local storage
     return `/api/v1/storage/view?path=${encodeURIComponent(storagePath)}`;
   }
 

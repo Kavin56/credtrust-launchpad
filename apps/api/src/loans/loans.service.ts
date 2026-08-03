@@ -107,6 +107,9 @@ export class LoansService {
     // Proportional charges calculation:
     // Documentation charge: ₹250 for every ₹10,000 (2.5% of principal)
     const amount = parseFloat(dto.amount || '0');
+    if (amount > 23000) {
+      throw new BadRequestException('The maximum loan amount allowed is ₹23,000');
+    }
     const documentationCharges = amount * 0.025; 
     const processingCharges = 0;
     const otherCharges = 0;
