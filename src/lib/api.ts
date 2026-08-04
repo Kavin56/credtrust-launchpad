@@ -8,6 +8,14 @@ export const getApiBaseUrl = () => {
   return "https://credtrust-launchpad-git-176626350005.asia-south1.run.app/api/v1";
 };
 
+export const getDocUrl = (url: string | null | undefined): string => {
+  if (!url) return '#';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  
+  const baseUrl = getApiBaseUrl();
+  return `${baseUrl}/storage/view?path=${encodeURIComponent(url)}`;
+};
+
 const api = axios.create({
   baseURL: getApiBaseUrl(),
   // File uploads + cold-start can exceed 30s; keep UX responsive via UI state instead.

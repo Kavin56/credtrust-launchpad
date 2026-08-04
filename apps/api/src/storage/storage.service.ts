@@ -71,23 +71,42 @@ export class StorageService {
   async getFileBuffer(storagePath: string): Promise<{ buffer: Buffer; contentType: string } | null> {
     if (!storagePath) return null;
 
-    // Handle local disk uploads
-    if (storagePath.startsWith('/uploads/')) {
-      const relativePath = storagePath.substring('/uploads/'.length);
-      const localPath = join(process.cwd(), 'uploads', relativePath);
+    const getContentTypeByExt = (filePath: string) => {
+      const ext = extname(filePath).toLowerCase();
+      if (ext === '.pdf') return 'application/pdf';
+      if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+      if (ext === '.png') return 'image/png';
+      if (ext === '.webp') return 'image/webp';
+      if (ext === '.svg') return 'image/svg+xml';
+      return 'application/octet-stream';
+    };
+
+    // 1. Try local disk check first for any path matching uploads/
+    const cleanRelativePath = storagePath
+      .replace(/^gs:\/\/[^\/]+\//, '')
+      .replace(/^\/uploads\//, '')
+      .replace(/^uploads\//, '')
+      .replace(/^\//, '');
+
+    const possibleLocalPaths = [
+      join(process.cwd(), 'uploads', cleanRelativePath),
+      join(process.cwd(), cleanRelativePath),
+      join(process.cwd(), 'uploads', storagePath.replace(/^\//, '')),
+    ];
+
+    for (const localPath of possibleLocalPaths) {
       if (existsSync(localPath)) {
-        const buffer = require('fs').readFileSync(localPath);
-        const ext = extname(localPath).toLowerCase();
-        let contentType = 'application/octet-stream';
-        if (ext === '.pdf') contentType = 'application/pdf';
-        else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
-        else if (ext === '.png') contentType = 'image/png';
-        return { buffer, contentType };
+        try {
+          const buffer = require('fs').readFileSync(localPath);
+          const contentType = getContentTypeByExt(localPath);
+          return { buffer, contentType };
+        } catch (e) {
+          console.warn(`Failed reading local file ${localPath}:`, e);
+        }
       }
-      return null;
     }
 
-    // Handle GCS gs:// paths
+    // 2. Handle GCS gs:// paths
     if (storagePath.startsWith('gs://')) {
       try {
         const [, , bucketName, ...keyParts] = storagePath.split('/');
@@ -96,23 +115,18 @@ export class StorageService {
         const file = bucket.file(key);
 
         const [exists] = await file.exists();
-        if (!exists) return null;
+        if (exists) {
+          const [buffer] = await file.download();
+          const [metadata] = await file.getMetadata();
 
-        const [buffer] = await file.download();
-        const [metadata] = await file.getMetadata();
-
-        let contentType = metadata.contentType || 'application/octet-stream';
-        if (contentType === 'application/octet-stream') {
-          const ext = extname(key).toLowerCase();
-          if (ext === '.pdf') contentType = 'application/pdf';
-          else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
-          else if (ext === '.png') contentType = 'image/png';
+          let contentType = metadata.contentType || 'application/octet-stream';
+          if (contentType === 'application/octet-stream') {
+            contentType = getContentTypeByExt(key);
+          }
+          return { buffer, contentType };
         }
-
-        return { buffer, contentType };
       } catch (error) {
         console.error('Error reading file from GCS:', error);
-        return null;
       }
     }
 

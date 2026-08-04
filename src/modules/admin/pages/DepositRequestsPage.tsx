@@ -1,21 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api, { getApiBaseUrl } from "@/lib/api";
-
-const getDocUrl = (url: string | null) => {
-  if (!url) return '#';
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  if (url.startsWith('gs://')) {
-    return url.replace('gs://', 'https://storage.googleapis.com/');
-  }
-  const baseUrl = getApiBaseUrl();
-  if (url.startsWith('/uploads/')) {
-    return `${baseUrl}/storage/view?path=${encodeURIComponent(url)}`;
-  }
-  const origin = baseUrl.replace('/api/v1', '');
-  const cleanPath = url.startsWith('/') ? url : `/${url}`;
-  return `${origin}${cleanPath}`;
-};
+import api, { getApiBaseUrl, getDocUrl } from "@/lib/api";
 
 import AdminNavbar from '@/components/AdminNavbar';
 import Footer from "@/components/Footer";

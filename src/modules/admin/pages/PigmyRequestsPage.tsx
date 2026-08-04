@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import api, { getApiBaseUrl } from "@/lib/api";
+import api, { getApiBaseUrl, getDocUrl } from "@/lib/api";
 import AdminNavbar from '@/components/AdminNavbar';
 import Footer from "@/components/Footer";
 import { 
@@ -97,15 +97,7 @@ const PigmyRequestsPage = () => {
     });
   };
 
-  const getDocUrl = (url: string | null) => {
-    if (!url) return '#';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    if (url.startsWith('gs://')) {
-      return url.replace('gs://', 'https://storage.googleapis.com/');
-    }
-    const baseUrl = getApiBaseUrl();
-    return `${baseUrl}/storage/view?path=${encodeURIComponent(url)}`;
-  };
+
 
   const openAppDetails = (app: any) => {
     setSelectedApp(app);

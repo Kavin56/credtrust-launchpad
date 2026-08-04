@@ -12,9 +12,13 @@ export class StorageController {
     }
     try {
       if (storagePath.startsWith('gs://')) {
-        const signedUrl = await this.storageService.signedUrl(storagePath);
-        if (signedUrl) {
-          return res.redirect(302, signedUrl);
+        try {
+          const signedUrl = await this.storageService.signedUrl(storagePath);
+          if (signedUrl && signedUrl.includes('X-Goog-Signature')) {
+            return res.redirect(302, signedUrl);
+          }
+        } catch (e) {
+          console.warn('Signed URL generation failed, streaming buffer directly:', e);
         }
       }
 

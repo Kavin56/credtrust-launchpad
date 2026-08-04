@@ -22,7 +22,7 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import api, { getApiErrorMessage, getApiBaseUrl } from "@/lib/api";
+import api, { getApiErrorMessage, getApiBaseUrl, getDocUrl } from "@/lib/api";
 import { QRCodeSVG } from 'qrcode.react';
 import html2canvas from 'html2canvas';
 import { Button } from "@/components/ui/button";
@@ -171,22 +171,7 @@ const ProfilePage = () => {
     [profile, profileView.joined, profileView.status],
   );
 
-  const getDocUrl = (url: string) => {
-    if (!url) return '#';
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    if (url.startsWith('gs://')) {
-      return url.replace('gs://', 'https://storage.googleapis.com/');
-    }
-    const baseUrl = getApiBaseUrl();
-    if (url.startsWith('/uploads/')) {
-      return `${baseUrl}/storage/view?path=${encodeURIComponent(url)}`;
-    }
-    const origin = baseUrl.replace('/api/v1', '');
-    const cleanPath = url.startsWith('/') ? url : `/${url}`;
-    return `${origin}${cleanPath}`;
-  };
+
 
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();

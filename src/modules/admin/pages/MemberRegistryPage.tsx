@@ -16,7 +16,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import api, { getApiErrorMessage, getApiBaseUrl } from '@/lib/api';
+import api, { getApiErrorMessage, getApiBaseUrl, getDocUrl } from '@/lib/api';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,20 +51,7 @@ export default function MemberRegistryPage() {
     },
   });
 
-  const getDocUrl = (url: string | null) => {
-    if (!url) return '#';
-    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url;
-    if (url.startsWith('gs://')) {
-      return url.replace('gs://', 'https://storage.googleapis.com/');
-    }
-    const baseUrl = getApiBaseUrl();
-    if (url.startsWith('/uploads/') || url.startsWith('profile/') || url.startsWith('signatures/') || url.startsWith('office/')) {
-      return `${baseUrl}/storage/view?path=${encodeURIComponent(url)}`;
-    }
-    const origin = baseUrl.replace('/api/v1', '');
-    const cleanPath = url.startsWith('/') ? url : `/${url}`;
-    return `${origin}${cleanPath}`;
-  };
+
 
   const handleSealSubmit = async () => {
     if (!adminSignatureFile && !officeSealFile) {
