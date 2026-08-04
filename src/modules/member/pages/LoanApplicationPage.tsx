@@ -155,7 +155,7 @@ const LoanApplicationPage = () => {
     }
     return loanTypes[0];
   });
-  const [amount, setAmount] = useState(50000);
+  const [amount, setAmount] = useState(23000);
   const [tenure, setTenure] = useState(12);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -225,7 +225,7 @@ const LoanApplicationPage = () => {
       setAmount(23000);
     } else if (selectedLoan.id === 'surety') {
       setTenure(12);
-      setAmount(5000);
+      setAmount(23000);
     } else {
       setTenure(12);
       setAmount(23000);
@@ -586,6 +586,13 @@ const LoanApplicationPage = () => {
   };
 
   const handleNext = async () => {
+    if (amount > 23000) {
+      setAmount(23000);
+      toast.error("Maximum Loan Amount Exceeded!", {
+        description: "The maximum allowed loan amount is ₹23,000. Amount adjusted to ₹23,000.",
+      });
+      return;
+    }
     if (!validateStep(step)) {
       toast.error("Please fill all required fields/uploads to continue.");
       return;
@@ -597,6 +604,13 @@ const LoanApplicationPage = () => {
   const handleBack = () => setStep(step - 1);
 
   const handleSubmit = async () => {
+    if (amount > 23000) {
+      setAmount(23000);
+      toast.error("Maximum Loan Amount Exceeded!", {
+        description: "The maximum allowed loan amount is ₹23,000. Please enter ₹23,000 or less.",
+      });
+      return;
+    }
     try {
       setIsSubmitting(true);
       const appID = `SRS-${selectedLoan.id.substring(0,2).toUpperCase()}-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -869,7 +883,18 @@ const LoanApplicationPage = () => {
                             <Input 
                                type="number"
                                value={amount}
-                               onChange={(e) => setAmount(Math.min(Number(e.target.value), selectedLoan.max))}
+                               max={23000}
+                               onChange={(e) => {
+                                 const val = Number(e.target.value);
+                                 if (val > 23000) {
+                                   setAmount(23000);
+                                   toast.error("Maximum Loan Amount Exceeded!", {
+                                     description: "The maximum allowed loan amount is ₹23,000. Amount adjusted to ₹23,000.",
+                                   });
+                                 } else {
+                                   setAmount(val);
+                                 }
+                               }}
                                className="h-14 text-xl font-black rounded-xl border-gray-100"
                             />
                             <div className="flex justify-between items-center text-[10px] font-bold text-gray-400">

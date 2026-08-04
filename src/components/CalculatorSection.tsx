@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import { toast } from "sonner";
 import professionalBanking from "@/assets/calculator-man.png";
 
 const tabs = ["EMI Calculator", "Home Loan", "Car Loan", "FD Calculator"];
@@ -8,7 +9,7 @@ const CalculatorSection = () => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const [activeTab, setActiveTab] = useState(0);
-  const [amount, setAmount] = useState(50000);
+  const [amount, setAmount] = useState(23000);
   const [rate, setRate] = useState(8.5);
   const [tenure, setTenure] = useState(36);
 
@@ -64,9 +65,19 @@ const CalculatorSection = () => {
                       <input
                         type="number"
                         min={1000}
-                        max={100000}
+                        max={23000}
                         value={amount}
-                        onChange={(e) => setAmount(Number(e.target.value))}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          if (val > 23000 && activeTab !== 3) {
+                            setAmount(23000);
+                            toast.error("Maximum Loan Amount Exceeded!", {
+                              description: "The maximum allowed loan amount is ₹23,000.",
+                            });
+                          } else {
+                            setAmount(val);
+                          }
+                        }}
                         className="bg-transparent outline-none text-base font-semibold text-foreground w-full"
                       />
                     </div>
@@ -80,16 +91,43 @@ const CalculatorSection = () => {
                       </button>
                       <button 
                         type="button"
-                        onClick={() => setAmount(prev => Math.min(100000, prev + 1000))}
+                        onClick={() => setAmount(prev => {
+                          const next = prev + 1000;
+                          if (next > 23000 && activeTab !== 3) {
+                            toast.error("Maximum Loan Amount Exceeded!", {
+                              description: "The maximum allowed loan amount is ₹23,000.",
+                            });
+                            return 23000;
+                          }
+                          return next;
+                        })}
                         className="w-7 h-7 rounded bg-muted hover:bg-primary hover:text-white flex items-center justify-center text-sm font-bold transition-colors select-none"
                       >
                         +
                       </button>
                     </div>
                   </div>
-                  <input type="range" min={1000} max={100000} step={1000} value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="w-full mt-1.5 accent-primary h-1.5 cursor-pointer" />
+                  <input 
+                    type="range" 
+                    min={1000} 
+                    max={23000} 
+                    step={1000} 
+                    value={amount} 
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      if (val > 23000 && activeTab !== 3) {
+                        setAmount(23000);
+                        toast.error("Maximum Loan Limit Exceeded!", {
+                          description: "The maximum allowed loan amount is ₹23,000.",
+                        });
+                      } else {
+                        setAmount(val);
+                      }
+                    }} 
+                    className="w-full mt-1.5 accent-primary h-1.5 cursor-pointer" 
+                  />
                   <div className="flex gap-1.5 mt-2 flex-wrap">
-                    {[1000, 10000, 50000, 100000].map(val => (
+                    {[1000, 5000, 10000, 15000, 20000, 23000].map(val => (
                       <button
                         key={val}
                         type="button"

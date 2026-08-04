@@ -65,7 +65,7 @@ const LoanApply = () => {
 
   // Form State
   const [formData, setFormData] = useState({
-    amount: 100000,
+    amount: 23000,
     tenure: 12,
     interestRate: 12.5,
     employmentStatus: "Salaried",
@@ -303,10 +303,19 @@ const LoanApply = () => {
                           </div>
                           <Slider 
                             value={[formData.amount]} 
-                            min={10000} 
-                            max={1000000} 
-                            step={10000}
-                            onValueChange={([val]) => setFormData({...formData, amount: val})}
+                            min={1000} 
+                            max={23000} 
+                            step={1000}
+                            onValueChange={([val]) => {
+                              if (val > 23000) {
+                                setFormData({...formData, amount: 23000});
+                                toast.error("Maximum Loan Limit Exceeded!", {
+                                  description: "The maximum allowed loan amount is ₹23,000.",
+                                });
+                              } else {
+                                setFormData({...formData, amount: val});
+                              }
+                            }}
                           />
                         </div>
 
