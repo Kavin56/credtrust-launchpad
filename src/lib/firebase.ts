@@ -2,15 +2,15 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getAnalytics } from "firebase/analytics";
 
-// Fallback config — uses the active Firebase project (gen-lang-client-0156201953)
+// Fallback config — uses the active Firebase project (credtrust-8e924)
 const fallbackConfig = {
-  apiKey: "AIzaSyAHQVHtVofMnQUhoir-1qT5wizEl6XkTt0",
-  authDomain: "gen-lang-client-0156201953.firebaseapp.com",
-  projectId: "gen-lang-client-0156201953",
-  storageBucket: "gen-lang-client-0156201953.firebasestorage.app",
-  messagingSenderId: "176626350005",
-  appId: "1:176626350005:web:2cf0ad918e0dfeaecc4bfc",
-  measurementId: "G-0JYENXPWKF",
+  apiKey: "AIzaSyD6C14EwtHf3_s5xIEGgJSqn8bGmF_DslU",
+  authDomain: "credtrust-8e924.firebaseapp.com",
+  projectId: "credtrust-8e924",
+  storageBucket: "credtrust-8e924.firebasestorage.app",
+  messagingSenderId: "938606850165",
+  appId: "1:938606850165:web:08d29f9bb8224ef766083c",
+  measurementId: "G-HCZLWX4RGE",
 };
 
 const firebaseConfig = {
