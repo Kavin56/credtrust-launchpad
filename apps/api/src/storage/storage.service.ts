@@ -9,7 +9,7 @@ export class StorageService {
   private bucket: any;
 
   constructor() {
-    const bucketName = process.env.FIREBASE_STORAGE_BUCKET || 'credtrust-storage-0156201953';
+    const bucketName = process.env.FIREBASE_STORAGE_BUCKET || 'srs-bank-storage-934de704';
     this.bucket = admin.storage().bucket(bucketName);
   }
 

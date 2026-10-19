@@ -2,10 +2,10 @@ import axios from "axios";
 
 export const getApiBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (envUrl && !envUrl.includes("credtrust-api-176626350005.us-central1.run.app") && envUrl !== "http://localhost:3000/api/v1") {
+  if (envUrl && envUrl !== "http://localhost:3000/api/v1") {
     return envUrl;
   }
-  return "https://credtrust-launchpad-git-176626350005.asia-south1.run.app/api/v1";
+  return "https://credtrust-launchpad-123280259621.europe-west1.run.app/api/v1";
 };
 
 export const getDocUrl = (url: string | null | undefined): string => {
