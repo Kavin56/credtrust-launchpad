@@ -1,0 +1,39 @@
+# Cloud Build configuration for CredTrust Launchpad
+# Builds the NestJS API from apps/api/Dockerfile and deploys to Cloud Run
+
+steps:
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/credtrust-launchpad/credtrust-launchpad:$COMMIT_SHA'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+    dir: 'apps/api'
+
+  # Step 2: Push image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/credtrust-launchpad/credtrust-launchpad:$COMMIT_SHA'
+
+  # Step 3: Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'services'
+      - 'update'
+      - 'credtrust-launchpad'
+      - '--platform=managed'
+      - '--image=europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/credtrust-launchpad/credtrust-launchpad:$COMMIT_SHA'
+      - '--region=europe-west1'
+      - '--quiet'
+
+images:
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/credtrust-launchpad/credtrust-launchpad:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
