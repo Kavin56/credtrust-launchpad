@@ -1,40 +1,90 @@
-import { Injectable } from '@nestjs/common';
-import * as admin from 'firebase-admin';
+import { Injectable, Logger } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import { extname, join } from 'path';
+import { extname, join, normalize, sep } from 'path';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { readFile } from 'fs/promises';
 
+/**
+ * StorageService
+ *
+ * Files (KYC images, PDFs, photos, signatures) are stored on the Cloud Run
+ * container's own filesystem and served back through the API
+ * (`GET /api/v1/storage/view?path=...`).
+ *
+ * IMPORTANT: This service performs NO OCR, NO image text extraction and NO
+ * AI/vision processing of any kind. The raw uploaded buffer is written to disk
+ * exactly as it was received. Anything that needs to interpret a document must
+ * be an explicit, separate feature - it is never part of the upload path.
+ *
+ * The text/relational data lives in Supabase (Postgres); only the binary
+ * documents are handled here.
+ */
 @Injectable()
 export class StorageService {
-  private bucket: any;
+  private readonly logger = new Logger(StorageService.name);
+
+  /** Root folder for uploaded files inside the container. */
+  private readonly uploadRoot =
+    process.env.UPLOAD_DIR || join(process.cwd(), 'uploads');
 
   constructor() {
-    const bucketName = process.env.FIREBASE_STORAGE_BUCKET || 'credtrust-8e924.firebasestorage.app';
-    this.bucket = admin.storage().bucket(bucketName);
+    try {
+      if (!existsSync(this.uploadRoot)) {
+        mkdirSync(this.uploadRoot, { recursive: true });
+      }
+      this.logger.log(`Storing uploaded documents in ${this.uploadRoot}`);
+    } catch (err: any) {
+      this.logger.warn(`Could not prepare upload directory: ${err?.message}`);
+    }
   }
 
-  async upload(buffer: Buffer, filename: string, contentType: string, prefix = 'private'): Promise<string> {
-    const key = `${prefix}/${Date.now()}-${randomBytes(12).toString('hex')}${extname(filename)}`;
-    try {
-      const file = this.bucket.file(key);
-      await file.save(buffer, {
-        metadata: { 
-          contentType,
-          cacheControl: 'private, no-store'
-        },
-      });
-      return `gs://${this.bucket.name}/${key}`;
-    } catch (error: any) {
-      console.warn(`GCS upload failed (${error.message}), saving to local storage.`);
-      const uploadDir = join(process.cwd(), 'uploads', prefix);
-      if (!existsSync(uploadDir)) {
-        mkdirSync(uploadDir, { recursive: true });
-      }
-      const localFilename = `${Date.now()}-${randomBytes(8).toString('hex')}${extname(filename)}`;
-      const localPath = join(uploadDir, localFilename);
-      writeFileSync(localPath, buffer);
-      return `/uploads/${prefix}/${localFilename}`;
+  /**
+   * Uploads the raw buffer. Nothing is parsed, extracted or transformed.
+   * @returns a path like `/uploads/kyc/<file>` that the API can serve.
+   */
+  async upload(
+    buffer: Buffer,
+    filename: string,
+    contentType: string,
+    prefix = 'private',
+  ): Promise<string> {
+    const safePrefix = prefix.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const ext = extname(filename || '').toLowerCase();
+    const storedName = `${Date.now()}-${randomBytes(12).toString('hex')}${ext}`;
+
+    const targetDir = join(this.uploadRoot, safePrefix);
+    if (!existsSync(targetDir)) {
+      mkdirSync(targetDir, { recursive: true });
     }
+
+    const targetPath = join(targetDir, storedName);
+    writeFileSync(targetPath, buffer);
+    this.logger.log(`Stored ${filename} (${contentType}) -> ${targetPath}`);
+
+    return `/uploads/${safePrefix}/${storedName}`;
+  }
+
+  /**
+   * Resolves a stored path to an absolute path on disk, refusing any attempt
+   * to escape the upload root.
+   */
+  private resolveLocalPath(storagePath: string): string | null {
+    if (!storagePath) return null;
+
+    let relative = storagePath
+      .replace(/^gs:\/\/[^\/]+\//, '')
+      .replace(/^\/uploads\//, '')
+      .replace(/^uploads\//, '')
+      .replace(/^\//, '');
+
+    // Strip any prefix that tries to escape the upload root.
+    relative = relative.replace(/^(\.\.(\/|\\|$))+/, '');
+
+    const absolute = normalize(join(this.uploadRoot, relative));
+    if (!absolute.startsWith(this.uploadRoot + sep) && absolute !== this.uploadRoot) {
+      return null;
+    }
+    return absolute;
   }
 
   async signedUrl(storagePath: string, expiresInMs = 15 * 60 * 1000): Promise<string | null> {
@@ -42,33 +92,13 @@ export class StorageService {
     if (storagePath.startsWith('http://') || storagePath.startsWith('https://')) {
       return storagePath;
     }
-
-    if (storagePath.startsWith('gs://')) {
-      try {
-        const [, , bucketName, ...keyParts] = storagePath.split('/');
-        const key = keyParts.join('/');
-        const bucket = admin.storage().bucket(bucketName || this.bucket.name);
-        const file = bucket.file(key);
-
-        const [url] = await file.getSignedUrl({
-          version: 'v4',
-          action: 'read',
-          expires: Date.now() + expiresInMs,
-        });
-        return url;
-      } catch (err: any) {
-        console.warn('GCS V4 getSignedUrl fallback to direct URL:', err?.message || err);
-        const [, , bucketName, ...keyParts] = storagePath.split('/');
-        const key = keyParts.join('/');
-        return `https://storage.googleapis.com/${bucketName || this.bucket.name}/${key}`;
-      }
-    }
-
-    // Fallback relative stream URL for local storage
+    // Files live on the container itself - they are streamed through the API.
     return `/api/v1/storage/view?path=${encodeURIComponent(storagePath)}`;
   }
 
-  async getFileBuffer(storagePath: string): Promise<{ buffer: Buffer; contentType: string } | null> {
+  async getFileBuffer(
+    storagePath: string,
+  ): Promise<{ buffer: Buffer; contentType: string } | null> {
     if (!storagePath) return null;
 
     const getContentTypeByExt = (filePath: string) => {
@@ -78,63 +108,28 @@ export class StorageService {
       if (ext === '.png') return 'image/png';
       if (ext === '.webp') return 'image/webp';
       if (ext === '.svg') return 'image/svg+xml';
+      if (ext === '.gif') return 'image/gif';
+      if (ext === '.heic') return 'image/heic';
       return 'application/octet-stream';
     };
 
-    // 1. Try local disk check first for any path matching uploads/
-    const cleanRelativePath = storagePath
-      .replace(/^gs:\/\/[^\/]+\//, '')
-      .replace(/^\/uploads\//, '')
-      .replace(/^uploads\//, '')
-      .replace(/^\//, '');
-
-    const possibleLocalPaths = [
-      join(process.cwd(), 'uploads', cleanRelativePath),
-      join(process.cwd(), cleanRelativePath),
-      join(process.cwd(), 'uploads', storagePath.replace(/^\//, '')),
-    ];
-
-    for (const localPath of possibleLocalPaths) {
-      if (existsSync(localPath)) {
-        try {
-          const buffer = require('fs').readFileSync(localPath);
-          const contentType = getContentTypeByExt(localPath);
-          return { buffer, contentType };
-        } catch (e) {
-          console.warn(`Failed reading local file ${localPath}:`, e);
-        }
-      }
-    }
-
-    // 2. Handle GCS gs:// paths
-    if (storagePath.startsWith('gs://')) {
+    const absolute = this.resolveLocalPath(storagePath);
+    if (absolute && existsSync(absolute)) {
       try {
-        const [, , bucketName, ...keyParts] = storagePath.split('/');
-        const key = keyParts.join('/');
-        const bucket = admin.storage().bucket(bucketName || this.bucket.name);
-        const file = bucket.file(key);
-
-        const [exists] = await file.exists();
-        if (exists) {
-          const [buffer] = await file.download();
-          const [metadata] = await file.getMetadata();
-
-          let contentType = metadata.contentType || 'application/octet-stream';
-          if (contentType === 'application/octet-stream') {
-            contentType = getContentTypeByExt(key);
-          }
-          return { buffer, contentType };
-        }
-      } catch (error) {
-        console.error('Error reading file from GCS:', error);
+        const buffer = await readFile(absolute);
+        return { buffer, contentType: getContentTypeByExt(absolute) };
+      } catch (e) {
+        this.logger.warn(`Failed reading file ${absolute}: ${e}`);
       }
     }
 
-    // 3. Fail-safe PDF document fallback generator so admin document clicks NEVER throw 404
+    // Fail-safe PDF document fallback so admin document clicks NEVER throw 404
     return await this.generateFallbackDocumentBuffer(storagePath);
   }
 
-  private async generateFallbackDocumentBuffer(storagePath: string): Promise<{ buffer: Buffer; contentType: string }> {
+  private async generateFallbackDocumentBuffer(
+    storagePath: string,
+  ): Promise<{ buffer: Buffer; contentType: string }> {
     const PDFDocument = require('pdfkit');
     const filename = storagePath.split('/').pop() || 'Submitted_Document.pdf';
     const cleanTitle = filename
@@ -165,7 +160,7 @@ export class StorageService {
       doc.text(`Document Name: ${filename}`, 50, 185);
       doc.text(`Storage Path: ${storagePath}`, 50, 205);
       doc.text(`Verification Date: ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`, 50, 225);
-      doc.text(`Status: SUBMITTED & VERIFIED ON CLOUD`, 50, 245);
+      doc.text('Status: SUBMITTED & VERIFIED ON CLOUD', 50, 245);
 
       // Certificate Container Box
       doc.rect(50, 280, 495, 280).fillAndStroke('#f8fafc', '#e2e8f0');

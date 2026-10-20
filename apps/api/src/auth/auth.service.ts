@@ -46,12 +46,31 @@ export class AuthService {
   }
 
   async verifyFirebaseToken(idToken: string) {
+<<<<<<< HEAD
     try {
       const firebaseAuth = this.getFirebaseAuth();
       const decoded = await firebaseAuth.verifyIdToken(idToken);
       if (!decoded.email) {
         throw new UnauthorizedException('Firebase account does not expose an email.');
       }
+=======
+    let decoded;
+    try {
+      const firebaseAuth = this.getFirebaseAuth();
+      decoded = await firebaseAuth.verifyIdToken(idToken);
+    } catch (err: any) {
+      // Never surface a 500 for an invalid/expired token - the client only
+      // needs to know the token could not be verified.
+      console.error('Firebase token verification failed:', err?.message || err);
+      throw new UnauthorizedException(
+        'Firebase token could not be verified. Please sign in again.',
+      );
+    }
+
+    if (!decoded?.email) {
+      throw new UnauthorizedException('Firebase account does not expose an email.');
+    }
+>>>>>>> 2b6f290ef18402e4b892ff210b57b995362e172a
 
       return {
         firebaseUid: decoded.uid,
