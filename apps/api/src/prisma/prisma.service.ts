@@ -1,12 +1,34 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
+const getActiveDatabaseUrl = () => {
+  const envUrl = process.env.DATABASE_URL;
+  if (
+    envUrl &&
+    !envUrl.includes('rgtjpygrfvnlozsoxndq') &&
+    !envUrl.includes('ptddphtsadqrdnhvenbg')
+  ) {
+    return envUrl;
+  }
+  return 'postgresql://postgres.pujouwnvpxbrxedwncrp:SRSTRUST%40123@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1';
+};
+
 @Injectable()
 export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
   private readonly logger = new Logger(PrismaService.name);
+
+  constructor() {
+    super({
+      datasources: {
+        db: {
+          url: getActiveDatabaseUrl(),
+        },
+      },
+    });
+  }
 
   async onModuleInit() {
     try {

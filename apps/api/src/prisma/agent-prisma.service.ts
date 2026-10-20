@@ -1,6 +1,18 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@credtrust/prisma-agent';
 
+const getActiveAgentDatabaseUrl = () => {
+  const envUrl = process.env.AGENT_DATABASE_URL || process.env.DATABASE_URL;
+  if (
+    envUrl &&
+    !envUrl.includes('rgtjpygrfvnlozsoxndq') &&
+    !envUrl.includes('ptddphtsadqrdnhvenbg')
+  ) {
+    return envUrl;
+  }
+  return 'postgresql://postgres.pujouwnvpxbrxedwncrp:SRSTRUST%40123@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1&schema=agent';
+};
+
 @Injectable()
 export class AgentPrismaService
   extends PrismaClient
@@ -12,7 +24,7 @@ export class AgentPrismaService
     super({
       datasources: {
         db: {
-          url: process.env.AGENT_DATABASE_URL || process.env.DATABASE_URL,
+          url: getActiveAgentDatabaseUrl(),
         },
       },
     });
