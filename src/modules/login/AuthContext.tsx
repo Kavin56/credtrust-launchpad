@@ -315,7 +315,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const loginWithGoogle = async () => {
     if (provider === "firebase") {
       const googleProvider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, googleProvider);
+      let result;
+      try {
+        result = await signInWithPopup(auth, googleProvider);
+      } catch (popupErr: any) {
+        if (popupErr?.code === "auth/unauthorized-domain") {
+          throw new Error(
+            "Google Sign-In is pending domain authorization in Firebase for credtrust-launchpad.vercel.app. Please log in using your Email & Password."
+          );
+        }
+        if (popupErr?.code === "auth/popup-closed-by-user") {
+          return;
+        }
+        throw popupErr;
+      }
       const firebaseToken = await result.user.getIdToken(true);
       api.defaults.headers.common.Authorization = `Bearer ${firebaseToken}`;
 
@@ -356,7 +369,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const loginAdminWithGoogle = async (secretKey: string) => {
     if (provider === "firebase") {
       const googleProvider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, googleProvider);
+      let result;
+      try {
+        result = await signInWithPopup(auth, googleProvider);
+      } catch (popupErr: any) {
+        if (popupErr?.code === "auth/unauthorized-domain") {
+          throw new Error(
+            "Google Sign-In is pending domain authorization in Firebase for credtrust-launchpad.vercel.app. Please log in using your Email & Password."
+          );
+        }
+        if (popupErr?.code === "auth/popup-closed-by-user") {
+          return;
+        }
+        throw popupErr;
+      }
       const token = await result.user.getIdToken(false);
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
       localStorage.setItem("accessToken", token);

@@ -130,14 +130,21 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, onClose
     Autoplay({ delay: 3000, stopOnInteraction: false })
   ]);
 
+  const hasToken = typeof window !== "undefined" && !!(localStorage.getItem("accessToken") || localStorage.getItem("firebaseIdToken"));
   const { data: notifications, isLoading } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
-      const { data } = await api.get("/notifications");
-      return data;
+      try {
+        const { data } = await api.get("/notifications");
+        return data;
+      } catch (err: any) {
+        if (err.response?.status === 401) return [];
+        throw err;
+      }
     },
-    enabled: !!user,
-    refetchInterval: 5000, // Poll every 5 seconds for new notifications
+    enabled: !!user && hasToken,
+    retry: false,
+    refetchInterval: (query) => (query.state.status === "error" ? false : 15000),
   });
 
   const markAsReadMutation = useMutation({

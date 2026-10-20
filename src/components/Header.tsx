@@ -122,14 +122,21 @@ const Header = () => {
     window.location.reload();
   };
 
+  const hasToken = typeof window !== "undefined" && !!(localStorage.getItem("accessToken") || localStorage.getItem("firebaseIdToken"));
   const { data: notifications } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
-      const { data } = await api.get("/notifications");
-      return data;
+      try {
+        const { data } = await api.get("/notifications");
+        return data;
+      } catch (err: any) {
+        if (err.response?.status === 401) return [];
+        throw err;
+      }
     },
-    enabled: !!user,
-    refetchInterval: 5000,
+    enabled: !!user && hasToken,
+    retry: false,
+    refetchInterval: (query) => (query.state.status === "error" ? false : 15000),
   });
 
   const unreadCount = notifications?.filter((n: any) => !n.isRead).length || 0;
