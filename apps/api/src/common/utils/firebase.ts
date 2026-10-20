@@ -11,7 +11,7 @@ export function initializeFirebaseAdmin() {
       const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
       initializeApp({
         credential: cert(serviceAccount),
-        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'srs-bank-storage-934de704',
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'credtrust-8e924.firebasestorage.app',
       });
     } else if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
       console.log('Initializing Firebase Admin from environment credentials...');
@@ -25,16 +25,15 @@ export function initializeFirebaseAdmin() {
           clientEmail,
           privateKey,
         }),
-        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'srs-bank-storage-934de704',
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'credtrust-8e924.firebasestorage.app',
       });
     } else {
-      const projectId = process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT;
-      if (!projectId) throw new Error('FIREBASE_PROJECT_ID or GOOGLE_CLOUD_PROJECT is required.');
+      const projectId = process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || 'credtrust-8e924';
       console.log('Initializing Firebase Admin with application default credentials...');
       initializeApp({
         credential: applicationDefault(),
         projectId,
-        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'srs-bank-storage-934de704',
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'credtrust-8e924.firebasestorage.app',
       });
     }
   }

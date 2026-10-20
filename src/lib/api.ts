@@ -2,7 +2,13 @@ import axios from "axios";
 
 export const getApiBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
-  if (envUrl && envUrl !== "http://localhost:3000/api/v1") {
+  if (
+    envUrl &&
+    !envUrl.includes("176626350005") &&
+    !envUrl.includes("asia-south1") &&
+    !envUrl.includes("us-central1") &&
+    envUrl !== "http://localhost:3000/api/v1"
+  ) {
     return envUrl;
   }
   return "https://credtrust-launchpad-123280259621.europe-west1.run.app/api/v1";

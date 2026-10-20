@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 
 async function main() {
   const client = new Client({
-    connectionString: 'postgresql://postgres:Srs-Society%40123@db.ptddphtsadqrdnhvenbg.supabase.co:5432/postgres',
+    connectionString: process.env.DATABASE_URL || 'postgresql://postgres.rgtjpygrfvnlozsoxndq:SRSbank%40123@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1',
   });
 
   await client.connect();
