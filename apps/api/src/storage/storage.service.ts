@@ -92,8 +92,10 @@ export class StorageService {
     if (storagePath.startsWith('http://') || storagePath.startsWith('https://')) {
       return storagePath;
     }
-    // Files live on the container itself - they are streamed through the API.
-    return `/api/v1/storage/view?path=${encodeURIComponent(storagePath)}`;
+    // Files live on the container itself. The stored path is returned as-is:
+    // the API streams it through GET /api/v1/storage/view?path=...
+    // (the frontend wraps the path with getDocUrl()).
+    return storagePath;
   }
 
   async getFileBuffer(
