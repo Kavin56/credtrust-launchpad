@@ -108,8 +108,12 @@ export class MembersController {
     } catch (error: any) {
       console.error('COMPLETE PROFILE ERROR:', error);
       if (error instanceof HttpException) throw error;
+      const isDbError = error.message?.includes('database') || error.message?.includes('tenant') || error.code?.startsWith('P');
+      const clientMessage = isDbError
+        ? 'Database connection unavailable. Please check that the Supabase database is active and unpaused.'
+        : (error.message || 'Internal Server Error');
       throw new HttpException(
-        error.message || 'Internal Server Error',
+        clientMessage,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

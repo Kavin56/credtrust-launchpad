@@ -13,16 +13,21 @@ const fallbackConfig = {
   measurementId: "G-HCZLWX4RGE",
 };
 
-const isStale = (val: string | undefined) => !val || val.includes("934de704") || val.includes("0156201953");
+const isStale = (val: string | undefined) =>
+  !val ||
+  val.includes("176626350005") ||
+  val.includes("934de704") ||
+  val.includes("0156201953") ||
+  val.includes("2cf0ad918e0dfeaecc4bfc");
 
 const firebaseConfig = {
   apiKey: !isStale(import.meta.env.VITE_FIREBASE_API_KEY) ? import.meta.env.VITE_FIREBASE_API_KEY! : fallbackConfig.apiKey,
   authDomain: !isStale(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN) ? import.meta.env.VITE_FIREBASE_AUTH_DOMAIN! : fallbackConfig.authDomain,
   projectId: !isStale(import.meta.env.VITE_FIREBASE_PROJECT_ID) ? import.meta.env.VITE_FIREBASE_PROJECT_ID! : fallbackConfig.projectId,
   storageBucket: !isStale(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET) ? import.meta.env.VITE_FIREBASE_STORAGE_BUCKET! : fallbackConfig.storageBucket,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || fallbackConfig.messagingSenderId,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || fallbackConfig.appId,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || fallbackConfig.measurementId,
+  messagingSenderId: !isStale(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID) ? import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID! : fallbackConfig.messagingSenderId,
+  appId: !isStale(import.meta.env.VITE_FIREBASE_APP_ID) ? import.meta.env.VITE_FIREBASE_APP_ID! : fallbackConfig.appId,
+  measurementId: !isStale(import.meta.env.VITE_FIREBASE_MEASUREMENT_ID) ? import.meta.env.VITE_FIREBASE_MEASUREMENT_ID! : fallbackConfig.measurementId,
 };
 
 const app = initializeApp(firebaseConfig);

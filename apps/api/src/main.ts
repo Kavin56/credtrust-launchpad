@@ -38,16 +38,33 @@ async function bootstrap() {
 
   app.useLogger(app.get(Logger));
   const logger = app.get(Logger);
-  const corsOrigins = (process.env.CORS_ORIGINS || '')
+  const defaultCorsOrigins = [
+    'https://credtrust-launchpad.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+  ];
+  const customCorsOrigins = (process.env.CORS_ORIGINS || '')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
+  const allAllowedOrigins = [...new Set([...defaultCorsOrigins, ...customCorsOrigins])];
 
-  // Enable CORS for the frontend dev server
+  // Enable CORS for the frontend and vercel domains
   app.enableCors({
-    origin: process.env.NODE_ENV === 'production' ? corsOrigins : true,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (
+        allAllowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        origin.includes('localhost')
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Range'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
     credentials: true,
   });
 
