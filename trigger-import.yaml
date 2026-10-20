@@ -1,0 +1,14 @@
+name: rmgpgab-credtrust-launchpad-europe-west1-Kavin56-credtrust-lzju
+description: Build and deploy to Cloud Run service credtrust-launchpad on push to "^main$"
+github:
+  name: credtrust-launchpad
+  owner: Kavin56
+  push:
+    branch: ^main$
+filename: cloudbuild.yaml
+includeBuildLogs: INCLUDE_BUILD_LOGS_WITH_STATUS
+serviceAccount: projects/project-934de704-b710-47c7-ac6/serviceAccounts/123280259621-compute@developer.gserviceaccount.com
+tags:
+  - gcp-cloud-build-deploy-cloud-run
+  - gcp-cloud-build-deploy-cloud-run-managed
+  - credtrust-launchpad
