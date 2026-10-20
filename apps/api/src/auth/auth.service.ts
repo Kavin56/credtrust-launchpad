@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
@@ -22,44 +22,73 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, pass: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+    try {
+      const user = await this.prisma.user.findUnique({ where: { email } });
+      if (!user) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+      const ok = await bcrypt.compare(pass, user.passwordHash);
+      if (!ok) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+      return { id: user.id, email: user.email, role: user.role };
+    } catch (err: any) {
+      if (err instanceof UnauthorizedException || err instanceof HttpException) throw err;
+      const isDbError = err.message?.includes('database') || err.message?.includes('tenant') || err.message?.includes('connect') || err.code?.startsWith('P');
+      if (isDbError) {
+        throw new HttpException(
+          'Database service is temporarily unavailable. Please ensure the Supabase project is active and unpaused.',
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+      throw err;
     }
-    const ok = await bcrypt.compare(pass, user.passwordHash);
-    if (!ok) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-    return { id: user.id, email: user.email, role: user.role };
   }
 
   async verifyFirebaseToken(idToken: string) {
-    const firebaseAuth = this.getFirebaseAuth();
-    const decoded = await firebaseAuth.verifyIdToken(idToken);
-    if (!decoded.email) {
-      throw new UnauthorizedException('Firebase account does not expose an email.');
-    }
+    try {
+      const firebaseAuth = this.getFirebaseAuth();
+      const decoded = await firebaseAuth.verifyIdToken(idToken);
+      if (!decoded.email) {
+        throw new UnauthorizedException('Firebase account does not expose an email.');
+      }
 
-    return {
-      firebaseUid: decoded.uid,
-      email: decoded.email,
-      emailVerified: !!decoded.email_verified,
-      name: typeof decoded.name === 'string' ? decoded.name : undefined,
-    } satisfies FirebaseIdentity;
+      return {
+        firebaseUid: decoded.uid,
+        email: decoded.email,
+        emailVerified: !!decoded.email_verified,
+        name: typeof decoded.name === 'string' ? decoded.name : undefined,
+      } satisfies FirebaseIdentity;
+    } catch (err: any) {
+      if (err instanceof UnauthorizedException) throw err;
+      throw new UnauthorizedException(err.message || 'Invalid or expired Firebase authentication token.');
+    }
   }
 
   async login(dto: any) {
-    const user = await this.validateUser(dto.email, dto.password);
-    const member = await this.prisma.member.findUnique({
-      where: { userId: user.id },
-    });
-    const tokens = this.buildTokens(user.id, user.email, user.role);
-    return {
-      ...tokens,
-      userId: user.id,
-      email: user.email,
-      hasMemberProfile: !!member || user.role !== 'MEMBER',
-    };
+    try {
+      const user = await this.validateUser(dto.email, dto.password);
+      const member = await this.prisma.member.findUnique({
+        where: { userId: user.id },
+      });
+      const tokens = this.buildTokens(user.id, user.email, user.role);
+      return {
+        ...tokens,
+        userId: user.id,
+        email: user.email,
+        hasMemberProfile: !!member || user.role !== 'MEMBER',
+      };
+    } catch (err: any) {
+      if (err instanceof UnauthorizedException || err instanceof HttpException) throw err;
+      const isDbError = err.message?.includes('database') || err.message?.includes('tenant') || err.message?.includes('connect') || err.code?.startsWith('P');
+      if (isDbError) {
+        throw new HttpException(
+          'Database service is temporarily unavailable. Please ensure the Supabase project is active and unpaused.',
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+      throw err;
+    }
   }
 
   async register(dto: any) {

@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getAnalytics } from "firebase/analytics";
+import { getAnalytics, isSupported } from "firebase/analytics";
 
 // Fallback config — uses the active Firebase project (credtrust-8e924)
 const fallbackConfig = {
@@ -33,9 +33,19 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 
-let analytics = null;
+let analytics: any = null;
 if (typeof window !== "undefined") {
-  analytics = getAnalytics(app);
+  isSupported()
+    .then((supported) => {
+      if (supported) {
+        try {
+          analytics = getAnalytics(app);
+        } catch {
+          // Analytics disabled or restricted
+        }
+      }
+    })
+    .catch(() => {});
 }
 
 export { app, auth, analytics };
