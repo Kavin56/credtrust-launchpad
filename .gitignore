@@ -43,3 +43,5 @@ apps/api/src/generated/
 *.db
 *.db-journal
 serviceAccountKey.json
+gcsServiceAccountKey.json
+apps/api/cloudrun-env.yaml

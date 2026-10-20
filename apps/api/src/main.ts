@@ -19,6 +19,13 @@ import { initializeFirebaseAdmin } from './common/utils/firebase';
 const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
 
 async function bootstrap() {
+  // Load .env before anything reads process.env (Firebase Admin, storage, ...).
+  try {
+    require('dotenv').config();
+  } catch {
+    /* dotenv is optional - in production env vars come from the platform */
+  }
+
   initializeFirebaseAdmin();
   if (process.env.SENTRY_DSN) {
     Sentry.init({

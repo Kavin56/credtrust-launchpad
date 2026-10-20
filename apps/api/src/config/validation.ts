@@ -15,5 +15,11 @@ export const validationSchema = Joi.object({
   FIREBASE_STORAGE_BUCKET: Joi.string().optional(),
   FIREBASE_CLIENT_EMAIL: Joi.string().optional(),
   FIREBASE_PRIVATE_KEY: Joi.string().optional(),
+  GCS_BUCKET_NAME: Joi.string().optional(),
+  GCS_PROJECT_ID: Joi.string().optional(),
+  GCS_CREDENTIALS_FILE: Joi.string().optional(),
+  GCS_CLIENT_EMAIL: Joi.string().optional(),
+  GCS_PRIVATE_KEY: Joi.string().optional(),
+  GCS_SIGNING_SERVICE_ACCOUNT: Joi.string().optional(),
   ENABLE_SWAGGER: Joi.boolean().default(false),
 });
