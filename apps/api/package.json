@@ -27,7 +27,6 @@
     "@fastify/static": "^7.0.0",
     "@fastify/swagger": "^8.0.0",
     "@fastify/swagger-ui": "^4.0.0",
-    "@google-cloud/storage": "^7.22.0",
     "@nestjs/bull": "^10.0.0",
     "@nestjs/common": "^10.3.0",
     "@nestjs/config": "^3.2.2",
