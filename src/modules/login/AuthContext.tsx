@@ -162,6 +162,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const unsubToken = onIdTokenChanged(auth, async (fbUser) => {
         if (fbUser) {
+          const currentRole = localStorage.getItem("role");
+          // Never overwrite NestJS JWT token for portal roles (ADMIN, CEO, AGENT, TELLER)
+          if (["ADMIN", "CEO", "AGENT", "TELLER"].includes(currentRole || "")) {
+            return;
+          }
           const token = await fbUser.getIdToken(false);
           api.defaults.headers.common.Authorization = `Bearer ${token}`;
           localStorage.setItem("accessToken", token);
