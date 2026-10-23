@@ -49,7 +49,7 @@ export class LoansService {
     let initialStatus = 'PENDING';
 
     if (member.kycStatus === 'VERIFIED') {
-      formattedId = member.rojaId || '';
+      formattedId = member.rojaId || member.memberId || '';
       initialStatus = 'PENDING';
     } else {
       const rawId = (dto.registeredId || '').toString().trim();

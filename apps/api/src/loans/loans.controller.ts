@@ -61,7 +61,7 @@ export class LoansController {
   @Roles('MEMBER')
   async apply(@Req() req: FastifyRequest) {
     const startedAt = Date.now();
-    const userId = (req as any).user?.userId ?? 'unknown';
+    const userId = (req as any).user?.userId ?? (req as any).user?.sub ?? 'unknown';
     const files: UploadedLoanFile[] = [];
     const fields: Record<string, any> = {};
 
