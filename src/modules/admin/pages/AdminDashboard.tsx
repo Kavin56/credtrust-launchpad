@@ -13,7 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/api";
+import api, { getApiBaseUrl } from "@/lib/api";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import Footer from "@/components/Footer";
@@ -70,10 +70,10 @@ const AdminDashboard = () => {
           </motion.div>
 
           <div className="flex gap-3">
-            <Button className="bg-[#1a1f36] hover:bg-black text-white" onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1"}/reports/trial-balance/pdf`, "_blank")}>
+            <Button className="bg-[#1a1f36] hover:bg-black text-white" onClick={() => window.open(`${getApiBaseUrl()}/reports/trial-balance/pdf`, "_blank")}>
                Download Trial Balance (PDF)
             </Button>
-            <Button className="bg-[#c9a84c] hover:bg-[#d4b65c] text-[#1a1f36]" onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api/v1"}/reports/trial-balance/excel`, "_blank")}>
+            <Button className="bg-[#c9a84c] hover:bg-[#d4b65c] text-[#1a1f36]" onClick={() => window.open(`${getApiBaseUrl()}/reports/trial-balance/excel`, "_blank")}>
                Download Trial Balance (Excel)
             </Button>
             <Link to="/admin/pigmy">
