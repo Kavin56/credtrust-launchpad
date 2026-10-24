@@ -24,6 +24,7 @@ import { PigmyModule } from './pigmy/pigmy.module';
 import { PortalAuthModule } from './portal-auth/portal-auth.module';
 import { AgentsModule } from './agents/agents.module';
 import { OfficeExpensesModule } from './office-expenses/office-expenses.module';
+import { ShareholdersModule } from './shareholders/shareholders.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { OfficeExpensesModule } from './office-expenses/office-expenses.module';
     PortalAuthModule,
     AgentsModule,
     OfficeExpensesModule,
+    ShareholdersModule,
   ],
   providers: [
 /*

@@ -13,7 +13,8 @@ import {
   Search,
   ShieldCheck,
   Menu,
-  X
+  X,
+  CreditCard
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useNavigate, Link, useLocation } from "react-router-dom";
@@ -42,6 +43,7 @@ const AdminNavbar = () => {
     { name: "Deposit Approvals", path: "/admin/deposits", icon: PiggyBank },
     { name: "Office Expense", path: "/admin/office-expenses", icon: HandCoins },
     { name: "Member Registry", path: "/admin/members", icon: Users },
+    { name: "Shareholder Details", path: "/admin/shareholders", icon: CreditCard },
 
   ];
 
@@ -91,14 +93,7 @@ const AdminNavbar = () => {
 
           {/* Right Utilities */}
           <div className="flex items-center gap-4">
-            <div className="hidden lg:flex items-center bg-white/5 rounded-full px-4 h-10 border border-white/10">
-               <Search className="h-4 w-4 text-white/30 mr-2" />
-               <input 
-                 type="text" 
-                 placeholder="Search registry..." 
-                 className="bg-transparent border-none text-xs text-white placeholder:text-white/20 focus:ring-0 w-32 xl:w-48"
-               />
-            </div>
+            
 
             <button className="relative p-2 text-white/40 hover:text-[#c9a84c] transition-colors">
                <Bell className="h-5 w-5" />

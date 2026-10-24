@@ -45,3 +45,8 @@ apps/api/src/generated/
 serviceAccountKey.json
 gcsServiceAccountKey.json
 apps/api/cloudrun-env.yaml
+
+# Source Member/Shareholder Registers
+Member_Register_English.xlsx
+*.xlsx
+shareholders_extracted.json

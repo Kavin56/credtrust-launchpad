@@ -354,3 +354,27 @@ model OfficeExpense {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }
+
+model Shareholder {
+  id                    String   @id @default(cuid())
+  slNo                  Int?
+  memberName            String
+  relation              String?
+  address               String?
+  phone                 String?
+  age                   Int?
+  casteClass            String?
+  category              String?
+  membershipReceiptNo   String?
+  receiptDate           String?
+  dateRemittedToDccBank String?
+  entranceFee           Float?   @default(0)
+  valueOfOneShare       Float?   @default(500)
+  noOfShares            Int?     @default(1)
+  totalShareAmount      Float?   @default(500)
+  shareFee              Float?   @default(100)
+  grandTotal            Float?   @default(650)
+  relationBasis         String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
