@@ -25,15 +25,28 @@ export class DepositsService {
   ) {}
 
   async apply(userId: string, fields: any, files: UploadedDepositFile[]) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: { member: true }
+    let member = await this.prisma.member.findFirst({
+      where: {
+        OR: [
+          { userId },
+          { id: userId },
+          { memberId: userId },
+        ],
+      },
+      include: { user: true },
     });
 
-    if (!user || !user.member) {
+    if (!member) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        include: { member: true },
+      });
+      member = user?.member as any;
+    }
+
+    if (!member) {
       throw new NotFoundException('Member profile not found.');
     }
-    const member = user.member;
 
     let initialStatus = 'PENDING';
     let formattedId: string | null = null;

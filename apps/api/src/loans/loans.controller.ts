@@ -58,14 +58,15 @@ export class LoansController {
   }
 
   @Post('apply')
-  @Roles('MEMBER')
+  @Roles('MEMBER', 'ADMIN', 'CEO')
   async apply(@Req() req: FastifyRequest) {
     const startedAt = Date.now();
-    const userId = (req as any).user?.userId ?? (req as any).user?.sub ?? 'unknown';
+    const callerRole = (req as any).user?.role;
+    const callerUserId = (req as any).user?.userId ?? (req as any).user?.sub ?? 'unknown';
     const files: UploadedLoanFile[] = [];
     const fields: Record<string, any> = {};
 
-    this.logger.log(`Loan apply started user=${userId}`);
+    this.logger.log(`Loan apply started caller=${callerUserId} role=${callerRole}`);
 
     try {
       // Fastify multipart handling (files + fields)
@@ -85,8 +86,12 @@ export class LoansController {
         }
       }
 
-      // Always bind to the authenticated user.
-      fields.userId = userId;
+      // If ADMIN or CEO and a target member/user was specified, use that target. Otherwise bind to caller.
+      if (['ADMIN', 'CEO'].includes(callerRole) && (fields.targetUserId || fields.targetMemberId)) {
+        fields.userId = fields.targetUserId || fields.targetMemberId;
+      } else {
+        fields.userId = callerUserId;
+      }
       const loan = await this.loansService.apply(fields, files);
       const totalBytes = files.reduce(
         (sum, file) => sum + file.size,
@@ -94,7 +99,7 @@ export class LoansController {
       );
 
       this.logger.log(
-        `Loan apply completed user=${userId} loan=${loan.id} files=${files.length} bytes=${totalBytes} durationMs=${Date.now() - startedAt}`,
+        `Loan apply completed user=${fields.userId} loan=${loan.id} files=${files.length} bytes=${totalBytes} durationMs=${Date.now() - startedAt}`,
       );
 
       return loan;
@@ -106,7 +111,7 @@ export class LoansController {
       const err = error as Error & { code?: string };
 
       this.logger.error(
-        `Loan apply failed user=${userId} files=${files.length} bytes=${totalBytes} durationMs=${Date.now() - startedAt} code=${err.code || 'unknown'} error=${err.message}`,
+        `Loan apply failed user=${callerUserId} files=${files.length} bytes=${totalBytes} durationMs=${Date.now() - startedAt} code=${err.code || 'unknown'} error=${err.message}`,
         err.stack,
       );
 

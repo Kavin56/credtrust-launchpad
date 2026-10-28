@@ -51,13 +51,15 @@ export class DepositsController {
   }
 
   @Post()
+  @Roles('MEMBER', 'ADMIN', 'CEO')
   async apply(@Req() req: FastifyRequest) {
     const startedAt = Date.now();
-    const userId = (req as any).user?.userId ?? (req as any).user?.sub ?? 'unknown';
+    const callerRole = (req as any).user?.role;
+    const callerUserId = (req as any).user?.userId ?? (req as any).user?.sub ?? 'unknown';
     const files: UploadedDepositFile[] = [];
     const fields: Record<string, any> = {};
 
-    this.logger.log(`Deposit apply started user=${userId}`);
+    this.logger.log(`Deposit apply started caller=${callerUserId} role=${callerRole}`);
 
     try {
       // Fastify multipart handling (files + fields)
@@ -77,11 +79,15 @@ export class DepositsController {
         }
       }
 
-      const application = await this.depositsService.apply(userId, fields, files);
+      const targetUserId = ['ADMIN', 'CEO'].includes(callerRole) && (fields.targetUserId || fields.targetMemberId)
+        ? (fields.targetUserId || fields.targetMemberId)
+        : callerUserId;
+
+      const application = await this.depositsService.apply(targetUserId, fields, files);
       const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
 
       this.logger.log(
-        `Deposit apply completed user=${userId} app=${application.id} files=${files.length} bytes=${totalBytes} durationMs=${Date.now() - startedAt}`,
+        `Deposit apply completed user=${targetUserId} app=${application.id} files=${files.length} bytes=${totalBytes} durationMs=${Date.now() - startedAt}`,
       );
 
       return application;
@@ -90,7 +96,7 @@ export class DepositsController {
       const err = error as Error & { code?: string };
 
       this.logger.error(
-        `Deposit apply failed user=${userId} files=${files.length} bytes=${totalBytes} durationMs=${Date.now() - startedAt} error=${err.message}`,
+        `Deposit apply failed user=${callerUserId} files=${files.length} bytes=${totalBytes} durationMs=${Date.now() - startedAt} error=${err.message}`,
         err.stack,
       );
 

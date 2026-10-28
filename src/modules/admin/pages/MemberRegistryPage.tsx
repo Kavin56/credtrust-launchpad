@@ -188,7 +188,14 @@ export default function MemberRegistryPage() {
                                 {m.fullName ? m.fullName.charAt(0).toUpperCase() : 'M'}
                               </div>
                               <div>
-                                <p className="font-bold text-[#1a1f36]">{m.fullName || 'Unnamed Member'}</p>
+                                <button
+                                  onClick={() => navigate(`/admin/shareholders/sh_mem_${m.id}`)}
+                                  className="font-bold text-[#1a1f36] hover:text-[#c9a84c] hover:underline text-left transition-colors flex items-center gap-1 group"
+                                  title="View dedicated Shareholder details, Pigmy, Loans, and Deposits"
+                                >
+                                  <span>{m.fullName || 'Unnamed Member'}</span>
+                                  <span className="text-[10px] text-slate-400 group-hover:text-[#c9a84c] opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                                </button>
                                 <p className="text-xs text-slate-400 font-mono">Registered ID: {kyc === 'VERIFIED' ? (m.memberId || m.id) : 'Pending Allocation'}</p>
                               </div>
                             </div>

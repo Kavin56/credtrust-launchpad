@@ -432,7 +432,14 @@ export default function ShareholderDetailsPage() {
                         #{item.slNo}
                       </td>
                       <td className="py-4 px-5 font-bold text-slate-900 whitespace-nowrap">
-                        {item.memberName}
+                        <button
+                          onClick={() => navigate(`/admin/shareholders/${item.id}`)}
+                          className="hover:text-[#c9a84c] hover:underline text-left font-bold transition-colors flex items-center gap-1.5 group"
+                          title="Click to view dedicated section with Pigmy, Loans, and Deposits"
+                        >
+                          <span>{item.memberName}</span>
+                          <span className="text-[10px] text-slate-400 group-hover:text-[#c9a84c] opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                        </button>
                       </td>
                       <td className="py-4 px-5 text-slate-500 whitespace-nowrap">
                         {item.relation || '—'}

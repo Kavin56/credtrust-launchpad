@@ -40,6 +40,19 @@ export class PigmyService {
       });
       if (!scheme) throw new NotFoundException('Scheme not found');
 
+      // Resolve member: allow dto.memberId to be Member.id, Member.userId, or Member.memberId
+      let member = await this.prisma.member.findFirst({
+        where: {
+          OR: [
+            { id: dto.memberId },
+            { userId: dto.memberId },
+            { memberId: dto.memberId },
+          ],
+        },
+      });
+
+      const actualMemberId = member ? member.id : dto.memberId;
+
       const lastAccount = await this.prisma.pigmyAccount.findFirst({
         orderBy: { accountNumber: 'desc' },
       });
@@ -62,7 +75,7 @@ export class PigmyService {
       return await this.prisma.pigmyAccount.create({
         data: {
           accountNumber,
-          memberId: dto.memberId,
+          memberId: actualMemberId,
           schemeId: dto.schemeId,
           agentId: dto.agentId,
           startDate,
@@ -70,7 +83,7 @@ export class PigmyService {
           endDate,
           monthlyPaymentDate: (dto as any).monthlyPaymentDate ? parseInt((dto as any).monthlyPaymentDate) : null,
           status: (dto as any).status || 'ACTIVE',
-          registeredId: (dto as any).registeredId || null,
+          registeredId: (dto as any).registeredId || member?.rojaId || member?.memberId || null,
         },
       });
     } catch (error) {

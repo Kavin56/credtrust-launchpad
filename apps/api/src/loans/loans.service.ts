@@ -36,11 +36,26 @@ export class LoansService {
   ) {}
 
   async apply(dto: any, files: UploadedLoanFile[]) {
-    const user = await this.prisma.user.findUnique({
-      where: { id: dto.userId },
-      include: { member: true }
+    // Lookup by user.id or member.id or member.userId
+    let member = await this.prisma.member.findFirst({
+      where: {
+        OR: [
+          { userId: dto.userId },
+          { id: dto.userId },
+          { memberId: dto.userId },
+        ],
+      },
+      include: { user: true },
     });
-    const member = user?.member;
+
+    if (!member) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: dto.userId },
+        include: { member: true },
+      });
+      member = user?.member as any;
+    }
+
     if (!member) {
       throw new BadRequestException('Member profile not found');
     }

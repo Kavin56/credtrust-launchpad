@@ -78,7 +78,61 @@ export class ShareholdersController {
 
   @Get(':id')
   async getOne(@Param('id') id: string) {
-    return this.prisma.shareholder.findUnique({ where: { id } });
+    const shareholder = await this.prisma.shareholder.findUnique({ where: { id } });
+    if (!shareholder) return null;
+
+    // Attempt to match or find member
+    let member = await this.prisma.member.findFirst({
+      where: {
+        OR: [
+          { id },
+          { memberId: shareholder.membershipReceiptNo || '' },
+          { contact: shareholder.phone || '' },
+          { fullName: { equals: shareholder.memberName, mode: 'insensitive' } },
+        ],
+      },
+      include: {
+        loans: {
+          include: {
+            emiSchedule: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        depositAccounts: {
+          orderBy: { createdAt: 'desc' },
+        },
+        pigmyAccounts: {
+          include: {
+            scheme: true,
+            collections: {
+              orderBy: { date: 'desc' },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    // Also fetch deposit applications for member if found
+    let depositApplications: any[] = [];
+    if (member) {
+      depositApplications = await this.prisma.depositApplication.findMany({
+        where: {
+          memberId: member.id,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
+    return {
+      ...shareholder,
+      member: member
+        ? {
+            ...member,
+            depositApplications,
+          }
+        : null,
+    };
   }
 
   @Post()
