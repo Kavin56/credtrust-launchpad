@@ -83,6 +83,10 @@ export class DepositsController {
         ? (fields.targetUserId || fields.targetMemberId)
         : callerUserId;
 
+      if (['ADMIN', 'CEO'].includes(callerRole) && (fields.targetUserId || fields.targetMemberId)) {
+        fields.isAdminCreation = true;
+      }
+
       const application = await this.depositsService.apply(targetUserId, fields, files);
       const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
 

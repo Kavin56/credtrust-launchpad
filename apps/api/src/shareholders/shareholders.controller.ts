@@ -99,6 +99,11 @@ export class ShareholdersController {
           orderBy: { createdAt: 'desc' },
         },
         depositAccounts: {
+          include: {
+            transactions: {
+              orderBy: { createdAt: 'desc' },
+            },
+          },
           orderBy: { createdAt: 'desc' },
         },
         pigmyAccounts: {

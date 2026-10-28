@@ -48,7 +48,7 @@ export class DepositsService {
       throw new NotFoundException('Member profile not found.');
     }
 
-    let initialStatus = 'PENDING';
+    let initialStatus = fields.isAdminCreation ? 'APPROVED' : 'PENDING';
     let formattedId: string | null = null;
     if (fields.registeredId) {
       const cleanInputId = fields.registeredId.trim();
@@ -60,10 +60,12 @@ export class DepositsService {
         where: { rojaId: formattedId },
       });
 
-      if (!registeredIdExists) {
+      if (!registeredIdExists && !fields.isAdminCreation) {
         throw new BadRequestException('ROJA ID not registered. Please enter a valid registered ID or proceed without it.');
       }
-      initialStatus = 'PENDING_REGISTERED_ID_APPROVAL';
+      if (!fields.isAdminCreation) {
+        initialStatus = 'PENDING_REGISTERED_ID_APPROVAL';
+      }
     }
 
     const monthlyPaymentDate = parseInt(fields.monthlyPaymentDate);
@@ -108,11 +110,63 @@ export class DepositsService {
         monthlyPaymentDate,
         documents: JSON.stringify(documentPaths),
         additionalDetails: fields.additionalDetails || null,
+        approvedBy: fields.isAdminCreation ? 'Admin' : null,
+        approvedDate: fields.isAdminCreation ? new Date() : null,
       },
       include: {
         member: true
       }
     });
+
+    // If created by admin, instantly open and activate the DepositAccount and record initial deposit transaction
+    if (fields.isAdminCreation) {
+      const accCount = await this.prisma.depositAccount.count();
+      const accountNumber = `DP-${newApplication.type}-${(accCount + 1).toString().padStart(8, '0')}`;
+
+      const maturityDate = new Date();
+      maturityDate.setMonth(maturityDate.getMonth() + newApplication.termMonths);
+
+      const principal = newApplication.amount;
+      const rate = newApplication.interestRate / 100;
+      const t = newApplication.termMonths / 12;
+      const maturityAmount = principal * Math.pow(1 + rate / 4, 4 * t);
+
+      const account = await this.prisma.depositAccount.create({
+        data: {
+          accountNumber,
+          memberId: newApplication.memberId,
+          type: newApplication.type,
+          balance: newApplication.amount,
+          interestRate: newApplication.interestRate,
+          maturityAmount: Math.round(maturityAmount * 100) / 100,
+          maturityDate: newApplication.endDate || maturityDate,
+          startDate: newApplication.startDate || new Date(),
+          endDate: newApplication.endDate || maturityDate,
+          monthlyPaymentDate: newApplication.monthlyPaymentDate || 5,
+          isMatured: false,
+        }
+      });
+
+      // Record deposit transaction
+      await this.prisma.depositTransaction.create({
+        data: {
+          accountId: account.id,
+          amount: newApplication.amount,
+          type: 'DEPOSIT',
+          paymentMode: 'CASH',
+          referenceNumber: newApplication.applicationNo,
+          balanceAfter: newApplication.amount,
+        }
+      });
+
+      // Send notification
+      await this.notificationsService.create({
+        memberId: newApplication.memberId,
+        title: 'Deposit Account Activated',
+        message: `Your ${newApplication.type} deposit of ₹${newApplication.amount.toLocaleString()} has been activated by Admin. Account: ${accountNumber}`,
+        type: 'SUCCESS'
+      });
+    }
 
     return newApplication;
   }

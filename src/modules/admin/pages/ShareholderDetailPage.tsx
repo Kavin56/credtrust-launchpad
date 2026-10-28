@@ -176,6 +176,7 @@ export default function ShareholderDetailPage() {
 
   // Pigmy Entry Form
   const [selectedPigmySchemeId, setSelectedPigmySchemeId] = useState('');
+  const [pigmyInitialDeposit, setPigmyInitialDeposit] = useState('500');
   const [pigmyStartDate, setPigmyStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [pigmyEndDate, setPigmyEndDate] = useState('');
   const [pigmyMonthlyDate, setPigmyMonthlyDate] = useState('5');
@@ -233,12 +234,13 @@ export default function ShareholderDetailPage() {
       await api.post('/pigmy/enroll', {
         memberId: targetId,
         schemeId: selectedPigmySchemeId,
+        initialDeposit: pigmyInitialDeposit ? parseFloat(pigmyInitialDeposit) : 0,
         startDate: pigmyStartDate ? new Date(pigmyStartDate).toISOString() : new Date().toISOString(),
         endDate: pigmyEndDate ? new Date(pigmyEndDate).toISOString() : undefined,
         monthlyPaymentDate: pigmyMonthlyDate ? parseInt(pigmyMonthlyDate) : 5,
         registeredId: member?.memberId || shareholder?.membershipReceiptNo || `SH-${shareholder?.slNo || 'REC'}`
       });
-      toast.success('Pigmy account enrolled successfully!');
+      toast.success('Pigmy account enrolled & activated immediately without approval!');
       setIsPigmyModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['admin-shareholder-detail', id] });
     } catch (err: any) {
@@ -284,7 +286,7 @@ export default function ShareholderDetailPage() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      toast.success('Loan application created successfully!');
+      toast.success('Loan created and activated instantly with full EMI schedule!');
       setIsLoanModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['admin-shareholder-detail', id] });
     } catch (err: any) {
@@ -331,7 +333,7 @@ export default function ShareholderDetailPage() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      toast.success('Deposit application opened successfully!');
+      toast.success('Deposit account created and opened immediately without approval!');
       setIsDepositModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['admin-shareholder-detail', id] });
     } catch (err: any) {
@@ -829,7 +831,19 @@ export default function ShareholderDetailPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Initial Deposit (₹)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={pigmyInitialDeposit}
+                  onChange={(e) => setPigmyInitialDeposit(e.target.value)}
+                  className="rounded-xl text-xs font-bold"
+                  placeholder="e.g. 500"
+                />
+              </div>
+
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-slate-700">Start Date</Label>
                 <Input
@@ -842,7 +856,7 @@ export default function ShareholderDetailPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Preferred Collection Day (Monthly)</Label>
+                <Label className="text-xs font-bold text-slate-700">Collection Day (Monthly)</Label>
                 <Input
                   type="number"
                   min="1"

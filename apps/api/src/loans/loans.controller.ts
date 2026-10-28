@@ -89,6 +89,7 @@ export class LoansController {
       // If ADMIN or CEO and a target member/user was specified, use that target. Otherwise bind to caller.
       if (['ADMIN', 'CEO'].includes(callerRole) && (fields.targetUserId || fields.targetMemberId)) {
         fields.userId = fields.targetUserId || fields.targetMemberId;
+        fields.isAdminCreation = true;
       } else {
         fields.userId = callerUserId;
       }

@@ -61,30 +61,38 @@ export class LoansService {
     }
 
     let formattedId = '';
-    let initialStatus = 'PENDING';
+    let initialStatus = dto.isAdminCreation ? 'APPROVED' : 'PENDING';
 
     if (member.kycStatus === 'VERIFIED') {
       formattedId = member.rojaId || member.memberId || '';
-      initialStatus = 'PENDING';
+      if (!dto.isAdminCreation) {
+        initialStatus = 'PENDING';
+      }
     } else {
       const rawId = (dto.registeredId || '').toString().trim();
       if (!rawId) {
-        throw new BadRequestException('Registered ID is mandatory');
-      }
-      formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
+        if (!dto.isAdminCreation) {
+          throw new BadRequestException('Registered ID is mandatory');
+        }
+        formattedId = member.rojaId || member.memberId || `ROJA-${member.id.substring(0, 8)}`;
+      } else {
+        formattedId = rawId.toUpperCase().startsWith('ROJA-') ? rawId.toUpperCase() : `ROJA-${rawId}`;
 
-      const existingRojaMember = await this.prisma.member.findFirst({
-        where: { rojaId: formattedId, id: { not: member.id } }
-      });
-      if (existingRojaMember) {
-        throw new BadRequestException('Registered ID already belongs to another member');
-      }
+        const existingRojaMember = await this.prisma.member.findFirst({
+          where: { rojaId: formattedId, id: { not: member.id } }
+        });
+        if (existingRojaMember) {
+          throw new BadRequestException('Registered ID already belongs to another member');
+        }
 
-      await this.prisma.member.update({
-        where: { id: member.id },
-        data: { rojaId: formattedId }
-      });
-      initialStatus = 'PENDING_REGISTERED_ID_APPROVAL';
+        await this.prisma.member.update({
+          where: { id: member.id },
+          data: { rojaId: formattedId }
+        });
+      }
+      if (!dto.isAdminCreation) {
+        initialStatus = 'PENDING_REGISTERED_ID_APPROVAL';
+      }
     }
 
     if (!dto.startDate || !dto.endDate || !dto.monthlyPaymentDate) {
@@ -151,11 +159,66 @@ export class LoansService {
         otherCharges,
         netDisbursed,
         status: initialStatus,
+        disbursedAt: dto.isAdminCreation ? new Date() : undefined,
       },
       include: {
         member: true
       }
     });
+
+    // If admin created, automatically generate the complete EMI schedule so no separate approval is required
+    if (dto.isAdminCreation) {
+      const termMonths = newLoan.termMonths;
+      const interestRate = newLoan.interestRate;
+      const monthlyRate = interestRate / 12 / 100;
+      
+      const emi = monthlyRate === 0 
+        ? amount / termMonths 
+        : (amount * monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / (Math.pow(1 + monthlyRate, termMonths) - 1);
+
+      let currentBalance = amount;
+      const schedules = [];
+      const baseDate = newLoan.startDate ? new Date(newLoan.startDate) : new Date();
+      const paymentDay = newLoan.monthlyPaymentDate || 5;
+
+      for (let i = 0; i < termMonths; i++) {
+        const dueDate = new Date(baseDate);
+        dueDate.setMonth(dueDate.getMonth() + i);
+        dueDate.setDate(paymentDay);
+
+        const interestPart = currentBalance * monthlyRate;
+        let principalPart = emi - interestPart;
+
+        if (i === termMonths - 1) {
+          principalPart = currentBalance;
+        }
+
+        currentBalance -= principalPart;
+
+        schedules.push({
+          loanId: newLoan.id,
+          dueDate,
+          principalPart: Math.round(principalPart * 100) / 100,
+          interestPart: Math.round(interestPart * 100) / 100,
+          totalEmi: Math.round(emi * 100) / 100,
+          isPaid: false,
+        });
+      }
+
+      await this.prisma.emiSchedule.createMany({
+        data: schedules
+      });
+
+      // Notification to shareholder
+      await this.notificationsService.create({
+        memberId: newLoan.memberId,
+        title: 'Loan Approved & Activated',
+        message: `Your ${newLoan.type} loan of ₹${newLoan.amount.toLocaleString()} has been approved and activated by Admin.`,
+        type: 'SUCCESS'
+      });
+
+      return this.getLoan(newLoan.id);
+    }
 
     return newLoan;
   }

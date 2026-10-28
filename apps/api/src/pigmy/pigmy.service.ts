@@ -72,7 +72,7 @@ export class PigmyService {
       }
       const maturityDate = endDate;
 
-      return await this.prisma.pigmyAccount.create({
+      const newPigmyAccount = await this.prisma.pigmyAccount.create({
         data: {
           accountNumber,
           memberId: actualMemberId,
@@ -85,7 +85,41 @@ export class PigmyService {
           status: (dto as any).status || 'ACTIVE',
           registeredId: (dto as any).registeredId || member?.rojaId || member?.memberId || null,
         },
+        include: {
+          scheme: true,
+          member: true,
+        },
       });
+
+      // If an initial deposit amount is provided, record it immediately as an active collection transaction
+      const initialDeposit = (dto as any).initialDeposit ? parseFloat((dto as any).initialDeposit) : 0;
+      if (initialDeposit > 0) {
+        const txnId = `TXN-PIG-${Date.now().toString().slice(-6)}`;
+        await this.prisma.pigmyCollection.create({
+          data: {
+            transactionId: txnId,
+            accountId: newPigmyAccount.id,
+            amount: initialDeposit,
+            date: startDate,
+            method: (dto as any).paymentMethod || 'CASH',
+            status: 'COMPLETED',
+            remarks: 'Initial deposit upon enrollment by Admin',
+            customerName: member?.fullName,
+            customerPhone: member?.contact,
+          },
+        });
+
+        // Update pigmy account balance
+        await this.prisma.pigmyAccount.update({
+          where: { id: newPigmyAccount.id },
+          data: {
+            balance: initialDeposit,
+            totalPaidDays: 1,
+          },
+        });
+      }
+
+      return newPigmyAccount;
     } catch (error) {
       console.error('ERROR in enrollAccount:', error);
       throw error;
