@@ -142,7 +142,7 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({ isOpen, onClose
         throw err;
       }
     },
-    enabled: !!user && hasToken,
+    enabled: !!user && hasToken && user?.role === "MEMBER",
     retry: false,
     refetchInterval: (query) => (query.state.status === "error" ? false : 15000),
   });

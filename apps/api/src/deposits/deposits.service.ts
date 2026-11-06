@@ -6,6 +6,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { StorageService } from '../storage/storage.service';
+import { EncryptionService } from '../common/utils/encryption.util';
+import { resolveOrCreateMember } from '../common/utils/shareholder-member-resolver.util';
 
 type UploadedDepositFile = {
   fieldname: string;
@@ -22,27 +24,12 @@ export class DepositsService {
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
     private readonly storage: StorageService,
+    private readonly encryption: EncryptionService,
   ) {}
 
   async apply(userId: string, fields: any, files: UploadedDepositFile[]) {
-    let member = await this.prisma.member.findFirst({
-      where: {
-        OR: [
-          { userId },
-          { id: userId },
-          { memberId: userId },
-        ],
-      },
-      include: { user: true },
-    });
-
-    if (!member) {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-        include: { member: true },
-      });
-      member = user?.member as any;
-    }
+    const targetLookupId = fields.targetMemberId || fields.targetUserId || userId;
+    let member = await resolveOrCreateMember(this.prisma, this.encryption, targetLookupId);
 
     if (!member) {
       throw new NotFoundException('Member profile not found.');

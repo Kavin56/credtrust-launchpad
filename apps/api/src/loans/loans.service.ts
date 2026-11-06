@@ -7,6 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { StorageService } from '../storage/storage.service';
 import { EncryptionService } from '../common/utils/encryption.util';
+import { resolveOrCreateMember } from '../common/utils/shareholder-member-resolver.util';
 
 const LOAN_STATUSES = [
   'PENDING',
@@ -36,25 +37,9 @@ export class LoansService {
   ) {}
 
   async apply(dto: any, files: UploadedLoanFile[]) {
-    // Lookup by user.id or member.id or member.userId
-    let member = await this.prisma.member.findFirst({
-      where: {
-        OR: [
-          { userId: dto.userId },
-          { id: dto.userId },
-          { memberId: dto.userId },
-        ],
-      },
-      include: { user: true },
-    });
-
-    if (!member) {
-      const user = await this.prisma.user.findUnique({
-        where: { id: dto.userId },
-        include: { member: true },
-      });
-      member = user?.member as any;
-    }
+    // Lookup by user.id or member.id or member.userId or Shareholder.id
+    const targetLookupId = dto.userId || dto.memberId || dto.targetMemberId || dto.targetUserId;
+    let member = await resolveOrCreateMember(this.prisma, this.encryption, targetLookupId);
 
     if (!member) {
       throw new BadRequestException('Member profile not found');

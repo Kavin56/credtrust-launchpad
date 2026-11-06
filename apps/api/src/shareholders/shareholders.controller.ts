@@ -12,13 +12,18 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { PrismaService } from '../prisma/prisma.service';
+import { EncryptionService } from '../common/utils/encryption.util';
+import { resolveOrCreateMember } from '../common/utils/shareholder-member-resolver.util';
 
 @ApiTags('shareholders')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('shareholders')
 export class ShareholdersController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly encryption: EncryptionService,
+  ) {}
 
   @Get()
   async getShareholders(
@@ -81,49 +86,48 @@ export class ShareholdersController {
     const shareholder = await this.prisma.shareholder.findUnique({ where: { id } });
     if (!shareholder) return null;
 
-    // Attempt to match or find member
-    let member = await this.prisma.member.findFirst({
-      where: {
-        OR: [
-          { id },
-          { memberId: shareholder.membershipReceiptNo || '' },
-          { contact: shareholder.phone || '' },
-          { fullName: { equals: shareholder.memberName, mode: 'insensitive' } },
-        ],
-      },
-      include: {
-        loans: {
-          include: {
-            emiSchedule: true,
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-        depositAccounts: {
-          include: {
-            transactions: {
-              orderBy: { createdAt: 'desc' },
+    // Resolve or auto-provision Member so financial records always link seamlessly
+    const resolvedMember = await resolveOrCreateMember(this.prisma, this.encryption, id);
+
+    // Fetch full member details with financial records
+    let memberWithRecords = null;
+    if (resolvedMember) {
+      memberWithRecords = await this.prisma.member.findUnique({
+        where: { id: resolvedMember.id },
+        include: {
+          loans: {
+            include: {
+              emiSchedule: true,
             },
+            orderBy: { createdAt: 'desc' },
           },
-          orderBy: { createdAt: 'desc' },
-        },
-        pigmyAccounts: {
-          include: {
-            scheme: true,
-            collections: {
-              orderBy: { date: 'desc' },
+          depositAccounts: {
+            include: {
+              transactions: {
+                orderBy: { createdAt: 'desc' },
+              },
             },
+            orderBy: { createdAt: 'desc' },
           },
-          orderBy: { createdAt: 'desc' },
+          pigmyAccounts: {
+            include: {
+              scheme: true,
+              collections: {
+                orderBy: { date: 'desc' },
+              },
+            },
+            orderBy: { createdAt: 'desc' },
+          },
         },
-      },
-    });
+      });
+    }
 
     // Also fetch deposit applications for member if found
     let depositApplications: any[] = [];
-    if (member) {
+    if (memberWithRecords) {
       depositApplications = await this.prisma.depositApplication.findMany({
         where: {
-          memberId: member.id,
+          memberId: memberWithRecords.id,
         },
         orderBy: { createdAt: 'desc' },
       });
@@ -131,9 +135,9 @@ export class ShareholdersController {
 
     return {
       ...shareholder,
-      member: member
+      member: memberWithRecords
         ? {
-            ...member,
+            ...memberWithRecords,
             depositApplications,
           }
         : null,
@@ -160,7 +164,7 @@ export class ShareholdersController {
         membershipReceiptNo: body.membershipReceiptNo || null,
         receiptDate: body.receiptDate || null,
         dateRemittedToDccBank: body.dateRemittedToDccBank || null,
-        entranceFee: body.entranceFee ? Number(body.entranceFee) : 50,
+        entranceFee: body.entranceFee ? Number(body.entranceFee) : 0,
         valueOfOneShare: body.valueOfOneShare ? Number(body.valueOfOneShare) : 500,
         noOfShares: body.noOfShares ? Number(body.noOfShares) : 1,
         totalShareAmount: body.totalShareAmount ? Number(body.totalShareAmount) : 500,
@@ -180,25 +184,25 @@ export class ShareholdersController {
         relation: body.relation,
         address: body.address,
         phone: body.phone,
-        age: body.age !== undefined && body.age !== '' ? Number(body.age) : null,
+        age: body.age ? Number(body.age) : null,
         casteClass: body.casteClass,
         category: body.category,
         membershipReceiptNo: body.membershipReceiptNo,
         receiptDate: body.receiptDate,
         dateRemittedToDccBank: body.dateRemittedToDccBank,
-        entranceFee: body.entranceFee !== undefined ? Number(body.entranceFee) : undefined,
-        valueOfOneShare: body.valueOfOneShare !== undefined ? Number(body.valueOfOneShare) : undefined,
-        noOfShares: body.noOfShares !== undefined ? Number(body.noOfShares) : undefined,
-        totalShareAmount: body.totalShareAmount !== undefined ? Number(body.totalShareAmount) : undefined,
-        shareFee: body.shareFee !== undefined ? Number(body.shareFee) : undefined,
-        grandTotal: body.grandTotal !== undefined ? Number(body.grandTotal) : undefined,
+        entranceFee: body.entranceFee ? Number(body.entranceFee) : undefined,
+        valueOfOneShare: body.valueOfOneShare ? Number(body.valueOfOneShare) : undefined,
+        noOfShares: body.noOfShares ? Number(body.noOfShares) : undefined,
+        totalShareAmount: body.totalShareAmount ? Number(body.totalShareAmount) : undefined,
+        shareFee: body.shareFee ? Number(body.shareFee) : undefined,
+        grandTotal: body.grandTotal ? Number(body.grandTotal) : undefined,
         relationBasis: body.relationBasis,
       },
     });
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
     return this.prisma.shareholder.delete({ where: { id } });
   }
 }

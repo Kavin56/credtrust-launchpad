@@ -15,10 +15,13 @@ export class NotificationsController {
   ) {}
 
   @Get()
-  findAll(@Req() req: any) {
-    return this.prisma.member
-      .findUnique({ where: { userId: req.user.userId } })
-      .then((m) => this.notificationsService.findAll(m?.id));
+  async findAll(@Req() req: any) {
+    if (!req.user || req.user.role === 'ADMIN' || req.user.role === 'CEO') {
+      return [];
+    }
+    const member = await this.prisma.member.findUnique({ where: { userId: req.user.userId } });
+    if (!member) return [];
+    return this.notificationsService.findAll(member.id);
   }
 
   @Patch(':id/read')

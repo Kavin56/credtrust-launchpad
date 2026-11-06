@@ -13,12 +13,15 @@ function nanoid(size = 21): string {
 }
 
 import { AgentPrismaService } from '../prisma/agent-prisma.service';
+import { EncryptionService } from '../common/utils/encryption.util';
+import { resolveOrCreateMember } from '../common/utils/shareholder-member-resolver.util';
 
 @Injectable()
 export class PigmyService {
   constructor(
     private prisma: PrismaService,
     private agentPrisma: AgentPrismaService,
+    private encryption: EncryptionService,
   ) {}
 
   async createScheme(dto: CreatePigmySchemeDto) {
@@ -40,18 +43,13 @@ export class PigmyService {
       });
       if (!scheme) throw new NotFoundException('Scheme not found');
 
-      // Resolve member: allow dto.memberId to be Member.id, Member.userId, or Member.memberId
-      let member = await this.prisma.member.findFirst({
-        where: {
-          OR: [
-            { id: dto.memberId },
-            { userId: dto.memberId },
-            { memberId: dto.memberId },
-          ],
-        },
-      });
+      // Resolve member: allow dto.memberId to be Member.id, Member.userId, Member.memberId, or Shareholder.id
+      const member = await resolveOrCreateMember(this.prisma, this.encryption, dto.memberId);
+      if (!member) {
+        throw new NotFoundException(`Member profile not found for ID: ${dto.memberId}`);
+      }
 
-      const actualMemberId = member ? member.id : dto.memberId;
+      const actualMemberId = member.id;
 
       const lastAccount = await this.prisma.pigmyAccount.findFirst({
         orderBy: { accountNumber: 'desc' },
