@@ -52,6 +52,26 @@ export class EnrollPigmyAccountDto {
   @ApiProperty()
   @IsOptional()
   startDate?: Date;
+
+  @ApiProperty()
+  @IsOptional()
+  endDate?: Date;
+
+  @ApiProperty()
+  @IsOptional()
+  monthlyPaymentDate?: number | string;
+
+  @ApiProperty()
+  @IsOptional()
+  registeredId?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  initialDeposit?: number;
+
+  @ApiProperty()
+  @IsOptional()
+  paymentMethod?: string;
 }
 
 export class AddCollectionDto {
