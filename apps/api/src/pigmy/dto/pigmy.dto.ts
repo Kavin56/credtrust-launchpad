@@ -72,6 +72,34 @@ export class EnrollPigmyAccountDto {
   @ApiProperty()
   @IsOptional()
   paymentMethod?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  collectionFrequency?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  dailyCollectionAmount?: number;
+
+  @ApiProperty()
+  @IsOptional()
+  nextCollectionDate?: Date;
+
+  @ApiProperty()
+  @IsOptional()
+  totalDurationMonths?: number;
+
+  @ApiProperty()
+  @IsOptional()
+  targetAmount?: number;
+
+  @ApiProperty()
+  @IsOptional()
+  status?: string;
+
+  @ApiProperty()
+  @IsOptional()
+  remarks?: string;
 }
 
 export class AddCollectionDto {

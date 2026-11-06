@@ -55,9 +55,13 @@ export class DepositsService {
       }
     }
 
-    const monthlyPaymentDate = parseInt(fields.monthlyPaymentDate);
+    let monthlyPaymentDate = parseInt(fields.monthlyPaymentDate);
     if (isNaN(monthlyPaymentDate) || monthlyPaymentDate < 1 || monthlyPaymentDate > 31) {
-      throw new BadRequestException('Monthly Payment Date must be between 1 and 31');
+      if (fields.isAdminCreation) {
+        monthlyPaymentDate = 5;
+      } else {
+        throw new BadRequestException('Monthly Payment Date must be between 1 and 31');
+      }
     }
 
     const documentPaths: Record<string, string> = {};

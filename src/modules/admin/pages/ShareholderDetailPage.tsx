@@ -176,27 +176,46 @@ export default function ShareholderDetailPage() {
 
   // Pigmy Entry Form
   const [selectedPigmySchemeId, setSelectedPigmySchemeId] = useState('');
+  const [pigmyDailyAmount, setPigmyDailyAmount] = useState('100');
   const [pigmyInitialDeposit, setPigmyInitialDeposit] = useState('500');
   const [pigmyStartDate, setPigmyStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [pigmyEndDate, setPigmyEndDate] = useState('');
+  const [pigmyDurationMonths, setPigmyDurationMonths] = useState('12');
+  const [pigmyFrequency, setPigmyFrequency] = useState('DAILY');
   const [pigmyMonthlyDate, setPigmyMonthlyDate] = useState('5');
+  const [pigmyStatus, setPigmyStatus] = useState('ACTIVE');
+  const [pigmyRemarks, setPigmyRemarks] = useState('Enrolled by Admin for shareholder');
   const [pigmySubmitting, setPigmySubmitting] = useState(false);
 
   // Loan Entry Form
   const [selectedLoanType, setSelectedLoanType] = useState(loanTypes[0].id);
   const [loanAmount, setLoanAmount] = useState('15000');
+  const [loanInterestRate, setLoanInterestRate] = useState('13');
   const [loanTenure, setLoanTenure] = useState('12');
   const [loanPurpose, setLoanPurpose] = useState('Personal / Household needs');
   const [loanStartDate, setLoanStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [loanEndDate, setLoanEndDate] = useState('');
+  const [loanRepaymentStartDate, setLoanRepaymentStartDate] = useState('');
+  const [loanFirstEmiDueDate, setLoanFirstEmiDueDate] = useState('');
+  const [loanFrequency, setLoanFrequency] = useState('Monthly');
   const [loanMonthlyPaymentDate, setLoanMonthlyPaymentDate] = useState('10');
+  const [loanGuarantorName, setLoanGuarantorName] = useState('');
+  const [loanGuarantorPhone, setLoanGuarantorPhone] = useState('');
+  const [loanGuarantorRelation, setLoanGuarantorRelation] = useState('');
+  const [loanStatus, setLoanStatus] = useState('ACTIVE');
+  const [loanRemarks, setLoanRemarks] = useState('Admin approved loan');
   const [loanSubmitting, setLoanSubmitting] = useState(false);
 
   // Deposit Entry Form
   const [selectedDepositScheme, setSelectedDepositScheme] = useState(depositSchemes[1].id);
   const [depositAmount, setDepositAmount] = useState('10000');
+  const [depositInterestRate, setDepositInterestRate] = useState('7.5');
+  const [depositDurationMonths, setDepositDurationMonths] = useState('12');
+  const [depositStartDate, setDepositStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [depositCalculationType, setDepositCalculationType] = useState('Quarterly Compounding');
+  const [depositPaymentFrequency, setDepositPaymentFrequency] = useState('Monthly');
+  const [depositMonthlyDate, setDepositMonthlyDate] = useState('5');
   const [nomineeName, setNomineeName] = useState('');
   const [nomineeRelation, setNomineeRelation] = useState('');
+  const [depositRemarks, setDepositRemarks] = useState('Opened by Admin');
   const [depositSubmitting, setDepositSubmitting] = useState(false);
 
   // 1. Fetch Shareholder Data & Related Financial History
@@ -231,16 +250,42 @@ export default function ShareholderDetailPage() {
     }
     setPigmySubmitting(true);
     try {
+      const durationM = parseInt(pigmyDurationMonths) || 12;
+      const calcStartDate = pigmyStartDate ? new Date(pigmyStartDate) : new Date();
+      const calcEndDate = new Date(calcStartDate);
+      calcEndDate.setMonth(calcEndDate.getMonth() + durationM);
+
+      const dailyAmt = parseFloat(pigmyDailyAmount) || 100;
+      const targetAmt = dailyAmt * (durationM * 30);
+
+      // Auto-calculate next collection date based on frequency
+      const nextColDate = new Date(calcStartDate);
+      if (pigmyFrequency === 'DAILY') {
+        nextColDate.setDate(nextColDate.getDate() + 1);
+      } else if (pigmyFrequency === 'WEEKLY') {
+        nextColDate.setDate(nextColDate.getDate() + 7);
+      } else {
+        nextColDate.setMonth(nextColDate.getMonth() + 1);
+      }
+
       await api.post('/pigmy/enroll', {
         memberId: targetId,
         schemeId: selectedPigmySchemeId,
+        dailyCollectionAmount: dailyAmt,
         initialDeposit: pigmyInitialDeposit ? parseFloat(pigmyInitialDeposit) : 0,
-        startDate: pigmyStartDate ? new Date(pigmyStartDate).toISOString() : new Date().toISOString(),
-        endDate: pigmyEndDate ? new Date(pigmyEndDate).toISOString() : undefined,
+        startDate: calcStartDate.toISOString(),
+        endDate: calcEndDate.toISOString(),
+        maturityDate: calcEndDate.toISOString(),
+        collectionFrequency: pigmyFrequency,
+        nextCollectionDate: nextColDate.toISOString(),
+        totalDurationMonths: durationM,
+        targetAmount: targetAmt,
+        status: pigmyStatus || 'ACTIVE',
+        remarks: pigmyRemarks,
         monthlyPaymentDate: pigmyMonthlyDate ? parseInt(pigmyMonthlyDate) : 5,
         registeredId: member?.memberId || shareholder?.membershipReceiptNo || `SH-${shareholder?.slNo || 'REC'}`
       });
-      toast.success('Pigmy account enrolled & activated immediately without approval!');
+      toast.success('Pigmy account enrolled & activated immediately with complete date tracking!');
       setIsPigmyModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['admin-shareholder-detail', id] });
     } catch (err: any) {
@@ -270,23 +315,43 @@ export default function ShareholderDetailPage() {
       formData.append('targetMemberId', member?.id || targetId);
       formData.append('type', lType?.name || 'Personal Loan');
       formData.append('amount', loanAmount.toString());
-      formData.append('interestRate', (lType?.rate || 13).toString());
+      formData.append('interestRate', (loanInterestRate || lType?.rate || 13).toString());
       formData.append('termMonths', loanTenure.toString());
       formData.append('purpose', loanPurpose);
-      formData.append('startDate', loanStartDate ? new Date(loanStartDate).toISOString() : new Date().toISOString());
       
-      const calcEndDate = loanEndDate 
-        ? new Date(loanEndDate) 
-        : new Date(new Date(loanStartDate).setMonth(new Date(loanStartDate).getMonth() + parseInt(loanTenure)));
+      const issueDate = loanStartDate ? new Date(loanStartDate) : new Date();
+      formData.append('startDate', issueDate.toISOString());
+      
+      const repayStartDate = loanRepaymentStartDate ? new Date(loanRepaymentStartDate) : new Date(issueDate);
+      if (!loanRepaymentStartDate) {
+        repayStartDate.setMonth(repayStartDate.getMonth() + 1);
+      }
+      formData.append('repaymentStartDate', repayStartDate.toISOString());
+
+      const firstEmiDate = loanFirstEmiDueDate ? new Date(loanFirstEmiDueDate) : new Date(repayStartDate);
+      formData.append('firstEmiDueDate', firstEmiDate.toISOString());
+
+      const calcEndDate = new Date(issueDate);
+      calcEndDate.setMonth(calcEndDate.getMonth() + parseInt(loanTenure));
       formData.append('endDate', calcEndDate.toISOString());
+      formData.append('finalClosureDate', calcEndDate.toISOString());
+
       formData.append('monthlyPaymentDate', loanMonthlyPaymentDate);
+      formData.append('repaymentFrequency', loanFrequency);
+      formData.append('status', loanStatus);
+      formData.append('adminRemarks', loanRemarks);
+      formData.append('guarantorDetail', JSON.stringify({
+        name: loanGuarantorName || 'Not specified',
+        phone: loanGuarantorPhone || '',
+        relation: loanGuarantorRelation || 'Surety Guarantor'
+      }));
       formData.append('registeredId', member?.memberId || shareholder?.membershipReceiptNo || `SH-${shareholder?.slNo || 'REC'}`);
 
       await api.post('/loans/apply', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      toast.success('Loan created and activated instantly with full EMI schedule!');
+      toast.success('Loan created and activated instantly with full EMI schedule and tracking!');
       setIsLoanModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['admin-shareholder-detail', id] });
     } catch (err: any) {
@@ -316,16 +381,33 @@ export default function ShareholderDetailPage() {
       formData.append('targetMemberId', member?.id || targetId);
       formData.append('type', dScheme?.short || 'FD');
       formData.append('amount', depositAmount.toString());
-      formData.append('interestRate', (dScheme?.rate || 7.5).toString());
-      formData.append('termMonths', (dScheme?.tenure || 12).toString());
+      formData.append('interestRate', (depositInterestRate || dScheme?.rate || 7.5).toString());
+      formData.append('termMonths', (depositDurationMonths || dScheme?.tenure || 12).toString());
       formData.append('registeredId', member?.memberId || shareholder?.membershipReceiptNo || `SH-${shareholder?.slNo || 'REC'}`);
       
+      const sDate = depositStartDate ? new Date(depositStartDate) : new Date();
+      formData.append('startDate', sDate.toISOString());
+
+      const tenureM = parseInt(depositDurationMonths || dScheme?.tenure.toString() || '12');
+      const mDate = new Date(sDate);
+      if (tenureM > 0) {
+        mDate.setMonth(mDate.getMonth() + tenureM);
+      }
+      formData.append('endDate', mDate.toISOString());
+      formData.append('maturityDate', mDate.toISOString());
+      formData.append('monthlyPaymentDate', depositMonthlyDate);
+      formData.append('isAdminCreation', 'true');
+
       const details = {
         schemeName: dScheme?.name,
+        depositType: dScheme?.type,
+        interestCalculationType: depositCalculationType,
+        paymentFrequency: depositPaymentFrequency,
         nomineeName: nomineeName || 'Not specified',
         nomineeRelation: nomineeRelation || 'Nominee',
         payoutFrequency: 'ON_MATURITY',
-        depositCreatedBy: 'ADMIN'
+        depositCreatedBy: 'ADMIN',
+        remarks: depositRemarks
       };
       formData.append('additionalDetails', JSON.stringify(details));
 
@@ -524,61 +606,112 @@ export default function ShareholderDetailPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {pigmyAccounts.map((acc: any) => (
-                  <div key={acc.id} className="bg-white rounded-[28px] p-6 border border-slate-100 shadow-sm space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="p-2 rounded-xl bg-amber-50 text-amber-600">
-                          <PiggyBank className="w-5 h-5" />
-                        </span>
-                        <div>
-                          <p className="font-bold text-sm text-slate-900">{acc.scheme?.name || 'Standard Pigmy'}</p>
-                          <p className="text-[11px] font-mono text-slate-400">A/C: {acc.accountNumber}</p>
+                {pigmyAccounts.map((acc: any) => {
+                  const totalCollected = (acc.collections || []).reduce((sum: number, c: any) => sum + (c.amount || 0), 0);
+                  const lastCollection = (acc.collections || [])[0];
+                  const durationMonths = acc.scheme?.maturityPeriod || 12;
+                  const targetAmount = (acc.scheme?.minAmount || 100) * (durationMonths * 30);
+                  const pendingAmount = Math.max(0, targetAmount - totalCollected);
+                  const isOverdue = acc.status === 'OVERDUE';
+
+                  return (
+                    <div key={acc.id} className={`bg-white rounded-[28px] p-6 border shadow-sm space-y-4 transition-all ${
+                      isOverdue ? 'border-rose-300 ring-2 ring-rose-100' : 'border-slate-100'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="p-2 rounded-xl bg-amber-50 text-amber-600">
+                            <PiggyBank className="w-5 h-5" />
+                          </span>
+                          <div>
+                            <p className="font-bold text-sm text-slate-900">{acc.scheme?.name || 'Standard Pigmy'}</p>
+                            <p className="text-[11px] font-mono text-slate-400">A/C: {acc.accountNumber}</p>
+                          </div>
                         </div>
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                          acc.status === 'ACTIVE' 
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                            : acc.status === 'OVERDUE'
+                            ? 'bg-rose-50 text-rose-600 border border-rose-200 animate-pulse'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}>
+                          {acc.status}
+                        </span>
                       </div>
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
-                        acc.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-600'
-                      }`}>
-                        {acc.status}
-                      </span>
-                    </div>
 
-                    <div className="grid grid-cols-3 gap-3 p-4 bg-slate-50 rounded-2xl text-xs">
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Type</p>
-                        <p className="font-bold text-slate-800">{acc.scheme?.type || 'DAILY'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Total Saved</p>
-                        <p className="font-bold text-emerald-600">
-                          ₹{(acc.collections || []).reduce((sum: number, c: any) => sum + (c.amount || 0), 0).toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Interest</p>
-                        <p className="font-bold text-blue-600">{acc.scheme?.interestRate || 3.5}%</p>
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Recent Collections</p>
-                      {(acc.collections || []).length === 0 ? (
-                        <p className="text-xs text-slate-400 italic">No deposit entries recorded yet.</p>
-                      ) : (
-                        <div className="space-y-1.5 max-h-36 overflow-y-auto">
-                          {acc.collections.slice(0, 5).map((col: any) => (
-                            <div key={col.id} className="flex justify-between items-center text-xs py-1 border-b border-slate-100">
-                              <span className="text-slate-500 font-mono">
-                                {col.date ? new Date(col.date).toLocaleDateString('en-IN') : 'Recent'}
-                              </span>
-                              <span className="font-bold text-slate-800">₹{Number(col.amount).toLocaleString()}</span>
-                            </div>
-                          ))}
+                      {isOverdue && (
+                        <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-rose-700 text-xs font-bold">
+                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                          <span>Attention: Collection payments are currently overdue!</span>
                         </div>
                       )}
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 rounded-2xl text-xs">
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Frequency</p>
+                          <p className="font-bold text-slate-800">{acc.scheme?.type || 'DAILY'}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Start Date</p>
+                          <p className="font-bold text-slate-800 font-mono">
+                            {acc.startDate ? new Date(acc.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Maturity Date</p>
+                          <p className="font-bold text-slate-800 font-mono">
+                            {acc.maturityDate ? new Date(acc.maturityDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Next Due Day</p>
+                          <p className="font-bold text-amber-700 font-mono">{acc.monthlyPaymentDate || 5}th of Month</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-3 p-3 bg-amber-50/50 rounded-2xl border border-amber-100/60 text-xs">
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-amber-800">Target Amount</p>
+                          <p className="font-black text-amber-950">₹{targetAmount.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-amber-800">Collected</p>
+                          <p className="font-black text-emerald-600">₹{totalCollected.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-amber-800">Pending</p>
+                          <p className="font-black text-rose-600">₹{pendingAmount.toLocaleString()}</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Collection History</p>
+                          {lastCollection && (
+                            <span className="text-[10px] text-slate-500 font-medium">
+                              Last: {new Date(lastCollection.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                            </span>
+                          )}
+                        </div>
+                        {(acc.collections || []).length === 0 ? (
+                          <p className="text-xs text-slate-400 italic">No deposit entries recorded yet.</p>
+                        ) : (
+                          <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                            {acc.collections.slice(0, 5).map((col: any) => (
+                              <div key={col.id} className="flex justify-between items-center text-xs py-1.5 px-3 bg-slate-50 rounded-xl border border-slate-100">
+                                <span className="text-slate-500 font-mono">
+                                  {col.date ? new Date(col.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Recent'}
+                                </span>
+                                <span className="text-slate-400 font-mono text-[10px]">{col.transactionId}</span>
+                                <span className="font-bold text-emerald-600">+₹{Number(col.amount).toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -613,78 +746,126 @@ export default function ShareholderDetailPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {loans.map((loan: any) => (
-                  <div key={loan.id} className="bg-white rounded-[28px] p-6 border border-slate-100 shadow-sm space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-                          <HandCoins className="w-5 h-5" />
+                {loans.map((loan: any) => {
+                  const principal = Number(loan.amount) || 0;
+                  const rate = loan.interestRate || 13;
+                  const months = loan.termMonths || 12;
+                  const totalInterest = (principal * rate * (months / 12)) / 100;
+                  const totalRepayable = principal + totalInterest;
+                  const emiAmount = Math.round(totalRepayable / months);
+                  
+                  const repayments = loan.repayments || [];
+                  const amountPaid = repayments.reduce((sum: number, r: any) => sum + (r.amount || 0), 0);
+                  const outstandingBalance = Math.max(0, totalRepayable - amountPaid);
+                  const isOverdue = loan.status === 'OVERDUE';
+                  const lastPayment = repayments[0];
+
+                  return (
+                    <div key={loan.id} className={`bg-white rounded-[28px] p-6 border shadow-sm space-y-4 transition-all ${
+                      isOverdue ? 'border-rose-300 ring-2 ring-rose-100' : 'border-slate-100'
+                    }`}>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                            <HandCoins className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-sm text-slate-900">{loan.type || 'Personal Loan'}</p>
+                            <p className="text-xs text-slate-400 font-mono">Loan A/C: {loan.loanNumber || loan.id}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                            loan.status === 'APPROVED' || loan.status === 'ACTIVE'
+                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                              : loan.status === 'OVERDUE'
+                              ? 'bg-rose-50 text-rose-600 border border-rose-200 animate-pulse'
+                              : loan.status === 'REJECTED'
+                              ? 'bg-rose-50 text-rose-600 border border-rose-100'
+                              : 'bg-amber-50 text-amber-600 border border-amber-100'
+                          }`}>
+                            {loan.status}
+                          </span>
+                          <span className="text-lg font-black text-slate-900">
+                            ₹{principal.toLocaleString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      {isOverdue && (
+                        <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2 text-rose-700 text-xs font-bold">
+                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                          <span>Warning: This loan account has overdue repayments pending!</span>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-2xl text-xs">
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Issue Date</p>
+                          <p className="font-bold text-slate-800 font-mono">
+                            {loan.startDate ? new Date(loan.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                          </p>
                         </div>
                         <div>
-                          <p className="font-bold text-sm text-slate-900">{loan.type || 'Personal Loan'}</p>
-                          <p className="text-xs text-slate-400 font-mono">App No: {loan.applicationNo || loan.id}</p>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Closure / End Date</p>
+                          <p className="font-bold text-slate-800 font-mono">
+                            {loan.endDate ? new Date(loan.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Rate & Tenure</p>
+                          <p className="font-bold text-slate-800">{loan.interestRate}% • {months}M</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Monthly EMI Due</p>
+                          <p className="font-bold text-indigo-600 font-mono">{loan.monthlyPaymentDate || 10}th of Month</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                          loan.status === 'APPROVED' || loan.status === 'ACTIVE'
-                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                            : loan.status === 'REJECTED'
-                            ? 'bg-rose-50 text-rose-600 border border-rose-100'
-                            : 'bg-amber-50 text-amber-600 border border-amber-100'
-                        }`}>
-                          {loan.status}
-                        </span>
-                        <span className="text-lg font-black text-slate-900">
-                          ₹{Number(loan.amount).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-2xl text-xs">
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Interest Rate</p>
-                        <p className="font-bold text-slate-800">{loan.interestRate}% p.a.</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Tenure</p>
-                        <p className="font-bold text-slate-800">{loan.termMonths} Months</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Monthly EMI</p>
-                        <p className="font-bold text-indigo-600">
-                          ₹{Math.round((Number(loan.amount) + (Number(loan.amount) * (loan.interestRate / 100) * (loan.termMonths / 12))) / (loan.termMonths || 12)).toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Payment Due Day</p>
-                        <p className="font-bold text-slate-800">{loan.monthlyPaymentDate || 10}th of month</p>
-                      </div>
-                    </div>
-
-                    {/* EMI schedule preview */}
-                    {loan.emiSchedule && loan.emiSchedule.length > 0 && (
-                      <div className="pt-2">
-                        <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
-                          EMI Schedule ({loan.emiSchedule.length} Installments)
-                        </p>
-                        <div className="max-h-36 overflow-y-auto space-y-1">
-                          {loan.emiSchedule.slice(0, 6).map((emi: any, idx: number) => (
-                            <div key={idx} className="flex justify-between items-center text-xs py-1 px-3 rounded-lg bg-slate-50/50">
-                              <span className="font-mono text-slate-500">EMI #{emi.installmentNo || idx + 1}</span>
-                              <span className="text-slate-600">Due: {emi.dueDate ? new Date(emi.dueDate).toLocaleDateString('en-IN') : 'N/A'}</span>
-                              <span className="font-bold text-slate-900">₹{Number(emi.emiAmount).toLocaleString()}</span>
-                              <span className={`text-[10px] font-bold uppercase ${emi.status === 'PAID' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                {emi.status || 'PENDING'}
-                              </span>
-                            </div>
-                          ))}
+                      <div className="grid grid-cols-3 gap-3 p-3 bg-blue-50/50 rounded-2xl border border-blue-100/60 text-xs">
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-blue-800">Total Repayable</p>
+                          <p className="font-black text-blue-950">₹{Math.round(totalRepayable).toLocaleString()}</p>
+                          <p className="text-[10px] text-blue-600">EMI: ₹{emiAmount.toLocaleString()}/mo</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-blue-800">Amount Paid</p>
+                          <p className="font-black text-emerald-600">₹{amountPaid.toLocaleString()}</p>
+                          <p className="text-[10px] text-slate-400">
+                            {lastPayment ? `Last: ${new Date(lastPayment.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}` : 'No payments yet'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-blue-800">Outstanding Balance</p>
+                          <p className="font-black text-rose-600">₹{Math.round(outstandingBalance).toLocaleString()}</p>
+                          <p className="text-[10px] text-slate-500 font-medium">Principal + interest</p>
                         </div>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {/* EMI schedule preview */}
+                      {loan.emiSchedule && loan.emiSchedule.length > 0 && (
+                        <div className="pt-2">
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">
+                            EMI Repayment Schedule ({loan.emiSchedule.length} Installments)
+                          </p>
+                          <div className="max-h-36 overflow-y-auto space-y-1">
+                            {loan.emiSchedule.slice(0, 6).map((emi: any, idx: number) => (
+                              <div key={idx} className="flex justify-between items-center text-xs py-1 px-3 rounded-lg bg-slate-50/50">
+                                <span className="font-mono text-slate-500">EMI #{emi.installmentNo || idx + 1}</span>
+                                <span className="text-slate-600">Due: {emi.dueDate ? new Date(emi.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A'}</span>
+                                <span className="font-bold text-slate-900">₹{Number(emi.totalEmi || emi.emiAmount || emiAmount).toLocaleString()}</span>
+                                <span className={`text-[10px] font-bold uppercase ${emi.isPaid || emi.status === 'PAID' ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                  {emi.isPaid || emi.status === 'PAID' ? 'PAID' : 'PENDING'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -719,75 +900,142 @@ export default function ShareholderDetailPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {depositAccounts.map((acc: any) => (
-                  <div key={acc.id} className="bg-white rounded-[28px] p-6 border border-slate-100 shadow-sm space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="p-2 rounded-xl bg-purple-50 text-purple-700">
-                          <CreditCard className="w-5 h-5" />
+                {depositAccounts.map((acc: any) => {
+                  const p = Number(acc.balance || acc.amount || 0);
+                  const rate = acc.interestRate || 7.5;
+                  const tenureMonths = acc.termMonths || 12;
+                  const isMatured = acc.isMatured || (acc.maturityDate && new Date(acc.maturityDate) <= new Date());
+                  const maturityAmt = acc.maturityAmount || Math.round(p * Math.pow(1 + (rate / 100) / 4, 4 * (tenureMonths / 12)));
+                  const interestAmt = Math.max(0, maturityAmt - p);
+
+                  return (
+                    <div key={acc.id} className="bg-white rounded-[28px] p-6 border border-slate-100 shadow-sm space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="p-2 rounded-xl bg-purple-50 text-purple-700">
+                            <CreditCard className="w-5 h-5" />
+                          </span>
+                          <div>
+                            <p className="font-bold text-sm text-slate-900">{acc.type || 'Fixed Deposit'}</p>
+                            <p className="text-[11px] font-mono text-slate-400">A/C: {acc.accountNumber}</p>
+                          </div>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                          isMatured ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                        }`}>
+                          {isMatured ? 'MATURED' : (acc.status || 'ACTIVE')}
                         </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 rounded-2xl text-xs">
                         <div>
-                          <p className="font-bold text-sm text-slate-900">{acc.type || 'Fixed Deposit'}</p>
-                          <p className="text-[11px] font-mono text-slate-400">A/C: {acc.accountNumber}</p>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Start Date</p>
+                          <p className="font-bold text-slate-800 font-mono">
+                            {acc.startDate ? new Date(acc.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Maturity Date</p>
+                          <p className="font-bold text-purple-700 font-mono">
+                            {acc.maturityDate ? new Date(acc.maturityDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Interest Rate</p>
+                          <p className="font-bold text-slate-800">{rate}% p.a.</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Duration</p>
+                          <p className="font-bold text-slate-800">{tenureMonths} Months</p>
                         </div>
                       </div>
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-50 text-emerald-600 border border-emerald-100">
-                        {acc.status}
-                      </span>
-                    </div>
 
-                    <div className="grid grid-cols-3 gap-3 p-4 bg-slate-50 rounded-2xl text-xs">
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Deposit Amount</p>
-                        <p className="font-black text-slate-900">₹{Number(acc.amount).toLocaleString()}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Interest Rate</p>
-                        <p className="font-bold text-purple-700">{acc.interestRate || 7.5}%</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Term</p>
-                        <p className="font-bold text-slate-800">{acc.termMonths || 12} Months</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {depositApplications.map((app: any) => (
-                  <div key={app.id} className="bg-white rounded-[28px] p-6 border border-slate-100 shadow-sm space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="p-2 rounded-xl bg-blue-50 text-blue-700">
-                          <Clock className="w-5 h-5" />
-                        </span>
+                      <div className="grid grid-cols-3 gap-3 p-3 bg-purple-50/50 rounded-2xl border border-purple-100/60 text-xs">
                         <div>
-                          <p className="font-bold text-sm text-slate-900">{app.type || 'Deposit Application'}</p>
-                          <p className="text-[11px] font-mono text-slate-400">App: {app.applicationNo}</p>
+                          <p className="text-[10px] uppercase font-bold text-purple-800">Principal</p>
+                          <p className="font-black text-purple-950">₹{p.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-purple-800">Interest Yield</p>
+                          <p className="font-black text-emerald-600">+₹{interestAmt.toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-purple-800">Maturity Value</p>
+                          <p className="font-black text-purple-900">₹{maturityAmt.toLocaleString()}</p>
                         </div>
                       </div>
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
-                        app.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                      }`}>
-                        {app.status}
-                      </span>
-                    </div>
 
-                    <div className="grid grid-cols-3 gap-3 p-4 bg-slate-50 rounded-2xl text-xs">
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Amount</p>
-                        <p className="font-black text-slate-900">₹{Number(app.amount).toLocaleString()}</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Rate</p>
-                        <p className="font-bold text-blue-700">{app.interestRate}%</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] uppercase font-bold text-slate-400">Tenure</p>
-                        <p className="font-bold text-slate-800">{app.termMonths} Months</p>
-                      </div>
+                      {acc.transactions && acc.transactions.length > 0 && (
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-2">Transactions</p>
+                          <div className="space-y-1 max-h-28 overflow-y-auto">
+                            {acc.transactions.slice(0, 3).map((txn: any) => (
+                              <div key={txn.id} className="flex justify-between items-center text-xs py-1 px-3 bg-slate-50 rounded-xl">
+                                <span className="text-slate-500 font-mono">
+                                  {new Date(txn.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                </span>
+                                <span className="font-bold text-emerald-600">₹{Number(txn.amount).toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
+
+                {depositApplications.map((app: any) => {
+                  let additional: any = {};
+                  try {
+                    if (app.additionalDetails) additional = JSON.parse(app.additionalDetails);
+                  } catch (e) {}
+
+                  return (
+                    <div key={app.id} className="bg-white rounded-[28px] p-6 border border-slate-100 shadow-sm space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="p-2 rounded-xl bg-blue-50 text-blue-700">
+                            <Clock className="w-5 h-5" />
+                          </span>
+                          <div>
+                            <p className="font-bold text-sm text-slate-900">{additional.schemeName || app.type || 'Deposit Application'}</p>
+                            <p className="text-[11px] font-mono text-slate-400">App No: {app.applicationNo}</p>
+                          </div>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                          app.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                        }`}>
+                          {app.status}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-50 rounded-2xl text-xs">
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Principal</p>
+                          <p className="font-black text-slate-900">₹{Number(app.amount).toLocaleString()}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Rate</p>
+                          <p className="font-bold text-blue-700">{app.interestRate}%</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Tenure</p>
+                          <p className="font-bold text-slate-800">{app.termMonths} Months</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Installment Day</p>
+                          <p className="font-bold text-slate-800">{app.monthlyPaymentDate || 5}th</p>
+                        </div>
+                      </div>
+
+                      {additional.nomineeName && (
+                        <p className="text-[11px] text-slate-500 bg-slate-50 p-2 rounded-xl">
+                          Nominee: <span className="font-bold text-slate-800">{additional.nomineeName}</span> ({additional.nomineeRelation || 'Nominee'})
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -797,14 +1045,14 @@ export default function ShareholderDetailPage() {
 
       {/* MODAL 1: ENROLL PIGMY SCHEME */}
       <Dialog open={isPigmyModalOpen} onOpenChange={setIsPigmyModalOpen}>
-        <DialogContent className="max-w-xl bg-white rounded-3xl p-6 sm:p-8">
+        <DialogContent className="max-w-2xl bg-white rounded-3xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <PiggyBank className="w-6 h-6 text-amber-500" />
               <span>Enroll Pigmy Deposit for {shareholder.memberName}</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500">
-              Select Pigmy scheme category, starting date, and payment intervals. Saved to shareholder's history.
+              Set up Pigmy scheme, collection frequency, auto-calculated target amount, maturity and scheduled collection dates.
             </DialogDescription>
           </DialogHeader>
 
@@ -833,6 +1081,19 @@ export default function ShareholderDetailPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Daily / Installment Amount (₹)</Label>
+                <Input
+                  type="number"
+                  min="10"
+                  value={pigmyDailyAmount}
+                  onChange={(e) => setPigmyDailyAmount(e.target.value)}
+                  className="rounded-xl text-xs font-bold"
+                  placeholder="e.g. 100"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-slate-700">Initial Deposit (₹)</Label>
                 <Input
                   type="number"
@@ -845,18 +1106,47 @@ export default function ShareholderDetailPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Start Date</Label>
+                <Label className="text-xs font-bold text-slate-700">Collection Frequency</Label>
+                <select
+                  value={pigmyFrequency}
+                  onChange={(e) => setPigmyFrequency(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl px-3 py-2.5 font-bold outline-none"
+                >
+                  <option value="DAILY">Daily Collection</option>
+                  <option value="WEEKLY">Weekly Collection</option>
+                  <option value="MONTHLY">Monthly Collection</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Pigmy Start Date</Label>
                 <Input
                   type="date"
                   value={pigmyStartDate}
                   onChange={(e) => setPigmyStartDate(e.target.value)}
-                  className="rounded-xl text-xs"
+                  className="rounded-xl text-xs font-medium"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Collection Day (Monthly)</Label>
+                <Label className="text-xs font-bold text-slate-700">Duration (Months)</Label>
+                <select
+                  value={pigmyDurationMonths}
+                  onChange={(e) => setPigmyDurationMonths(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl px-3 py-2.5 font-bold outline-none"
+                >
+                  <option value="6">6 Months</option>
+                  <option value="12">12 Months (1 Year)</option>
+                  <option value="24">24 Months (2 Years)</option>
+                  <option value="36">36 Months (3 Years)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Monthly Day / Next Due Day</Label>
                 <Input
                   type="number"
                   min="1"
@@ -868,6 +1158,62 @@ export default function ShareholderDetailPage() {
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Account Status</Label>
+                <select
+                  value={pigmyStatus}
+                  onChange={(e) => setPigmyStatus(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl px-3 py-2.5 font-bold outline-none"
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="OVERDUE">Overdue</option>
+                  <option value="CLOSED">Closed</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Admin Remarks / Note</Label>
+                <Input
+                  value={pigmyRemarks}
+                  onChange={(e) => setPigmyRemarks(e.target.value)}
+                  className="rounded-xl text-xs"
+                  placeholder="e.g. Daily doorstep collection"
+                />
+              </div>
+            </div>
+
+            {/* Target & Maturity Calculation Box */}
+            {(() => {
+              const durM = parseInt(pigmyDurationMonths) || 12;
+              const sDate = pigmyStartDate ? new Date(pigmyStartDate) : new Date();
+              const mDate = new Date(sDate);
+              mDate.setMonth(mDate.getMonth() + durM);
+
+              const dailyAmt = parseFloat(pigmyDailyAmount) || 100;
+              const targetAmt = dailyAmt * (durM * 30);
+              const initialDep = parseFloat(pigmyInitialDeposit) || 0;
+              const pendingAmt = Math.max(0, targetAmt - initialDep);
+
+              return (
+                <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-200 flex flex-wrap items-center justify-between gap-4 text-xs">
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-amber-800 tracking-wider">Calculated Maturity Date</span>
+                    <p className="text-sm font-black text-amber-950 font-mono mt-0.5">
+                      {mDate.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    </p>
+                    <p className="text-[10px] text-amber-700">Total duration: {durM} Months ({durM * 30} days)</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-black uppercase text-amber-800 tracking-wider">Total Target Amount</span>
+                    <p className="text-lg font-black text-amber-950">₹{targetAmt.toLocaleString()}</p>
+                    <p className="text-[11px] text-amber-800 font-bold">Pending Amount: ₹{pendingAmt.toLocaleString()}</p>
+                  </div>
+                </div>
+              );
+            })()}
 
             <DialogFooter className="pt-4 flex gap-2">
               <Button
@@ -932,9 +1278,9 @@ export default function ShareholderDetailPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Loan Amount (Max ₹23,000)</Label>
+                <Label className="text-xs font-bold text-slate-700">Loan Principal (₹)</Label>
                 <Input
                   type="number"
                   max="23000"
@@ -947,7 +1293,20 @@ export default function ShareholderDetailPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Tenure (Months)</Label>
+                <Label className="text-xs font-bold text-slate-700">Interest Rate (%)</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="1"
+                  value={loanInterestRate}
+                  onChange={(e) => setLoanInterestRate(e.target.value)}
+                  className="rounded-xl text-xs font-bold"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Duration (Tenure)</Label>
                 <select
                   value={loanTenure}
                   onChange={(e) => setLoanTenure(e.target.value)}
@@ -962,7 +1321,65 @@ export default function ShareholderDetailPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Monthly Payment Day</Label>
+                <Label className="text-xs font-bold text-slate-700">Repayment Frequency</Label>
+                <select
+                  value={loanFrequency}
+                  onChange={(e) => setLoanFrequency(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl px-3 py-2.5 font-bold outline-none"
+                >
+                  <option value="Monthly">Monthly</option>
+                  <option value="Weekly">Weekly</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Loan Issue Date</Label>
+                <Input
+                  type="date"
+                  value={loanStartDate}
+                  onChange={(e) => {
+                    setLoanStartDate(e.target.value);
+                    if (!loanRepaymentStartDate) {
+                      const d = new Date(e.target.value);
+                      d.setMonth(d.getMonth() + 1);
+                      setLoanRepaymentStartDate(d.toISOString().split('T')[0]);
+                      setLoanFirstEmiDueDate(d.toISOString().split('T')[0]);
+                    }
+                  }}
+                  className="rounded-xl text-xs"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Repayment Start Date</Label>
+                <Input
+                  type="date"
+                  value={loanRepaymentStartDate || loanStartDate}
+                  onChange={(e) => {
+                    setLoanRepaymentStartDate(e.target.value);
+                    if (!loanFirstEmiDueDate) setLoanFirstEmiDueDate(e.target.value);
+                  }}
+                  className="rounded-xl text-xs"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">First EMI Due Date</Label>
+                <Input
+                  type="date"
+                  value={loanFirstEmiDueDate || loanRepaymentStartDate || loanStartDate}
+                  onChange={(e) => setLoanFirstEmiDueDate(e.target.value)}
+                  className="rounded-xl text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Monthly Due Day</Label>
                 <Input
                   type="number"
                   min="1"
@@ -973,18 +1390,19 @@ export default function ShareholderDetailPage() {
                   required
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-slate-700">Disbursement / Start Date</Label>
-                <Input
-                  type="date"
-                  value={loanStartDate}
-                  onChange={(e) => setLoanStartDate(e.target.value)}
-                  className="rounded-xl text-xs"
-                  required
-                />
+                <Label className="text-xs font-bold text-slate-700">Loan Status</Label>
+                <select
+                  value={loanStatus}
+                  onChange={(e) => setLoanStatus(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl px-3 py-2.5 font-bold outline-none"
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="OVERDUE">Overdue</option>
+                  <option value="CLOSED">Closed</option>
+                </select>
               </div>
 
               <div className="space-y-1.5">
@@ -994,6 +1412,36 @@ export default function ShareholderDetailPage() {
                   onChange={(e) => setLoanPurpose(e.target.value)}
                   className="rounded-xl text-xs"
                   placeholder="e.g. Household renovation"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Guarantor Name</Label>
+                <Input
+                  value={loanGuarantorName}
+                  onChange={(e) => setLoanGuarantorName(e.target.value)}
+                  className="rounded-xl text-xs"
+                  placeholder="Full name of surety"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Guarantor Phone</Label>
+                <Input
+                  value={loanGuarantorPhone}
+                  onChange={(e) => setLoanGuarantorPhone(e.target.value)}
+                  className="rounded-xl text-xs"
+                  placeholder="e.g. 9876543210"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Guarantor Relation</Label>
+                <Input
+                  value={loanGuarantorRelation}
+                  onChange={(e) => setLoanGuarantorRelation(e.target.value)}
+                  className="rounded-xl text-xs"
+                  placeholder="e.g. Brother / Member"
                 />
               </div>
             </div>
@@ -1084,19 +1532,113 @@ export default function ShareholderDetailPage() {
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-slate-700">Deposit Amount (₹)</Label>
-              <Input
-                type="number"
-                min="500"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                className="rounded-xl text-xs font-bold"
-                required
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Principal Deposit (₹)</Label>
+                <Input
+                  type="number"
+                  min="500"
+                  value={depositAmount}
+                  onChange={(e) => setDepositAmount(e.target.value)}
+                  className="rounded-xl text-xs font-bold"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Interest Rate (%)</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  min="1"
+                  value={depositInterestRate}
+                  onChange={(e) => setDepositInterestRate(e.target.value)}
+                  className="rounded-xl text-xs font-bold"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Duration (Months)</Label>
+                <select
+                  value={depositDurationMonths}
+                  onChange={(e) => setDepositDurationMonths(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl px-3 py-2.5 font-bold outline-none"
+                >
+                  <option value="6">6 Months</option>
+                  <option value="12">12 Months (1 Year)</option>
+                  <option value="24">24 Months (2 Years)</option>
+                  <option value="36">36 Months (3 Years)</option>
+                  <option value="60">60 Months (5 Years)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Deposit Start Date</Label>
+                <Input
+                  type="date"
+                  value={depositStartDate}
+                  onChange={(e) => setDepositStartDate(e.target.value)}
+                  className="rounded-xl text-xs"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Interest Calc Type</Label>
+                <select
+                  value={depositCalculationType}
+                  onChange={(e) => setDepositCalculationType(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl px-3 py-2.5 font-bold outline-none"
+                >
+                  <option value="Quarterly Compounding">Quarterly Compounding</option>
+                  <option value="Simple Interest">Simple Interest</option>
+                  <option value="Monthly Payout">Monthly Payout</option>
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Payment Frequency (RD)</Label>
+                <select
+                  value={depositPaymentFrequency}
+                  onChange={(e) => setDepositPaymentFrequency(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs rounded-xl px-3 py-2.5 font-bold outline-none"
+                >
+                  <option value="Monthly">Monthly Installment</option>
+                  <option value="One-time">One-time Lump Sum</option>
+                  <option value="Quarterly">Quarterly</option>
+                </select>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Monthly Day (RD Installment)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="31"
+                  value={depositMonthlyDate}
+                  onChange={(e) => setDepositMonthlyDate(e.target.value)}
+                  className="rounded-xl text-xs"
+                  placeholder="e.g. 5"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-slate-700">Remarks / Purpose</Label>
+                <Input
+                  value={depositRemarks}
+                  onChange={(e) => setDepositRemarks(e.target.value)}
+                  className="rounded-xl text-xs"
+                  placeholder="e.g. Special festive deposit scheme"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 bg-purple-50/40 rounded-2xl border border-purple-100">
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-slate-700">Nominee Full Name</Label>
                 <Input
@@ -1117,6 +1659,38 @@ export default function ShareholderDetailPage() {
                 />
               </div>
             </div>
+
+            {/* Auto-calculated Maturity & Interest Summary Box */}
+            {(() => {
+              const p = parseFloat(depositAmount) || 0;
+              const r = (parseFloat(depositInterestRate) || 7.5) / 100;
+              const m = parseInt(depositDurationMonths) || 12;
+              const t = m / 12;
+              // Quarterly compound interest: A = P * (1 + r/4)^(4*t)
+              const maturityAmt = Math.round(p * Math.pow(1 + r / 4, 4 * t));
+              const interestEarned = Math.max(0, maturityAmt - p);
+              
+              const sDate = depositStartDate ? new Date(depositStartDate) : new Date();
+              const matDate = new Date(sDate);
+              matDate.setMonth(matDate.getMonth() + m);
+
+              return (
+                <div className="p-4 bg-purple-50/70 rounded-2xl border border-purple-200 flex flex-wrap items-center justify-between gap-4 text-xs">
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-purple-800 tracking-wider">Calculated Maturity Date</span>
+                    <p className="text-sm font-black text-purple-950 font-mono mt-0.5">
+                      {matDate.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    </p>
+                    <p className="text-[10px] text-purple-700">Tenure: {m} Months ({depositCalculationType})</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-black uppercase text-purple-800 tracking-wider">Expected Maturity Value</span>
+                    <p className="text-xl font-black text-purple-950">₹{maturityAmt.toLocaleString()}</p>
+                    <p className="text-[11px] text-purple-800 font-bold">Total Interest Return: ₹{interestEarned.toLocaleString()}</p>
+                  </div>
+                </div>
+              );
+            })()}
 
             <DialogFooter className="pt-4 flex gap-2">
               <Button

@@ -128,7 +128,7 @@ const AdminDashboard = () => {
         </motion.div>
 
         {/* Admin Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {adminStats.map((stat, idx) => (
             <motion.div
               key={idx}
@@ -148,6 +148,61 @@ const AdminDashboard = () => {
               </Card>
             </motion.div>
           ))}
+        </div>
+
+        {/* Enhanced Financial Tracking: Pigmy, Deposits & Loans Status */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-black text-slate-900">Financial Products & Repayment Overview</h2>
+              <p className="text-xs text-slate-500">Real-time status of Pigmy accounts, active deposits, upcoming collections, and loan repayments.</p>
+            </div>
+            <Link to="/admin/shareholders" className="text-xs font-bold text-[#c9a84c] hover:underline">
+              View Shareholder Records →
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active Pigmy A/Cs</span>
+              <p className="text-xl font-black text-amber-600 mt-1">{isLoading ? "—" : overview?.activePigmyAccounts ?? 0}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Enrolled depositors</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Pigmy Collected</span>
+              <p className="text-xl font-black text-slate-900 mt-1">
+                {isLoading ? "—" : `₹${Number(overview?.totalPigmyCollections ?? 0).toLocaleString()}`}
+              </p>
+              <p className="text-[10px] text-emerald-600 font-bold mt-0.5">Completed entries</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active Deposits</span>
+              <p className="text-xl font-black text-purple-600 mt-1">{isLoading ? "—" : overview?.activeDeposits ?? 0}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">FD & RD running</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active Loans</span>
+              <p className="text-xl font-black text-blue-600 mt-1">{isLoading ? "—" : overview?.activeLoans ?? 0}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">In repayment</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Overdue Loans</span>
+              <p className="text-xl font-black text-rose-600 mt-1">{isLoading ? "—" : overview?.overdueLoans ?? 0}</p>
+              <p className="text-[10px] text-rose-500 font-bold mt-0.5">Action required</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Outstanding</span>
+              <p className="text-xl font-black text-slate-900 mt-1">
+                {isLoading ? "—" : `₹${Number(overview?.totalOutstandingLoanBalance ?? 0).toLocaleString()}`}
+              </p>
+              <p className="text-[10px] text-amber-600 font-bold mt-0.5">Principal balance</p>
+            </div>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">

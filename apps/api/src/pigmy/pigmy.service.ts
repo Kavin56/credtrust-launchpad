@@ -101,7 +101,7 @@ export class PigmyService {
             date: startDate,
             method: (dto as any).paymentMethod || 'CASH',
             status: 'COMPLETED',
-            remarks: 'Initial deposit upon enrollment by Admin',
+            remarks: (dto as any).remarks || 'Initial deposit upon enrollment by Admin',
             customerName: member?.fullName,
             customerPhone: member?.contact,
           },

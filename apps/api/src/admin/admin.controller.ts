@@ -20,7 +20,13 @@ export class AdminController {
       pendingKyc,
       depositAccountsAgg,
       depositAppsAgg,
-      pigmyAgg
+      pigmyAgg,
+      activePigmyAccounts,
+      totalPigmyCollections,
+      activeDeposits,
+      activeLoans,
+      overdueLoans,
+      outstandingLoansAgg
     ] = await Promise.all([
       this.prisma.member.count(),
       this.prisma.loan.count({ where: { status: { in: ['PENDING', 'APPROVED', 'ACTIVE', 'OVERDUE'] } } }),
@@ -29,7 +35,13 @@ export class AdminController {
       this.prisma.member.count({ where: { kycStatus: 'PENDING' } }),
       this.prisma.depositAccount.aggregate({ _sum: { balance: true } }),
       this.prisma.depositApplication.aggregate({ _sum: { amount: true }, where: { status: { not: 'REJECTED' } } }),
-      this.prisma.pigmyAccount.aggregate({ _sum: { balance: true } })
+      this.prisma.pigmyAccount.aggregate({ _sum: { balance: true } }),
+      this.prisma.pigmyAccount.count({ where: { status: 'ACTIVE' } }),
+      this.prisma.pigmyCollection.aggregate({ _sum: { amount: true }, where: { status: 'COMPLETED' } }),
+      this.prisma.depositAccount.count({ where: { isMatured: false } }),
+      this.prisma.loan.count({ where: { status: { in: ['ACTIVE', 'APPROVED'] } } }),
+      this.prisma.loan.count({ where: { status: 'OVERDUE' } }),
+      this.prisma.loan.aggregate({ _sum: { amount: true }, where: { status: { in: ['ACTIVE', 'APPROVED', 'OVERDUE'] } } })
     ]);
 
     const totalDepositCount = depositAccountsCount + depositAppsCount;
@@ -45,7 +57,13 @@ export class AdminController {
       depositAccountsCount,
       depositAppsCount,
       pendingKyc,
-      totalDepositAmount: Math.round(totalDepositAmount * 100) / 100
+      totalDepositAmount: Math.round(totalDepositAmount * 100) / 100,
+      activePigmyAccounts,
+      totalPigmyCollections: Math.round((totalPigmyCollections._sum.amount || 0) * 100) / 100,
+      activeDeposits,
+      activeLoans,
+      overdueLoans,
+      totalOutstandingLoanBalance: Math.round((outstandingLoansAgg._sum.amount || 0) * 100) / 100,
     };
   }
 
